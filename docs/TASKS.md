@@ -64,11 +64,11 @@ Légende des tailles : **S** = 1–2 fichiers · **M** = 3–5 fichiers (hors te
 
 ## Jalon 1 : Ingestion de bout en bout
 
-- [ ] **T5 — Tokens d'ingestion** · S · Dépend de : T3
+- [x] **T5 — Tokens d'ingestion** · S · Dépend de : T3
   - Acceptation :
     - Format `wu_` + 32 octets base62 ; stockage du hash sha-256 et d'un préfixe de 8 caractères
     - Réglages › Ingestion : génération (token en clair affiché **une seule fois**), copier, régénérer (révoque l'ancien), révoquer
-    - `verifyIngestToken(header)` est à temps constant et met à jour `last_used_at`
+    - `verifyIngestToken(header)` cherche par hash (index unique, aucune comparaison du secret) et met à jour `last_used_at` ; un seul token actif par foyer (index unique partiel)
   - Vérifier : `pnpm test tests/integration/ingest-token` (+ isolation)
   - Fichiers : `src/db/schema.ts`, `src/server/ingest/token.ts`, `src/app/(app)/reglages/ingest-card.tsx`
 

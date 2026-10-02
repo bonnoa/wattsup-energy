@@ -21,7 +21,7 @@ Légende des tailles : **S** = 1–2 fichiers · **M** = 3–5 fichiers (hors te
 
 ## Jalon 0 : Socle
 
-- [ ] **T1 — Initialiser le repo** · M · Dépend de : —
+- [x] **T1 — Initialiser le repo** · M · Dépend de : —
   - Acceptation :
     - `git init` ; `.gitignore` (node_modules, .env*, .next) ; `LICENSE` GPL-3.0-or-later ; `.env.example`
     - Next.js 15 (App Router, `src/`), TS `strict`, pnpm 9, ESLint (`next/core-web-vitals` + `@typescript-eslint/strict`), Prettier (largeur 100)

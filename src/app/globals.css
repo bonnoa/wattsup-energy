@@ -1,0 +1,50 @@
+@import "tailwindcss";
+
+/* Tokens issus de la maquette (docs/wattsup-energy-app-design), voir SPEC §2 */
+@theme {
+  --color-bg: #f4f2ec;
+  --color-surface: #ffffff;
+  --color-ink: #16181a;
+  --color-muted: #6b6f68;
+  --color-subtle: #8a8e86;
+  --color-border: #e4e0d6;
+  --color-border-strong: #ddd8cc;
+  --color-track: #efece4;
+  --color-chip: #e9e5dc;
+
+  --color-grid: #3d5a80;
+  --color-solar: #e0a21b;
+  --color-battery: #2a9d74;
+  --color-pellet: #b5652b;
+  --color-wood: #6f4a2e;
+  --color-eheat: #c8442f;
+
+  --color-positive: #1f7a59;
+  --color-negative: #c8442f;
+
+  --font-sans: var(--font-instrument-sans), system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains-mono), ui-monospace, monospace;
+
+  --radius-card: 14px;
+  --radius-control: 10px;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  background: var(--color-bg);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: var(--color-grid);
+}
+
+a:hover {
+  color: var(--color-ink);
+}

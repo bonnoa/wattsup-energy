@@ -31,11 +31,11 @@ Légende des tailles : **S** = 1–2 fichiers · **M** = 3–5 fichiers (hors te
   - Vérifier : `pnpm lint && pnpm test && pnpm build`
   - Fichiers : `package.json`, `tsconfig.json`, `eslint.config.mjs`, `vitest.config.ts`, `src/app/globals.css`, `src/app/layout.tsx`, `LICENSE`
 
-- [ ] **T2 — Base de données et authentification** · M · Dépend de : T1
+- [x] **T2 — Base de données et authentification** · M · Dépend de : T1
   - Acceptation :
     - `docker-compose.yml` avec un service `db` (Postgres 16, volume nommé)
     - Drizzle + `drizzle-kit` ; première migration avec les tables Better Auth + `household` (`timezone`, `granularity`, `profile`, `settings` JSONB avec les valeurs par défaut de la spec §5)
-    - Better Auth en email + mot de passe ; pages `/connexion` et `/inscription` ; un foyer est créé à l'inscription, dans la même transaction
+    - Better Auth en email + mot de passe ; pages `/connexion` et `/inscription` ; un foyer est créé à l'inscription (hook `user.create.after`, rattrapé par `ensureHousehold()` idempotent si le hook échoue)
     - Middleware : toute route `(app)` sans session redirige vers `/connexion`
   - Vérifier : `docker compose up -d db && pnpm db:migrate && pnpm test tests/integration/auth` ; manuel : inscription, déconnexion, connexion
   - Fichiers : `docker-compose.yml`, `src/db/schema.ts`, `src/db/index.ts`, `src/server/auth.ts`, `src/app/(auth)/…`, `src/middleware.ts`
@@ -333,7 +333,6 @@ Légende des tailles : **S** = 1–2 fichiers · **M** = 3–5 fichiers (hors te
 | `drizzle-orm`, `drizzle-kit`, `postgres` | DB | T2 |
 | `better-auth` | auth | T2 |
 | `zod` | validation | T4, T7 |
-| `date-fns`, `date-fns-tz` | fuseaux et changements d'heure | T6 |
 | `vitest`, `@vitest/coverage-v8`, `msw`, `@playwright/test` | tests (dev) | T1, T16, T33 |
 | `csv-parse` | parsing CSV en flux | T22 |
-| `tsx` | exécution des scripts | T15 |
+| `tsx` | exécution des scripts | T2 |

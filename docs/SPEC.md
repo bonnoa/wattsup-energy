@@ -195,7 +195,7 @@ HA envoie les **index cumulés** (capteurs `total_increasing`). Le serveur calcu
 
 Règles :
 - Tous les blocs sont optionnels, sauf `version` et `ts`.
-- Delta = `value − meter_state.value`. Il est ventilé sur les heures écoulées au prorata si le trou fait moins de 24 h, puis rattaché à l'heure de `ts` (fuseau du foyer).
+- Delta = `value − meter_state.value`. Il est réparti au prorata du temps passé dans chaque heure entre l'index précédent et `ts` (trou < 24 h). Les seaux sont des **heures UTC pleines** : pour un fuseau à décalage entier comme Europe/Paris, elles coïncident avec les heures locales, et les changements d'heure n'ont plus de cas particulier. Le fuseau du foyer ne sert qu'aux agrégats (jour, mois) et aux plages tarifaires.
 - Une valeur **inférieure** à l'index précédent est traitée comme un reset : le delta vaut la nouvelle valeur.
 - Un trou de plus de 24 h ne crée pas de données : le delta est absorbé et un avertissement est consigné dans `ingest_log`.
 - Une clé de `categories` inconnue est ignorée, avec un avertissement dans la réponse.

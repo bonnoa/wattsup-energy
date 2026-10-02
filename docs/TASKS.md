@@ -71,7 +71,7 @@ Légende des tailles : **S** = 1–2 fichiers · **M** = 3–5 fichiers (hors te
   - Vérifier : `pnpm test tests/integration/ingest-token` (+ isolation)
   - Fichiers : `src/db/schema.ts`, `src/server/ingest/token.ts`, `src/app/(app)/reglages/ingest-card.tsx`
 
-- [ ] **T6 — Normalisation horaire des index (domaine)** · S · Dépend de : T1
+- [x] **T6 — Normalisation horaire des index (domaine)** · S · Dépend de : T1
   - Acceptation :
     - `indexToIntervals(prev, current, tz)` renvoie des intervalles horaires + des avertissements
     - Tests : delta simple ; reset (valeur < précédente) ; trou < 24 h réparti au prorata ; trou > 24 h absorbé avec avertissement ; premier index (aucun delta) ; passage à l'heure d'hiver (heure dupliquée) et à l'heure d'été (heure manquante)

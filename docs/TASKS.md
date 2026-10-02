@@ -98,7 +98,7 @@ Légende des tailles : **S** = 1–2 fichiers · **M** = 3–5 fichiers (hors te
   - Vérifier : `pnpm test tests/integration/ingest-route`
   - Fichiers : `src/app/api/v1/ingest/route.ts`, `src/server/ingest/persist.ts`, `src/db/schema.ts`
 
-- [ ] **T9 — Garde-fous d'ingestion** · S · Dépend de : T8
+- [x] **T9 — Garde-fous d'ingestion** · S · Dépend de : T8
   - Acceptation :
     - `RateLimiter` (interface + implémentation mémoire à fenêtre glissante) : 120 req/min par token → 429 + `Retry-After`
     - Corps > 64 Ko → 413 ; mode du payload ≠ `household.granularity` → 409 avec message explicite

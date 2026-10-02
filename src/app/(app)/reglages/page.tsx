@@ -21,6 +21,7 @@ export default async function SettingsPage() {
         <div className="flex flex-col gap-4">
           <IngestCard
             endpoint={`${origin}/api/v1/ingest`}
+            granularity={ctx.granularity}
             active={
               active && {
                 prefix: active.prefix,

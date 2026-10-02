@@ -1,7 +1,11 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { createIngestTokenAction, revokeIngestTokenAction } from "@/server/actions/ingest-token";
+import {
+  createIngestTokenAction,
+  revokeIngestTokenAction,
+  setGranularityAction,
+} from "@/server/actions/ingest-token";
 
 interface ActiveToken {
   prefix: string;
@@ -9,10 +13,26 @@ interface ActiveToken {
   lastUsedAt: string | null;
 }
 
+type Granularity = "hourly" | "daily";
+
 interface Props {
   endpoint: string;
   active: ActiveToken | null;
+  granularity: Granularity;
 }
+
+const MODES: { id: Granularity; label: string; help: string }[] = [
+  {
+    id: "hourly",
+    label: "Horaire",
+    help: "HA envoie ses index cumulés chaque heure. Simulation exacte de tous les contrats.",
+  },
+  {
+    id: "daily",
+    label: "Quotidien",
+    help: "HA envoie une fois par jour les kWh HP et HC de la veille. Les contrats aux plages creuses différentes sont simulés de façon approchée.",
+  },
+];
 
 const fmt = (iso: string) =>
   new Date(iso).toLocaleString("fr-FR", { dateStyle: "short", timeStyle: "short" });
@@ -40,9 +60,20 @@ function CopyButton({ value }: { value: string }) {
   );
 }
 
-export function IngestCard({ endpoint, active }: Props) {
+export function IngestCard({ endpoint, active, granularity }: Props) {
   const [fresh, setFresh] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+  const [mode, setMode] = useState(granularity);
+
+  const chooseMode = (next: Granularity) => {
+    if (next === mode) return;
+    const previous = mode;
+    setMode(next);
+    startTransition(async () => {
+      const res = await setGranularityAction(next);
+      if (!res.ok) setMode(previous);
+    });
+  };
 
   const generate = () => {
     if (active && !confirm("Régénérer le token ? L'ancien cessera immédiatement de fonctionner."))
@@ -67,6 +98,27 @@ export function IngestCard({ endpoint, active }: Props) {
       <p className="text-xs text-subtle">
         Home Assistant pousse les données. Aucun port entrant à ouvrir.
       </p>
+
+      <div className="flex flex-col gap-1.5">
+        <span className="text-xs text-muted">Granularité des envois</span>
+        <div role="radiogroup" className="flex gap-1 rounded-[10px] bg-chip p-[3px]">
+          {MODES.map((m) => (
+            <button
+              key={m.id}
+              type="button"
+              role="radio"
+              aria-checked={mode === m.id}
+              onClick={() => chooseMode(m.id)}
+              className={`flex-1 rounded-[8px] px-3 py-2 text-[13px] font-medium ${
+                mode === m.id ? "bg-surface shadow-[0_1px_2px_rgba(0,0,0,0.08)]" : ""
+              }`}
+            >
+              {m.label}
+            </button>
+          ))}
+        </div>
+        <p className="text-xs text-subtle">{MODES.find((m) => m.id === mode)?.help}</p>
+      </div>
 
       <div className="flex flex-col gap-1.5">
         <span className="text-xs text-muted">Endpoint</span>

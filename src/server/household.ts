@@ -11,3 +11,15 @@ export async function ensureHousehold(userId: string) {
   if (!row) throw new Error(`foyer introuvable pour ${userId}`);
   return row;
 }
+
+export async function updateGranularity(
+  ctx: { householdId: string },
+  granularity: "hourly" | "daily",
+) {
+  const [row] = await db
+    .update(household)
+    .set({ granularity })
+    .where(eq(household.id, ctx.householdId))
+    .returning({ granularity: household.granularity });
+  return row?.granularity ?? null;
+}

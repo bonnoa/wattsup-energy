@@ -1,4 +1,4 @@
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq, lt, sql } from "drizzle-orm";
 import { db } from "@/db";
 import {
   category,
@@ -25,7 +25,8 @@ import { localParts, tempoDay, zonedInstant } from "@/lib/time";
 
 export type IngestResponse =
   | { status: 200; body: { ok: true; warnings: IngestWarning[] } }
-  | { status: 400; body: { ok: false; errors: PayloadError[] } };
+  | { status: 400; body: { ok: false; errors: PayloadError[] } }
+  | { status: 409; body: { ok: false; error: string } };
 
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
@@ -58,10 +59,21 @@ export async function ingest(householdId: string, rawBody: string): Promise<Inge
 
   const payload = parsed.data;
   const [home] = await db
-    .select({ timezone: household.timezone })
+    .select({ timezone: household.timezone, granularity: household.granularity })
     .from(household)
     .where(eq(household.id, householdId));
   if (!home) throw new Error(`foyer inconnu : ${householdId}`);
+  if (home.granularity !== payload.kind) {
+    const expected =
+      home.granularity === "hourly" ? "horaire (champ `ts`)" : "quotidien (champ `date`)";
+    return log(householdId, rawBody, payload.kind, {
+      status: 409,
+      body: {
+        ok: false,
+        error: `ce foyer attend des envois en mode ${expected} ; changez la granularité dans Réglages ou dans le blueprint`,
+      },
+    });
+  }
   const slugs = (
     await db
       .select({ slug: category.slug })
@@ -227,6 +239,8 @@ async function upsertTempo(
     });
 }
 
+const LOG_RETENTION_DAYS = 30;
+
 async function log<R extends IngestResponse>(
   householdId: string,
   rawBody: string,
@@ -239,7 +253,20 @@ async function log<R extends IngestResponse>(
     mode,
     payloadSize: Buffer.byteLength(rawBody),
     warnings: response.body.ok ? response.body.warnings : [],
-    error: response.body.ok ? null : JSON.stringify(response.body.errors).slice(0, 2000),
+    error: response.body.ok
+      ? null
+      : ("errors" in response.body
+          ? JSON.stringify(response.body.errors)
+          : response.body.error
+        ).slice(0, 2000),
   });
+  await db
+    .delete(ingestLog)
+    .where(
+      and(
+        eq(ingestLog.householdId, householdId),
+        lt(ingestLog.receivedAt, sql`now() - make_interval(days => ${LOG_RETENTION_DAYS})`),
+      ),
+    );
   return response;
 }

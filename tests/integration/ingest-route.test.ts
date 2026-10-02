@@ -10,12 +10,14 @@ import {
   tempoOverride,
   weatherDaily,
 } from "@/db/schema";
+import { updateGranularity } from "@/server/household";
 import { createIngestToken } from "@/server/ingest/token";
 import type { HouseholdContext } from "@/server/context";
 import { createTestHousehold } from "../helpers/tenancy";
 
-async function setup() {
+async function setup(granularity: "hourly" | "daily" = "hourly") {
   const ctx = await createTestHousehold("ingest");
+  if (granularity === "daily") await updateGranularity(ctx, "daily");
   const { token } = await createIngestToken(ctx);
   const push = async (body: unknown, auth = `Bearer ${token}`) => {
     const res = await POST(
@@ -199,7 +201,7 @@ describe("mode quotidien", () => {
   });
 
   it("intervalles journaliers au minuit local, ventilés HP/HC", async () => {
-    const { ctx, push } = await setup();
+    const { ctx, push } = await setup("daily");
     expect((await push(daily(6.82, 5.31))).status).toBe(200);
     const rows = await intervals(ctx, "grid_import");
     expect(rows.map((r) => [r.tariffSlot, r.kwh, r.granularity])).toEqual([
@@ -211,7 +213,7 @@ describe("mode quotidien", () => {
   });
 
   it("idempotent : renvoyer la même date remplace les valeurs", async () => {
-    const { ctx, push } = await setup();
+    const { ctx, push } = await setup("daily");
     await push(daily(6, 5));
     await push(daily(7, 4));
     const rows = await intervals(ctx, "grid_import");
@@ -225,7 +227,7 @@ describe("mode quotidien", () => {
   });
 
   it("une correction Tempo manuelle n'est pas écrasée par HA", async () => {
-    const { ctx, push } = await setup();
+    const { ctx, push } = await setup("daily");
     await db.insert(tempoOverride).values({
       householdId: ctx.householdId,
       date: "2026-10-01",

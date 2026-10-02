@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { NavItem } from "@/domain/profile";
+import { HaStatus } from "./ha-status";
 import { NavIcon } from "./icons";
 import { SignOutButton } from "./sign-out-button";
 
@@ -11,33 +12,13 @@ interface Props {
   items: NavItem[];
   userName: string;
   householdName: string;
+  ingest: { lastPushAt: string | null; granularity: "hourly" | "daily"; renderedAt: string };
 }
 
 const isActive = (pathname: string, href: string) =>
   href === "/" ? pathname === "/" : pathname === href || pathname.startsWith(`${href}/`);
 
-// Statut d'ingestion : provisoire jusqu'à T9 (dernier push réel).
-function HaStatus({ compact }: { compact?: boolean }) {
-  if (compact) {
-    return (
-      <div className="flex items-center gap-1.5 rounded-full border border-border bg-surface px-2.5 py-1.5 text-xs text-[#5E625C]">
-        <span className="size-[7px] rounded-full bg-subtle" />
-        HA · en attente
-      </div>
-    );
-  }
-  return (
-    <div className="flex flex-col gap-1.5 rounded-[10px] bg-bg/[0.06] px-3 py-3.5">
-      <div className="flex items-center gap-2 text-xs text-[#A9ADA6]">
-        <span className="size-[7px] rounded-full bg-subtle" />
-        Home Assistant non connecté
-      </div>
-      <div className="font-mono text-[11px] text-[#7D817A]">En attente du premier push</div>
-    </div>
-  );
-}
-
-export function AppNav({ items, userName, householdName }: Props) {
+export function AppNav({ items, userName, householdName, ingest }: Props) {
   const pathname = usePathname();
 
   return (
@@ -69,7 +50,7 @@ export function AppNav({ items, userName, householdName }: Props) {
           })}
         </nav>
         <div className="mt-auto">
-          <HaStatus />
+          <HaStatus {...ingest} />
         </div>
         <div className="flex items-center gap-2.5 px-2 pt-4">
           <div className="flex size-8 items-center justify-center rounded-full bg-grid text-[13px] font-semibold">
@@ -89,7 +70,7 @@ export function AppNav({ items, userName, householdName }: Props) {
           <Image src="/wattsup.svg" alt="" width={28} height={28} priority />
           <span className="text-base font-bold">WattsUp</span>
         </div>
-        <HaStatus compact />
+        <HaStatus {...ingest} compact />
       </header>
 
       {/* Mobile : barre d'onglets */}

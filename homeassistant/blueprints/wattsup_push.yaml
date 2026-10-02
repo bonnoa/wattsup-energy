@@ -1,0 +1,260 @@
+blueprint:
+  name: WattsUp Energy — envoi des données
+  description: >-
+    Pousse les compteurs d'énergie, la météo locale et la couleur Tempo vers
+    WattsUp Energy (contrat d'ingestion v1). Aucun port entrant à ouvrir : Home
+    Assistant envoie, WattsUp ne l'interroge jamais.
+
+
+    Prérequis : un `rest_command` nommé `wattsup_push` (voir le README du dépôt
+    WattsUp, dossier homeassistant/).
+
+
+    Mode **horaire** : chaque heure, les index cumulés (capteurs `total_increasing`).
+    Mode **quotidien** : à 00:05, les totaux de la veille lus dans l'attribut
+    `last_period` de vos `utility_meter` quotidiens.
+  domain: automation
+  source_url: https://github.com/bonnoa/wattsup-energy/blob/main/homeassistant/blueprints/wattsup_push.yaml
+  input:
+    granularity:
+      name: Granularité
+      description: Doit correspondre au réglage choisi dans WattsUp (Réglages › API d'ingestion).
+      default: hourly
+      selector:
+        select:
+          options:
+            - label: Horaire (index cumulés, recommandé)
+              value: hourly
+            - label: Quotidien (totaux de la veille)
+              value: daily
+
+    energy:
+      name: Compteurs d'énergie
+      description: >-
+        Mode horaire : capteurs cumulés (kWh, total_increasing).
+        Mode quotidien : utility_meter quotidiens (la valeur de la veille est lue
+        dans `last_period`).
+      input:
+        grid_import:
+          name: Import réseau (obligatoire)
+          description: En mode quotidien avec un contrat HP/HC ou Tempo, laissez vide et renseignez les deux champs HP et HC ci-dessous.
+          default: ""
+          selector:
+            entity:
+              filter:
+                - domain: sensor
+                  device_class: energy
+        grid_import_hp:
+          name: Import réseau heures pleines (mode quotidien HP/HC)
+          default: ""
+          selector:
+            entity:
+              filter:
+                - domain: sensor
+                  device_class: energy
+        grid_import_hc:
+          name: Import réseau heures creuses (mode quotidien HP/HC)
+          default: ""
+          selector:
+            entity:
+              filter:
+                - domain: sensor
+                  device_class: energy
+        grid_export:
+          name: Export réseau (surplus injecté)
+          default: ""
+          selector:
+            entity:
+              filter:
+                - domain: sensor
+                  device_class: energy
+        solar_production:
+          name: Production solaire
+          default: ""
+          selector:
+            entity:
+              filter:
+                - domain: sensor
+                  device_class: energy
+        battery_charge:
+          name: Charge batterie
+          default: ""
+          selector:
+            entity:
+              filter:
+                - domain: sensor
+                  device_class: energy
+        battery_charge_grid:
+          name: Charge batterie depuis le réseau (si activé dans WattsUp)
+          default: ""
+          selector:
+            entity:
+              filter:
+                - domain: sensor
+                  device_class: energy
+        battery_discharge:
+          name: Décharge batterie
+          default: ""
+          selector:
+            entity:
+              filter:
+                - domain: sensor
+                  device_class: energy
+
+    categories_input:
+      name: Postes de consommation
+      input:
+        categories:
+          name: Postes (slug → entité)
+          description: >-
+            Correspondance entre le slug affiché dans WattsUp (Réglages › Postes de
+            consommation) et un capteur d'énergie. Exemple :
+            `eau-chaude: sensor.chauffe_eau_energy`
+          default: {}
+          selector:
+            object: {}
+
+    context:
+      name: Météo et Tempo
+      input:
+        outdoor_temperature:
+          name: Température extérieure (mode horaire)
+          default: ""
+          selector:
+            entity:
+              filter:
+                - domain: sensor
+                  device_class: temperature
+        temp_min:
+          name: Température minimale de la veille (mode quotidien)
+          default: ""
+          selector:
+            entity:
+              filter:
+                - domain: sensor
+        temp_max:
+          name: Température maximale de la veille (mode quotidien)
+          default: ""
+          selector:
+            entity:
+              filter:
+                - domain: sensor
+        temp_avg:
+          name: Température moyenne de la veille (mode quotidien)
+          default: ""
+          selector:
+            entity:
+              filter:
+                - domain: sensor
+        tempo_color:
+          name: Couleur Tempo du jour (optionnel)
+          description: Capteur dont l'état vaut bleu, blanc ou rouge (casse indifférente). Laissez vide si vous n'êtes pas au tarif Tempo ou si vous n'avez pas ce capteur.
+          default: ""
+          selector:
+            entity:
+              filter:
+                - domain: sensor
+
+mode: queued
+max: 3
+
+triggers:
+  - trigger: time_pattern
+    minutes: 0
+    id: hourly
+  - trigger: time
+    at: "00:05:00"
+    id: daily
+
+variables:
+  granularity: !input granularity
+  grid_import: !input grid_import
+  grid_import_hp: !input grid_import_hp
+  grid_import_hc: !input grid_import_hc
+  energy_entities:
+    grid_export_kwh: !input grid_export
+    solar_production_kwh: !input solar_production
+    battery_charge_kwh: !input battery_charge
+    battery_charge_grid_kwh: !input battery_charge_grid
+    battery_discharge_kwh: !input battery_discharge
+  categories: !input categories
+  outdoor_temperature: !input outdoor_temperature
+  temp_min: !input temp_min
+  temp_max: !input temp_max
+  temp_avg: !input temp_avg
+  tempo_color: !input tempo_color
+
+  # Construit le payload v1. Les capteurs indisponibles ou non numériques sont
+  # omis (jamais remplacés par 0, qui fausserait les deltas).
+  payload: >-
+    {%- set daily = granularity == 'daily' -%}
+    {%- macro read(e) -%}
+      {%- if e -%}
+        {%- set v = state_attr(e, 'last_period') if daily else states(e) -%}
+        {{- v if v is not none and v | is_number else '' -}}
+      {%- endif -%}
+    {%- endmacro -%}
+    {%- set ns = namespace(p={'version': 1}, energy={}, cats={}) -%}
+    {%- for key, e in energy_entities.items() -%}
+      {%- set v = read(e) -%}
+      {%- if v != '' -%}{%- set ns.energy = dict(ns.energy, **{key: v | float}) -%}{%- endif -%}
+    {%- endfor -%}
+    {%- for slug, e in (categories or {}).items() -%}
+      {%- set v = read(e) -%}
+      {%- if v != '' -%}{%- set ns.cats = dict(ns.cats, **{slug: v | float}) -%}{%- endif -%}
+    {%- endfor -%}
+    {%- if daily -%}
+      {%- set ns.p = dict(ns.p, date=(now() - timedelta(days=1)).date().isoformat()) -%}
+      {%- set hp = read(grid_import_hp) -%}
+      {%- set hc = read(grid_import_hc) -%}
+      {%- set total = read(grid_import) -%}
+      {%- if hp != '' and hc != '' -%}
+        {%- set ns.p = dict(ns.p, grid_import={'hp_kwh': hp | float, 'hc_kwh': hc | float}) -%}
+      {%- elif total != '' -%}
+        {%- set ns.p = dict(ns.p, grid_import={'kwh': total | float}) -%}
+      {%- endif -%}
+      {%- set ns.p = dict(ns.p, **ns.energy) -%}
+      {%- set tmin = states(temp_min) if temp_min else '' -%}
+      {%- set tmax = states(temp_max) if temp_max else '' -%}
+      {%- set tavg = states(temp_avg) if temp_avg else '' -%}
+      {%- if tmin | is_number and tmax | is_number and tavg | is_number -%}
+        {%- set ns.p = dict(ns.p, weather={'t_min': tmin | float, 't_max': tmax | float, 't_avg': tavg | float}) -%}
+      {%- endif -%}
+    {%- else -%}
+      {%- set ns.p = dict(ns.p, ts=now().isoformat()) -%}
+      {%- set total = read(grid_import) -%}
+      {%- if total != '' -%}{%- set ns.energy = dict(ns.energy, grid_import_kwh=total | float) -%}{%- endif -%}
+      {%- if ns.energy -%}{%- set ns.p = dict(ns.p, energy=ns.energy) -%}{%- endif -%}
+      {%- set t = states(outdoor_temperature) if outdoor_temperature else '' -%}
+      {%- if t | is_number -%}{%- set ns.p = dict(ns.p, weather={'outdoor_temp_c': t | float}) -%}{%- endif -%}
+    {%- endif -%}
+    {%- if ns.cats -%}{%- set ns.p = dict(ns.p, categories=ns.cats) -%}{%- endif -%}
+    {%- set color = (states(tempo_color) | lower) if tempo_color else '' -%}
+    {%- if color in ['bleu', 'blanc', 'rouge'] -%}{%- set ns.p = dict(ns.p, tempo_color=color) -%}{%- endif -%}
+    {{- ns.p | to_json -}}
+
+conditions:
+  - condition: template
+    value_template: "{{ trigger.id == granularity }}"
+
+actions:
+  - action: rest_command.wattsup_push
+    data:
+      payload: "{{ payload }}"
+    response_variable: wattsup_response
+    continue_on_error: true
+  - if:
+      - condition: template
+        value_template: "{{ wattsup_response is not defined or wattsup_response.status != 200 }}"
+    then:
+      - action: persistent_notification.create
+        data:
+          notification_id: wattsup_push_error
+          title: WattsUp Energy — envoi refusé
+          message: >-
+            Statut {{ wattsup_response.status if wattsup_response is defined else 'inconnu' }} :
+            {{ wattsup_response.content if wattsup_response is defined else 'pas de réponse' }}
+    else:
+      - action: persistent_notification.dismiss
+        data:
+          notification_id: wattsup_push_error

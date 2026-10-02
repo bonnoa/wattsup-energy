@@ -1,4 +1,5 @@
 import { headers } from "next/headers";
+import { cache } from "react";
 import type { EnergyProfile, HouseholdSettings } from "@/db/schema";
 import { auth } from "./auth";
 import { ensureHousehold } from "./household";
@@ -10,6 +11,9 @@ import { ensureHousehold } from "./household";
 
 export interface HouseholdContext {
   userId: string;
+  /** Prénom affiché ; vide hors requête web (tests, scripts). */
+  userName: string;
+  householdName: string;
   householdId: string;
   timezone: string;
   granularity: "hourly" | "daily";
@@ -24,10 +28,15 @@ export class UnauthorizedError extends Error {
   }
 }
 
-export async function householdContextFor(userId: string): Promise<HouseholdContext> {
+export async function householdContextFor(
+  userId: string,
+  userName = "",
+): Promise<HouseholdContext> {
   const home = await ensureHousehold(userId);
   return {
     userId,
+    userName,
+    householdName: home.name,
     householdId: home.id,
     timezone: home.timezone,
     granularity: home.granularity,
@@ -36,9 +45,12 @@ export async function householdContextFor(userId: string): Promise<HouseholdCont
   };
 }
 
-/** Contexte de l'utilisateur connecté ; lève UnauthorizedError sans session valide. */
-export async function getHouseholdContext(): Promise<HouseholdContext> {
+/**
+ * Contexte de l'utilisateur connecté ; lève UnauthorizedError sans session valide.
+ * Mis en cache pour la durée d'une requête (layout et page le partagent).
+ */
+export const getHouseholdContext = cache(async (): Promise<HouseholdContext> => {
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session) throw new UnauthorizedError();
-  return householdContextFor(session.user.id);
-}
+  return householdContextFor(session.user.id, session.user.name);
+});

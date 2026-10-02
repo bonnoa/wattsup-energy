@@ -29,22 +29,25 @@
   --radius-control: 10px;
 }
 
-html,
-body {
-  height: 100%;
-}
+/* Styles de base dans @layer base : les utilitaires Tailwind doivent pouvoir les surcharger. */
+@layer base {
+  html,
+  body {
+    height: 100%;
+  }
 
-body {
-  background: var(--color-bg);
-  color: var(--color-ink);
-  font-family: var(--font-sans);
-  -webkit-font-smoothing: antialiased;
-}
+  body {
+    background: var(--color-bg);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
 
-a {
-  color: var(--color-grid);
-}
+  a {
+    color: var(--color-grid);
+  }
 
-a:hover {
-  color: var(--color-ink);
+  a:hover {
+    color: var(--color-ink);
+  }
 }

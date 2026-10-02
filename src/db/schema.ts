@@ -1,4 +1,5 @@
 import { jsonb, pgEnum, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import type { EnergyProfile } from "../domain/profile";
 import { user } from "./auth-schema";
 
 export * from "./auth-schema";
@@ -7,13 +8,7 @@ export * from "./auth-schema";
 
 export const granularity = pgEnum("granularity", ["hourly", "daily"]);
 
-export interface EnergyProfile {
-  solar: boolean;
-  battery: boolean;
-  pellet: boolean;
-  wood: boolean;
-  electricHeating: boolean;
-}
+export type { EnergyProfile } from "../domain/profile";
 
 export interface HouseholdSettings {
   exportEnabled: boolean;

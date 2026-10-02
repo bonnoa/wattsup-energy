@@ -49,7 +49,7 @@ Légende des tailles : **S** = 1–2 fichiers · **M** = 3–5 fichiers (hors te
   - Vérifier : `pnpm test tests/integration/tenancy`
   - Fichiers : `src/server/context.ts`, `tests/helpers/tenancy.ts`, `tests/setup/global.ts`
 
-- [ ] **T4 — Shell UI et visibilité des modules** · M · Dépend de : T3
+- [x] **T4 — Shell UI et visibilité des modules** · M · Dépend de : T3
   - Acceptation :
     - `visibleModules(profile)` est pure et couvre les 6 règles de la spec §7.6 (tests table-driven)
     - Layout `(app)` : sidebar sombre de 232 px à partir de 1024 px ; header + onglets en bas en dessous (cibles ≥ 44 px) ; la nav provient de `visibleModules`

@@ -1,0 +1,77 @@
+// Visibilité des modules selon le profil énergétique (SPEC §7.6). Seule source de
+// vérité : la nav, les pages et les composants interrogent cette fonction plutôt que
+// de tester le profil eux-mêmes.
+
+export interface EnergyProfile {
+  solar: boolean;
+  battery: boolean;
+  pellet: boolean;
+  wood: boolean;
+  electricHeating: boolean;
+}
+
+export type NavId = "overview" | "heating" | "roi" | "contracts" | "settings";
+
+export interface NavItem {
+  id: NavId;
+  href: string;
+  label: string;
+  /** Libellé court de la barre d'onglets mobile. */
+  short: string;
+}
+
+export const NAV_ITEMS: readonly NavItem[] = [
+  { id: "overview", href: "/", label: "Vue d'ensemble", short: "Accueil" },
+  { id: "heating", href: "/chauffage", label: "Chauffage", short: "Chauffage" },
+  { id: "roi", href: "/rentabilite", label: "Rentabilité", short: "ROI" },
+  { id: "contracts", href: "/contrats", label: "Contrats", short: "Contrats" },
+  { id: "settings", href: "/reglages", label: "Réglages", short: "Réglages" },
+];
+
+export interface VisibleModules extends EnergyProfile {
+  nav: NavItem[];
+  /** Encart « Prévision réapprovisionnement ». */
+  refillForecast: boolean;
+  /** Onglets Granulés / Bois dans la prévision. */
+  fuelTabs: boolean;
+  /** Postes marqués « chauffage » sur le tableau de bord. */
+  heatingCategories: boolean;
+  isRouteVisible(pathname: string): boolean;
+}
+
+export function visibleModules(profile: EnergyProfile): VisibleModules {
+  const hasFuel = profile.pellet || profile.wood;
+  const shown: Record<NavId, boolean> = {
+    overview: true,
+    heating: hasFuel || profile.electricHeating,
+    roi: profile.solar || profile.battery,
+    contracts: true,
+    settings: true,
+  };
+  const nav = NAV_ITEMS.filter((n) => shown[n.id]);
+  const hidden = NAV_ITEMS.filter((n) => !shown[n.id]);
+
+  return {
+    ...profile,
+    nav,
+    refillForecast: hasFuel,
+    fuelTabs: profile.pellet && profile.wood,
+    heatingCategories: profile.electricHeating,
+    isRouteVisible: (pathname) =>
+      !hidden.some((n) => pathname === n.href || pathname.startsWith(`${n.href}/`)),
+  };
+}
+
+export const PROFILE_KEYS = ["solar", "battery", "pellet", "wood", "electricHeating"] as const;
+
+/** Validation d'un profil reçu du client (formulaire Réglages). */
+export function parseProfile(input: unknown): EnergyProfile | null {
+  if (typeof input !== "object" || input === null) return null;
+  const record = input as Record<string, unknown>;
+  const out = {} as EnergyProfile;
+  for (const key of PROFILE_KEYS) {
+    if (typeof record[key] !== "boolean") return null;
+    out[key] = record[key];
+  }
+  return out;
+}

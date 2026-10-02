@@ -40,11 +40,12 @@ Légende des tailles : **S** = 1–2 fichiers · **M** = 3–5 fichiers (hors te
   - Vérifier : `docker compose up -d db && pnpm db:migrate && pnpm test tests/integration/auth` ; manuel : inscription, déconnexion, connexion
   - Fichiers : `docker-compose.yml`, `src/db/schema.ts`, `src/db/index.ts`, `src/server/auth.ts`, `src/app/(auth)/…`, `src/middleware.ts`
 
-- [ ] **T3 — Contexte foyer et harnais d'isolation** · S · Dépend de : T2
+- [x] **T3 — Contexte foyer et harnais d'isolation** · S · Dépend de : T2
   - Acceptation :
     - `getHouseholdContext()` renvoie `{ userId, householdId, timezone, profile, settings }` ou lève une erreur 401
     - `tests/helpers/tenancy.ts` : crée 2 foyers et vérifie qu'une action exécutée en tant que A ne lit ni ne modifie rien chez B ; réutilisable via `describeTenantIsolation(action, setup)`
-    - `globalSetup` Vitest : base de test migrée et vidée entre les suites
+    - `globalSetup` Vitest : base de test vidée et migrée à chaque lancement ; chaque test crée ses propres foyers (emails uniques)
+    - Convention : chaque opération serveur s'écrit `operation(ctx, input)` ; la Server Action n'est qu'une enveloppe autour de `getHouseholdContext()`
   - Vérifier : `pnpm test tests/integration/tenancy`
   - Fichiers : `src/server/context.ts`, `tests/helpers/tenancy.ts`, `tests/setup/global.ts`
 

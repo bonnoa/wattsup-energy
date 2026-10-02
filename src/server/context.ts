@@ -1,0 +1,44 @@
+import { headers } from "next/headers";
+import type { EnergyProfile, HouseholdSettings } from "@/db/schema";
+import { auth } from "./auth";
+import { ensureHousehold } from "./household";
+
+// Seul point d'accès aux données métier (SPEC §5). Convention : chaque opération
+// serveur s'écrit `operation(ctx, input)` et filtre par ctx.householdId ; la Server
+// Action exposée à l'UI se contente d'appeler getHouseholdContext() puis l'opération.
+// Le harnais tests/helpers/tenancy.ts vérifie l'isolation sur ces opérations.
+
+export interface HouseholdContext {
+  userId: string;
+  householdId: string;
+  timezone: string;
+  granularity: "hourly" | "daily";
+  profile: EnergyProfile;
+  settings: HouseholdSettings;
+}
+
+export class UnauthorizedError extends Error {
+  readonly status = 401;
+  constructor() {
+    super("non authentifié");
+  }
+}
+
+export async function householdContextFor(userId: string): Promise<HouseholdContext> {
+  const home = await ensureHousehold(userId);
+  return {
+    userId,
+    householdId: home.id,
+    timezone: home.timezone,
+    granularity: home.granularity,
+    profile: home.profile,
+    settings: home.settings,
+  };
+}
+
+/** Contexte de l'utilisateur connecté ; lève UnauthorizedError sans session valide. */
+export async function getHouseholdContext(): Promise<HouseholdContext> {
+  const session = await auth.api.getSession({ headers: await headers() });
+  if (!session) throw new UnauthorizedError();
+  return householdContextFor(session.user.id);
+}

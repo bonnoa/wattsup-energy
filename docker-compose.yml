@@ -1,23 +1,37 @@
-# Développement local : `docker compose up -d db`.
-# Le service app est ajouté en T11.
+# Développement : `docker compose up -d db` (base seule, l'app tourne avec `pnpm dev`).
+# Stack complète auto-hébergée : `BETTER_AUTH_SECRET=… docker compose --profile app up --build`.
 services:
   db:
     image: postgres:16-alpine
     restart: unless-stopped
     environment:
-      POSTGRES_USER: wattsup
-      POSTGRES_PASSWORD: wattsup
-      POSTGRES_DB: wattsup
+      POSTGRES_USER: ${POSTGRES_USER:-wattsup}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-wattsup}
+      POSTGRES_DB: ${POSTGRES_DB:-wattsup}
     ports:
-      - "5432:5432"
+      - "${DB_PORT:-5432}:5432"
     volumes:
       - db-data:/var/lib/postgresql/data
       - ./docker/postgres-init:/docker-entrypoint-initdb.d:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U wattsup"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-wattsup}"]
       interval: 5s
       timeout: 3s
       retries: 10
+
+  app:
+    build: .
+    restart: unless-stopped
+    profiles: ["app"]
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER:-wattsup}:${POSTGRES_PASSWORD:-wattsup}@db:5432/${POSTGRES_DB:-wattsup}
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:-} # obligatoire : openssl rand -base64 32
+      BETTER_AUTH_URL: ${BETTER_AUTH_URL:-http://localhost:3000}
+    ports:
+      - "${APP_PORT:-3000}:3000"
 
 volumes:
   db-data:

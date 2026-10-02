@@ -88,11 +88,13 @@ Légende des tailles : **S** = 1–2 fichiers · **M** = 3–5 fichiers (hors te
   - Vérifier : `pnpm test tests/unit/domain/ingest/schema tests/unit/domain/ingest/normalize`
   - Fichiers : `src/domain/ingest/schema.ts`, `src/domain/ingest/normalize.ts`
 
-- [ ] **T8 — Route `POST /api/v1/ingest`** · M · Dépend de : T5, T6, T7
+- [x] **T8 — Route `POST /api/v1/ingest`** · M · Dépend de : T5, T6, T7
   - Acceptation :
     - Authentification Bearer, puis parsing Zod, puis normalisation, puis upsert transactionnel dans `meter_state`, `energy_interval`, `weather_daily` (min, max, moyenne, DJU), `tempo_override` (source `ha`), et une ligne dans `ingest_log`
     - Réponses 200 (+ `warnings`), 400 (`errors[].path`), 401
     - Mode quotidien idempotent : 2 envois de la même date donnent une seule ligne par métrique et par créneau
+    - Table `category` créée ici (slugs connus requis par l'ingestion) ; son CRUD reste en T19
+    - Bloc `fuel` accepté mais signalé `ignored_block` jusqu'à T23 ; la moyenne et le DJU météo sont calculés à la lecture (`t_sum / t_count`)
   - Vérifier : `pnpm test tests/integration/ingest-route`
   - Fichiers : `src/app/api/v1/ingest/route.ts`, `src/server/ingest/persist.ts`, `src/db/schema.ts`
 

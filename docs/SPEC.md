@@ -146,8 +146,8 @@ Toutes les tables métier portent `household_id` (FK, `ON DELETE CASCADE`). **Au
 | `ingest_token` | tokens HA | `id`, `household_id`, `prefix` (affiché), `hash` (sha-256), `created_at`, `last_used_at`, `revoked_at` |
 | `ingest_log` | journal des pushes (30 j) | `household_id`, `received_at`, `status`, `error`, `payload_size` |
 | `meter_state` | dernier index connu par métrique, pour calculer les deltas | `household_id`, `metric`, `ts`, `value` |
-| `energy_interval` | **table de faits** | `household_id`, `start` (timestamptz), `granularity` (`hour`\|`day`), `metric`, `tariff_slot` (`hp`\|`hc`\|null), `kwh` numeric(12,4), `source` (`ha`\|`csv`) — PK `(household_id, metric, start, granularity, tariff_slot)` |
-| `weather_daily` | météo locale agrégée | `household_id`, `date`, `t_min`, `t_max`, `t_avg`, `dju` |
+| `energy_interval` | **table de faits** | `household_id`, `start` (timestamptz), `granularity` (`hour`\|`day`), `metric`, `tariff_slot` (`all`\|`hp`\|`hc`), `kwh` numeric(12,4), `source` (`ha`\|`csv`) — PK `(household_id, metric, start, granularity, tariff_slot)` |
+| `weather_daily` | météo locale agrégée | `household_id`, `date`, `t_min`, `t_max`, `t_sum`, `t_count` (moyenne et DJU calculés à la lecture) |
 | `tempo_calendar` | couleurs Tempo **globales** (partagées entre tous les foyers, donnée publique) | `date` PK, `color` (`bleu`\|`blanc`\|`rouge`), `source` (`rte`\|`community`\|`seed`), `fetched_at` |
 | `tempo_override` | couleur poussée par HA ou corrigée à la main, par foyer | `household_id`, `date`, `color`, `source` (`ha`\|`manual`) |
 | `category` | postes sur mesure | `id`, `household_id`, `name`, `slug` (clé du payload), `icon`, `color`, `is_heating` |

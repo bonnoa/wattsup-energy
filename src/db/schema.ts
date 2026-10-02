@@ -1,11 +1,19 @@
 import { sql } from "drizzle-orm";
 import {
+  boolean,
+  date,
+  doublePrecision,
   index,
+  integer,
   jsonb,
+  numeric,
   pgEnum,
   pgTable,
+  primaryKey,
+  real,
   text,
   timestamp,
+  unique,
   uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
@@ -92,4 +100,102 @@ export const ingestToken = pgTable(
       .on(t.householdId)
       .where(sql`${t.revokedAt} is null`),
   ],
+);
+
+/** Postes de consommation sur mesure ; le slug est la clé du bloc `categories` du payload. */
+export const category = pgTable(
+  "category",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    householdId: householdRef(),
+    name: text("name").notNull(),
+    slug: text("slug").notNull(),
+    icon: text("icon"),
+    color: text("color"),
+    isHeating: boolean("is_heating").notNull().default(false),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [unique("category_household_slug_uq").on(t.householdId, t.slug)],
+);
+
+/** Dernier index cumulé reçu par métrique (mode horaire), pour calculer les deltas. */
+export const meterState = pgTable(
+  "meter_state",
+  {
+    householdId: householdRef(),
+    metric: text("metric").notNull(),
+    ts: timestamp("ts", { withTimezone: true }).notNull(),
+    value: doublePrecision("value").notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.householdId, t.metric] })],
+);
+
+export const intervalGranularity = pgEnum("interval_granularity", ["hour", "day"]);
+export const dataSource = pgEnum("data_source", ["ha", "csv"]);
+
+/**
+ * Table de faits : énergie par intervalle. `tariff_slot` vaut "all" sauf pour les
+ * totaux journaliers ventilés HP/HC.
+ */
+export const energyInterval = pgTable(
+  "energy_interval",
+  {
+    householdId: householdRef(),
+    metric: text("metric").notNull(),
+    start: timestamp("start", { withTimezone: true }).notNull(),
+    granularity: intervalGranularity("granularity").notNull(),
+    tariffSlot: text("tariff_slot", { enum: ["all", "hp", "hc"] })
+      .notNull()
+      .default("all"),
+    kwh: numeric("kwh", { precision: 12, scale: 4, mode: "number" }).notNull(),
+    source: dataSource("source").notNull(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.householdId, t.metric, t.start, t.granularity, t.tariffSlot] }),
+    index("energy_interval_household_start_idx").on(t.householdId, t.start),
+  ],
+);
+
+/** Météo locale agrégée par jour ; moyenne = t_sum / t_count, DJU calculé à la lecture. */
+export const weatherDaily = pgTable(
+  "weather_daily",
+  {
+    householdId: householdRef(),
+    date: date("date").notNull(),
+    tMin: real("t_min").notNull(),
+    tMax: real("t_max").notNull(),
+    tSum: doublePrecision("t_sum").notNull(),
+    tCount: integer("t_count").notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.householdId, t.date] })],
+);
+
+export const tempoColor = pgEnum("tempo_color", ["bleu", "blanc", "rouge"]);
+
+/** Couleur Tempo propre au foyer : poussée par HA ou corrigée à la main. */
+export const tempoOverride = pgTable(
+  "tempo_override",
+  {
+    householdId: householdRef(),
+    date: date("date").notNull(),
+    color: tempoColor("color").notNull(),
+    source: text("source", { enum: ["ha", "manual"] }).notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.householdId, t.date] })],
+);
+
+/** Journal des pushes d'ingestion (conservé 30 jours). */
+export const ingestLog = pgTable(
+  "ingest_log",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    householdId: householdRef(),
+    receivedAt: timestamp("received_at", { withTimezone: true }).notNull().defaultNow(),
+    httpStatus: integer("http_status").notNull(),
+    mode: text("mode", { enum: ["hourly", "daily"] }),
+    payloadSize: integer("payload_size").notNull(),
+    warnings: jsonb("warnings").$type<unknown[]>().notNull().default([]),
+    error: text("error"),
+  },
+  (t) => [index("ingest_log_household_received_idx").on(t.householdId, t.receivedAt)],
 );

@@ -18,7 +18,9 @@ export type IngestWarning =
   | { code: "invalid_value"; metric: Metric }
   | { code: "gap_too_long"; metric: Metric; hours: number }
   | { code: "implausible"; metric: Metric; kwhPerHour: number }
-  | { code: "unknown_category"; key: string };
+  | { code: "unknown_category"; key: string }
+  /** Bloc reçu mais pas encore exploité par cette version (ex. `fuel` avant T23). */
+  | { code: "ignored_block"; key: string };
 
 export interface HourlyInterval {
   metric: Metric;

@@ -78,3 +78,22 @@ export function parseHm(hm: string): number {
   }
   return h * 60 + min;
 }
+
+/** Instant UTC correspondant à `date` à `hour`:00 heure locale de `timeZone`. */
+export function zonedInstant(date: string, hour: number, timeZone: string): Date {
+  const target = Date.parse(`${date}T00:00:00Z`) + hour * 3_600_000;
+  let guess = target;
+  // Deux passes suffisent pour converger, y compris les jours de changement d'heure.
+  for (let i = 0; i < 2; i++) {
+    const p = localParts(new Date(guess), timeZone);
+    const seen = Date.parse(`${p.date}T00:00:00Z`) + (p.hour * 60 + p.minute) * 60_000;
+    guess += target - seen;
+  }
+  return new Date(guess);
+}
+
+/** Jour Tempo d'un instant : la journée Tempo commence à 6 h locales. */
+export function tempoDay(instant: Date, timeZone: string): string {
+  const p = localParts(instant, timeZone);
+  return p.hour < 6 ? addDays(p.date, -1) : p.date;
+}

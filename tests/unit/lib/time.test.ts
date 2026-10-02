@@ -1,5 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { addDays, daysInYear, eachDay, localParts, parseHm } from "@/lib/time";
+import {
+  addDays,
+  daysInYear,
+  eachDay,
+  localParts,
+  parseHm,
+  tempoDay,
+  zonedInstant,
+} from "@/lib/time";
 
 const TZ = "Europe/Paris";
 
@@ -48,5 +56,29 @@ describe("dates locales", () => {
     expect(parseHm("22:30")).toBe(1350);
     expect(parseHm("24:00")).toBe(1440);
     expect(() => parseHm("25:00")).toThrow();
+  });
+});
+
+describe("zonedInstant", () => {
+  it("minuit local à Paris en été et en hiver", () => {
+    expect(zonedInstant("2026-07-01", 0, TZ).toISOString()).toBe("2026-06-30T22:00:00.000Z");
+    expect(zonedInstant("2026-01-15", 0, TZ).toISOString()).toBe("2026-01-14T23:00:00.000Z");
+  });
+
+  it("jours de changement d'heure", () => {
+    expect(zonedInstant("2026-03-29", 0, TZ).toISOString()).toBe("2026-03-28T23:00:00.000Z");
+    expect(zonedInstant("2026-10-25", 0, TZ).toISOString()).toBe("2026-10-24T22:00:00.000Z");
+    expect(zonedInstant("2026-10-25", 6, TZ).toISOString()).toBe("2026-10-25T05:00:00.000Z");
+  });
+
+  it("UTC est l'identité", () => {
+    expect(zonedInstant("2026-10-02", 14, "UTC").toISOString()).toBe("2026-10-02T14:00:00.000Z");
+  });
+});
+
+describe("tempoDay", () => {
+  it("avant 6 h locales : jour Tempo de la veille", () => {
+    expect(tempoDay(new Date("2026-10-02T03:00:00Z"), TZ)).toBe("2026-10-01"); // 05:00 local
+    expect(tempoDay(new Date("2026-10-02T04:00:00Z"), TZ)).toBe("2026-10-02"); // 06:00 local
   });
 });

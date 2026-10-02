@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "ts": "2026-10-02T14:00:00+02:00",
+  "energy": {
+    "grid_import_kwh": 18234.512,
+    "grid_export_kwh": 1203.004,
+    "solar_production_kwh": 9876.3,
+    "battery_charge_kwh": 2011.7,
+    "battery_charge_grid_kwh": 0,
+    "battery_discharge_kwh": 1840.2
+  },
+  "categories": { "eau-chaude": 3012.4, "chauffage-electrique": 1450.0 },
+  "tempo_color": "bleu",
+  "weather": { "outdoor_temp_c": 13.4 },
+  "fuel": { "pellet_bags_total": 812, "wood_steres_total": 31.5 }
+}

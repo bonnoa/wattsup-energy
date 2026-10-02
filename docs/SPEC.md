@@ -222,6 +222,7 @@ HA envoie **les totaux de la veille** (utility_meter quotidiens HP et HC), une f
 ```
 
 Règles :
+- `grid_import` vaut `{ hp_kwh, hc_kwh }` (contrat HP/HC ou Tempo) ou `{ kwh }` (contrat Base), jamais un mélange des deux.
 - Upsert idempotent par `(date, metric, slot)` : renvoyer la même date écrase les valeurs.
 - **Limite connue :** en quotidien, la simulation d'un contrat HP/HC avec une **autre plage HC** que celle du contrat actuel reprend la ventilation HP/HC réelle. L'UI l'indique (« simulation approximative, passez en horaire pour plus de précision »). Base et Tempo restent exacts, Tempo grâce à `tempo_color` et à la ventilation HP/HC.
 

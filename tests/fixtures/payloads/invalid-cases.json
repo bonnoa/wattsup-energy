@@ -1,0 +1,40 @@
+{
+  "missing version": { "ts": "2026-10-02T12:00:00Z" },
+  "wrong version": { "version": 2, "ts": "2026-10-02T12:00:00Z" },
+  "ts without offset": { "version": 1, "ts": "2026-10-02T12:00:00" },
+  "both ts and date": { "version": 1, "ts": "2026-10-02T12:00:00Z", "date": "2026-10-02" },
+  "neither ts nor date": { "version": 1 },
+  "negative index": {
+    "version": 1,
+    "ts": "2026-10-02T12:00:00Z",
+    "energy": { "grid_import_kwh": -1 }
+  },
+  "string number": {
+    "version": 1,
+    "ts": "2026-10-02T12:00:00Z",
+    "energy": { "grid_import_kwh": "12" }
+  },
+  "bad tempo color": { "version": 1, "ts": "2026-10-02T12:00:00Z", "tempo_color": "vert" },
+  "absurd temperature": {
+    "version": 1,
+    "ts": "2026-10-02T12:00:00Z",
+    "weather": { "outdoor_temp_c": 99 }
+  },
+  "bad category key": {
+    "version": 1,
+    "ts": "2026-10-02T12:00:00Z",
+    "categories": { "Eau Chaude": 1 }
+  },
+  "bad date": { "version": 1, "date": "2026-13-01" },
+  "daily mixes kwh and hp": {
+    "version": 1,
+    "date": "2026-10-01",
+    "grid_import": { "kwh": 3, "hp_kwh": 1 }
+  },
+  "daily hp without hc": { "version": 1, "date": "2026-10-01", "grid_import": { "hp_kwh": 1 } },
+  "daily t_min above t_max": {
+    "version": 1,
+    "date": "2026-10-01",
+    "weather": { "t_min": 20, "t_max": 10, "t_avg": 15 }
+  }
+}

@@ -79,13 +79,13 @@ Légende des tailles : **S** = 1–2 fichiers · **M** = 3–5 fichiers (hors te
   - Vérifier : `pnpm test tests/unit/domain/ingest/hourly`
   - Fichiers : `src/domain/ingest/hourly.ts`, `src/lib/time.ts`
 
-- [ ] **T7 — Schémas Zod v1 et normalisation quotidienne** · S · Dépend de : T1
+- [x] **T7 — Schémas Zod v1 et normalisation quotidienne** · S · Dépend de : T1
   - Acceptation :
     - `ingestPayloadV1` est une union discriminée horaire/quotidien conforme à la spec §6.1–6.2 ; tous les blocs sont optionnels sauf `version` et `ts`/`date`
     - `dailyToIntervals(payload)` produit des intervalles `day` avec `tariff_slot` hp/hc pour `grid_import`
     - Fixtures `tests/fixtures/payloads/*.json` (valides et invalides)
-  - Vérifier : `pnpm test tests/unit/domain/ingest/schema tests/unit/domain/ingest/daily`
-  - Fichiers : `src/domain/ingest/schema.ts`, `src/domain/ingest/daily.ts`
+  - Vérifier : `pnpm test tests/unit/domain/ingest/schema tests/unit/domain/ingest/normalize`
+  - Fichiers : `src/domain/ingest/schema.ts`, `src/domain/ingest/normalize.ts`
 
 - [ ] **T8 — Route `POST /api/v1/ingest`** · M · Dépend de : T5, T6, T7
   - Acceptation :

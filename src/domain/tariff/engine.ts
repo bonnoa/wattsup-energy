@@ -1,0 +1,110 @@
+import { daysInYear, eachDay, localParts } from "@/lib/time";
+import { basePricer, hphcPricer } from "./base-hphc";
+import type { Pricer } from "./pricer";
+import type {
+  Contract,
+  MonthBreakdown,
+  PriceableInterval,
+  PricedResult,
+  PricingContext,
+} from "./types";
+
+// Les montants sont cumulés en euros exacts puis arrondis au centime une seule fois,
+// à la sortie : arrondir chaque heure ferait dériver le total de plusieurs centimes par an.
+
+function pricerFor(contract: Contract): Pricer {
+  switch (contract.kind) {
+    case "base":
+      return basePricer(contract);
+    case "hphc":
+      return hphcPricer(contract);
+  }
+}
+
+interface Acc {
+  energyEur: number;
+  subscriptionEur: number;
+  kwh: number;
+}
+
+const cents = (eur: number) => Math.round(eur * 100);
+
+export function priceIntervals(
+  intervals: readonly PriceableInterval[],
+  contract: Contract,
+  ctx: PricingContext,
+): PricedResult {
+  const pricer = pricerFor(contract);
+  const months = new Map<string, Acc>();
+  const slots = new Map<string, { kwh: number; eur: number }>();
+  let approximatedKwh = 0;
+
+  const month = (key: string) => {
+    let m = months.get(key);
+    if (!m) months.set(key, (m = { energyEur: 0, subscriptionEur: 0, kwh: 0 }));
+    return m;
+  };
+
+  for (const interval of intervals) {
+    let date: string;
+    let shares;
+    if (interval.granularity === "hour") {
+      const local = localParts(interval.start, ctx.timezone);
+      date = local.date;
+      shares = pricer.hour(local, interval.start);
+    } else {
+      date = interval.date;
+      const priced = pricer.day(interval.date, interval.slot);
+      shares = priced.shares;
+      if (priced.approximated) approximatedKwh += interval.kwh;
+    }
+
+    const m = month(date.slice(0, 7));
+    m.kwh += interval.kwh;
+    for (const share of shares) {
+      const kwh = interval.kwh * share.fraction;
+      const eur = kwh * share.price;
+      m.energyEur += eur;
+      const s = slots.get(share.key) ?? { kwh: 0, eur: 0 };
+      s.kwh += kwh;
+      s.eur += eur;
+      slots.set(share.key, s);
+    }
+  }
+
+  for (const day of eachDay(ctx.period.from, ctx.period.to)) {
+    const year = Number(day.slice(0, 4));
+    month(day.slice(0, 7)).subscriptionEur += contract.subscriptionEurYear / daysInYear(year);
+  }
+
+  let energyEur = 0;
+  let subscriptionEur = 0;
+  let kwh = 0;
+  const byMonth: Record<string, MonthBreakdown> = {};
+  for (const key of [...months.keys()].sort()) {
+    const m = months.get(key) as Acc;
+    energyEur += m.energyEur;
+    subscriptionEur += m.subscriptionEur;
+    kwh += m.kwh;
+    byMonth[key] = {
+      energyCents: cents(m.energyEur),
+      subscriptionCents: cents(m.subscriptionEur),
+      kwh: m.kwh,
+    };
+  }
+
+  const bySlot: PricedResult["bySlot"] = {};
+  for (const [key, s] of slots) bySlot[key] = { kwh: s.kwh, energyCents: cents(s.eur) };
+
+  const energyCents = cents(energyEur);
+  const subscriptionCents = cents(subscriptionEur);
+  return {
+    totalCents: energyCents + subscriptionCents,
+    energyCents,
+    subscriptionCents,
+    kwh,
+    byMonth,
+    bySlot,
+    approximatedKwh,
+  };
+}

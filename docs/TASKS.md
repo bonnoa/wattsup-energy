@@ -126,13 +126,13 @@ Légende des tailles : **S** = 1–2 fichiers · **M** = 3–5 fichiers (hors te
 
 > T12–T14 sont du domaine pur et peuvent démarrer dès T1.
 
-- [ ] **T12 — Moteur tarifaire Base et HP/HC** · M · Dépend de : T1
+- [x] **T12 — Moteur tarifaire Base et HP/HC** · M · Dépend de : T1
   - Acceptation :
     - Types `Contract`, `PricedResult` ; `priceIntervals(intervals, contract, ctx)` → centimes, détail par mois et par créneau
     - Base ; HP/HC avec plusieurs plages, y compris à cheval sur minuit ; abonnement proratisé au jour ; intervalles `day` déjà ventilés en hp/hc pris tels quels
-    - Fixture d'un an (`tests/fixtures/tariff/year-hourly.json`) avec résultats attendus calculés à la main : écart ≤ 1 centime ; cas des changements d'heure
+    - Année synthétique (1 kWh/h, générée dans le test) avec résultats attendus calculés à la main : écart ≤ 1 centime ; cas des changements d'heure. La fixture de données réelles anonymisées viendra au checkpoint C
   - Vérifier : `pnpm test tests/unit/domain/tariff`
-  - Fichiers : `src/domain/tariff/types.ts`, `src/domain/tariff/engine.ts`, `src/domain/tariff/base-hphc.ts`
+  - Fichiers : `src/domain/tariff/types.ts`, `src/domain/tariff/engine.ts`, `src/domain/tariff/pricer.ts`, `src/domain/tariff/base-hphc.ts`, `src/lib/time.ts`
 
 - [ ] **T13 — Tarif Tempo** · S · Dépend de : T12
   - Acceptation :

@@ -1,0 +1,17 @@
+import type { LocalParts } from "@/lib/time";
+import type { Slot } from "./types";
+
+/** Une part de l'énergie d'un intervalle, facturée à un prix donné. */
+export interface Share {
+  /** Clé de ventilation (bySlot). */
+  key: string;
+  price: number;
+  /** Fraction de l'intervalle, la somme des parts vaut 1. */
+  fraction: number;
+}
+
+/** Stratégie de prix d'un type de contrat. */
+export interface Pricer {
+  hour(local: LocalParts, start: Date): Share[];
+  day(date: string, slot: Slot | null): { shares: Share[]; approximated: boolean };
+}

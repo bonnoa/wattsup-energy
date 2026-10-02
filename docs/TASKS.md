@@ -113,11 +113,11 @@ Légende des tailles : **S** = 1–2 fichiers · **M** = 3–5 fichiers (hors te
   - Vérifier : sur l'instance HA d'Alexandre, après T11, une exécution manuelle de l'automatisation renvoie un 200 et `ingest_log` affiche `ok`
   - Fichiers : `homeassistant/blueprints/wattsup_push.yaml`, `homeassistant/README.md`
 
-- [ ] **T11 — Docker et déploiement Coolify** · S · Dépend de : T8
+- [x] **T11 — Docker et déploiement Coolify** · S · Dépend de : T8
   - Acceptation :
     - `Dockerfile` multi-stage (Next `output: standalone`, utilisateur non-root) ; migrations appliquées au démarrage ; `GET /api/health`
     - `docker-compose.yml` complet (app + db) ; `.env.example` documenté
-    - Coolify : projet **« wattsup »** (app + Postgres), domaine `wattsup-energy.kraftpunk.app`, HTTPS, sauvegarde quotidienne de la base
+    - Coolify : projet « WattsUp Energy », application Dockerfile, domaine `wattsup-energy.kraftpunk.app`, HTTPS ; base `wattsup` (utilisateur dédié) sur la ressource partagée `postgres-partage`, ajoutée aux sauvegardes nocturnes et à `check-backups`
   - Vérifier : `docker compose up --build` sur une base vide → inscription OK ; `curl https://wattsup-energy.kraftpunk.app/api/health` → 200
   - Fichiers : `Dockerfile`, `docker-compose.yml`, `src/app/api/health/route.ts`, `scripts/migrate.ts`
 

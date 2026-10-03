@@ -152,12 +152,13 @@ Légende des tailles : **S** = 1–2 fichiers · **M** = 3–5 fichiers (hors te
   - Vérifier : `pnpm test tests/unit/domain/tariff/custom`
   - Fichiers : `src/domain/tariff/custom.ts`
 
-- [ ] **T15 — Seed de démo** · S · Dépend de : T8
+- [x] **T15 — Seed de démo** · S · Dépend de : T8
   - Acceptation :
-    - `pnpm db:seed` crée l'utilisateur `demo@wattsup.local` (mot de passe dans `.env.example`), son foyer, 2 ans horaires (saisonnalité, solaire, batterie, chauffe), la météo, des événements granulés et bois, 4 contrats de référence, les catégories et les équipements
+    - `pnpm db:seed` crée l'utilisateur `demo@wattsup.local` (identifiants `DEMO_EMAIL` / `DEMO_PASSWORD` de `.env.example`), son foyer (profil complet, commune Nantes), 2 ans horaires générés de façon déterministe (saisonnalité, solaire 3,2 kWc calé sur l'irradiation, batterie 5,12 kWh, chauffe-eau routé, appoint électrique), les postes et la météo (sans écraser les données Open-Meteo réelles) ; refusé en production sauf `--force`
+    - Les contrats de référence, les événements de combustibles et les équipements seront ajoutés au seed par T17, T23 et T28, quand leurs tables existeront
     - Idempotent : relancer le seed remplace les données du foyer démo
   - Vérifier : `pnpm db:seed && pnpm test tests/integration/seed`
-  - Fichiers : `scripts/seed.ts`, `scripts/seed/generators.ts`
+  - Fichiers : `scripts/seed.ts`, `scripts/seed/generate.ts` (pur, testé), `scripts/seed/seed.ts`
 
 - [ ] **T16 — Synchronisation du calendrier Tempo** · M · Dépend de : T2
   - Acceptation :

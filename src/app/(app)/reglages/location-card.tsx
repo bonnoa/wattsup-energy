@@ -87,7 +87,7 @@ export function LocationCard({ status }: { status: Status | null }) {
               name="q"
               required
               minLength={2}
-              placeholder="Votre commune, ex. Vigneux-de-Bretagne"
+              placeholder="Votre commune, ex. Nantes"
               className={inputClass}
               autoComplete="address-level2"
             />

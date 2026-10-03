@@ -20,7 +20,7 @@
     "test:e2e": "node -e \"console.error('Disponible à partir de T33');process.exit(1)\"",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx --env-file-if-exists=.env.local scripts/migrate.ts",
-    "db:seed": "node -e \"console.error('Disponible à partir de T15');process.exit(1)\"",
+    "db:seed": "tsx --env-file-if-exists=.env.local --tsconfig tsconfig.json scripts/seed.ts",
     "tempo:sync": "node -e \"console.error('Disponible à partir de T16');process.exit(1)\"",
     "test:unit": "vitest run --project unit",
     "test:integration": "vitest run --project integration",

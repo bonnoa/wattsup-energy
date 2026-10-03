@@ -15,6 +15,8 @@ blueprint:
     `last_period` de vos `utility_meter` quotidiens.
   domain: automation
   source_url: https://github.com/bonnoa/wattsup-energy/blob/main/homeassistant/blueprints/wattsup_push.yaml
+  homeassistant:
+    min_version: "2024.10.0"
   input:
     granularity:
       name: Granularité
@@ -244,8 +246,9 @@ variables:
     {{- ns.p | to_json -}}
 
 conditions:
-  - condition: template
-    value_template: "{{ trigger.id == granularity }}"
+  # Seul le déclencheur du mode choisi envoie (horaire ou 00:05).
+  - condition: trigger
+    id: !input granularity
 
 actions:
   - action: rest_command.wattsup_push

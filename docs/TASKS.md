@@ -145,7 +145,7 @@ Légende des tailles : **S** = 1–2 fichiers · **M** = 3–5 fichiers (hors te
   - Vérifier : `pnpm test tests/unit/domain/tariff/tempo`
   - Fichiers : `src/domain/tariff/tempo.ts`
 
-- [ ] **T14 — Tarif Custom** · S · Dépend de : T12
+- [x] **T14 — Tarif Custom** · S · Dépend de : T12
   - Acceptation :
     - Règles ordonnées `{ days, ranges, price }` ; la première règle qui correspond s'applique ; un trou de couverture est une erreur de validation
     - Fixture Zen Week-End : écart ≤ 1 centime

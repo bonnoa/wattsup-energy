@@ -1,5 +1,6 @@
 import { daysInYear, eachDay, localParts } from "@/lib/time";
 import { basePricer, hphcPricer } from "./base-hphc";
+import { customPricer } from "./custom";
 import { tempoPricer } from "./tempo";
 import type { Pricer } from "./pricer";
 import type {
@@ -21,6 +22,8 @@ function pricerFor(contract: Contract, ctx: PricingContext): Pricer {
       return hphcPricer(contract);
     case "tempo":
       return tempoPricer(contract, ctx);
+    case "custom":
+      return customPricer(contract);
   }
 }
 

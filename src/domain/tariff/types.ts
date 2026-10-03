@@ -31,7 +31,23 @@ export interface TempoContract {
   prices: Record<TempoColor, Record<Slot, number>>;
 }
 
-export type Contract = BaseContract | HphcContract | TempoContract;
+/** Règle d'un contrat sur mesure : jours ISO (1 = lundi … 7 = dimanche) et plages. */
+export interface CustomRule {
+  /** Libellé unique, utilisé comme clé de ventilation (ex. « Week-end »). */
+  label: string;
+  days: number[];
+  ranges: TimeRange[];
+  price: number;
+}
+
+/** Contrat sur mesure : la première règle qui couvre une minute s'applique. */
+export interface CustomContract {
+  kind: "custom";
+  subscriptionEurYear: number;
+  rules: CustomRule[];
+}
+
+export type Contract = BaseContract | HphcContract | TempoContract | CustomContract;
 
 export type PriceableInterval =
   | { granularity: "hour"; start: Date; kwh: number }

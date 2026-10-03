@@ -201,7 +201,7 @@ Règles :
 - Une valeur **inférieure** à l'index précédent est traitée comme un reset : le delta vaut la nouvelle valeur.
 - Un trou de plus de 24 h ne crée pas de données : le delta est absorbé et un avertissement est consigné dans `ingest_log`.
 - Une clé de `categories` inconnue est ignorée, avec un avertissement dans la réponse.
-- Le bloc `weather` reste accepté (compatibilité du contrat v1) mais **n'est plus exploité à partir de T16b** : il renvoie l'avertissement `ignored_block`. La météo vient d'Open-Meteo (§7.9).
+- Le bloc `weather` est **retiré du contrat en T16b** (schéma, persistance, table par foyer). Ce n'est pas une rupture : l'API ignore déjà les clés inconnues. La météo vient d'Open-Meteo (§7.9).
 
 ### 6.2 Mode quotidien (`household.granularity = daily`)
 
@@ -223,7 +223,7 @@ HA envoie **les totaux de la veille** (utility_meter quotidiens HP et HC), une f
 }
 ```
 
-`weather` : même règle qu'en horaire, accepté mais ignoré à partir de T16b.
+`weather` : même règle qu'en horaire, retiré du contrat en T16b.
 
 Règles :
 - `grid_import` vaut `{ hp_kwh, hc_kwh }` (contrat HP/HC ou Tempo) ou `{ kwh }` (contrat Base), jamais un mélange des deux.
@@ -369,13 +369,13 @@ La météo ne passe plus par Home Assistant : le serveur la récupère auprès d
 ## 8. Blueprint Home Assistant (livré en V1)
 
 `homeassistant/blueprints/wattsup_push.yaml` :
-- Entrées (sélecteurs `entity`, jamais d'entités codées en dur) : import et export réseau, production solaire, charge et décharge batterie, température extérieure, couleur Tempo (optionnelle), compteurs combustibles (optionnels), liste de catégories (paires slug → entité), granularité.
+- Entrées (sélecteurs `entity`, jamais d'entités codées en dur) : import et export réseau (et HP/HC en mode quotidien), production solaire, charge et décharge batterie, couleur Tempo (optionnelle), liste de catégories (paires slug → entité), granularité.
 - Déclencheur : `time_pattern` toutes les heures (minute 0), ou `time` à 00:05 en mode quotidien.
 - Action : `rest_command.wattsup_push`. L'URL et le token vivent dans `secrets.yaml` (README pas à pas).
 - Les capteurs `unavailable` ou `unknown` sont omis du payload au lieu d'envoyer 0.
 - Les unités Wh, kWh et MWh sont converties en kWh d'après `unit_of_measurement`.
 - Un envoi accepté sans aucune donnée d'énergie (`no_energy_data`) déclenche, comme un refus, une notification persistante dans HA.
-- Les entrées météo (température, min, max, moyenne) restent présentes pour ne pas casser les automatisations existantes, mais deviennent **facultatives et ignorées** à partir de T16b ; leur description l'indique.
+- Aucune entrée météo : la météo vient d'Open-Meteo (§7.9). Les entrées température ont été retirées du blueprint et de l'automatisation d'Alexandre le 2026-10-03.
 - Retours du branchement réel (2026-10-03) : en horaire, il faut des **index cumulés temps réel**. Les index Linky issus de l'API Enedis ne changent qu'une fois par jour ; les compteurs « du jour » ou « du mois » repartent à zéro. Le mode quotidien n'accepte que des `utility_meter`, qui exposent l'attribut `last_period`.
 
 ---

@@ -1,7 +1,8 @@
 # Home Assistant → WattsUp Energy
 
-Home Assistant **pousse** ses données vers WattsUp : aucun port entrant à ouvrir,
-WattsUp n'interroge jamais votre instance. Contrat d'API : voir `docs/SPEC.md` §6.
+Home Assistant **pousse** ses compteurs d'énergie vers WattsUp : aucun port entrant à ouvrir,
+WattsUp n'interroge jamais votre instance. Contrat d'API : voir `docs/SPEC.md` §6. La météo n'est pas envoyée par HA : WattsUp la
+récupère lui-même (Open-Meteo) pour la commune indiquée dans Réglages.
 
 ## 1. Récupérer l'endpoint et le token
 
@@ -57,7 +58,6 @@ Créez ensuite une automatisation à partir du blueprint.
 | ------------------------------------------------------ | ---------------------------------------------------------------------------------------------- |
 | Import réseau                                          | compteur cumulé **temps réel** (pince, routeur, téléinfo), `total_increasing` ; Wh, kWh ou MWh |
 | Export, production solaire, charge / décharge batterie | compteurs cumulés correspondants (optionnels)                                                  |
-| Température extérieure                                 | sonde extérieure ou entité météo `weather.*`                                                   |
 | Couleur Tempo                                          | optionnel : capteur dont l'état vaut bleu / blanc / rouge                                      |
 | Postes                                                 | `slug: sensor.xxx_energy`, slugs copiés depuis WattsUp                                         |
 
@@ -90,7 +90,7 @@ mais il faut alors basculer son entité `select` entre `hp` et `hc` aux heures d
 contrat (automatisation dédiée).
 
 Renseignez **Import HP** et **Import HC** (ou **Import réseau** seul pour un contrat
-Base). Pour la météo, utilisez trois capteurs `statistics` (min, max, moyenne sur 24 h).
+Base).
 
 ## 4. Vérifier
 

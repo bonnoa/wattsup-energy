@@ -173,7 +173,7 @@ Légende des tailles : **S** = 1–2 fichiers · **M** = 3–5 fichiers (hors te
     - Table `weather_daily` **globale par maille** (`lat_e2`, `lon_e2`, `date`) avec `t_min`, `t_max`, `t_mean`, `sunshine_s`, `radiation_mj_m2`, `source` ; migration qui retire l'ancienne table par foyer alimentée par HA
     - `OpenMeteoSource` derrière `WeatherSource` : *forecast* (`past_days=3`, `timezone=Europe/Paris`) et *archive* (jusqu'à 3 ans en arrière à l'enregistrement de la localisation) ; timeout de 10 s, 3 essais ; une requête par maille, jamais d'identifiant envoyé
     - `pnpm weather:sync` (veille + rattrapage) dans la même tâche planifiée Coolify que Tempo, à 07:00 ; `WEATHER_SYNC=off` = aucun appel sortant
-    - Ingestion : le bloc `weather` du payload renvoie `ignored_block` ; les entrées météo du blueprint sont décrites comme obsolètes (clés conservées) et retirées de l'automatisation d'Alexandre
+    - Ingestion : le bloc `weather` est **supprimé** du schéma Zod, de la persistance et des fixtures (aucun code mort ; les clés inconnues étant ignorées, ce n'est pas une rupture). Blueprint et automatisation d'Alexandre : déjà faits le 2026-10-03
     - Domaine : `dju(t_mean)`, conversions (s → h, MJ/m² → kWh/m²)
   - Vérifier : `pnpm test tests/integration/weather-sync tests/unit/domain/weather` (MSW, aucun appel réel) ; manuel : sur l'instance Coolify, la commune d'Alexandre a 3 ans d'historique et la veille arrive chaque matin
   - Fichiers : `src/server/weather/source.ts`, `src/server/weather/open-meteo.ts`, `src/server/weather/sync.ts`, `scripts/weather-sync.ts`, `src/app/(app)/reglages/location-card.tsx`, `src/domain/weather.ts`

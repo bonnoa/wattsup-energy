@@ -1,8 +1,9 @@
 blueprint:
   name: WattsUp Energy — envoi des données
   description: >-
-    Pousse les compteurs d'énergie, la météo locale et la couleur Tempo vers
-    WattsUp Energy (contrat d'ingestion v1). Aucun port entrant à ouvrir : Home
+    Pousse les compteurs d'énergie et la couleur Tempo vers WattsUp Energy
+    (contrat d'ingestion v1). La météo n'est pas envoyée : WattsUp la récupère
+    lui-même pour la commune du foyer. Aucun port entrant à ouvrir : Home
     Assistant envoie, WattsUp ne l'interroge jamais.
 
 
@@ -117,40 +118,9 @@ blueprint:
           selector:
             object: {}
 
-    context:
-      name: Météo et Tempo
+    tempo:
+      name: Tempo
       input:
-        outdoor_temperature:
-          name: Température extérieure (mode horaire)
-          description: Sonde extérieure, ou entité météo locale (weather.*) dont l'attribut température est lu.
-          default: ""
-          selector:
-            entity:
-              filter:
-                - domain: sensor
-                  device_class: temperature
-                - domain: weather
-        temp_min:
-          name: Température minimale de la veille (mode quotidien)
-          default: ""
-          selector:
-            entity:
-              filter:
-                - domain: sensor
-        temp_max:
-          name: Température maximale de la veille (mode quotidien)
-          default: ""
-          selector:
-            entity:
-              filter:
-                - domain: sensor
-        temp_avg:
-          name: Température moyenne de la veille (mode quotidien)
-          default: ""
-          selector:
-            entity:
-              filter:
-                - domain: sensor
         tempo_color:
           name: Couleur Tempo du jour (optionnel)
           description: Capteur dont l'état vaut bleu, blanc ou rouge (casse indifférente). Laissez vide si vous n'êtes pas au tarif Tempo ou si vous n'avez pas ce capteur.
@@ -183,10 +153,6 @@ variables:
     battery_charge_grid_kwh: !input battery_charge_grid
     battery_discharge_kwh: !input battery_discharge
   categories: !input categories
-  outdoor_temperature: !input outdoor_temperature
-  temp_min: !input temp_min
-  temp_max: !input temp_max
-  temp_avg: !input temp_avg
   tempo_color: !input tempo_color
 
   # Construit le payload v1. Les capteurs indisponibles ou non numériques sont
@@ -198,12 +164,6 @@ variables:
         {%- set v = state_attr(e, 'last_period') if daily else states(e) -%}
         {%- set factor = {'Wh': 0.001, 'kWh': 1, 'MWh': 1000}.get(state_attr(e, 'unit_of_measurement'), 1) -%}
         {{- (v | float * factor) if v is not none and v | is_number else '' -}}
-      {%- endif -%}
-    {%- endmacro -%}
-    {%- macro temperature(e) -%}
-      {%- if e -%}
-        {%- set v = state_attr(e, 'temperature') if e.startswith('weather.') else states(e) -%}
-        {{- v if v is not none and v | is_number else '' -}}
       {%- endif -%}
     {%- endmacro -%}
     {%- set ns = namespace(p={'version': 1}, energy={}, cats={}) -%}
@@ -226,19 +186,11 @@ variables:
         {%- set ns.p = dict(ns.p, grid_import={'kwh': total | float}) -%}
       {%- endif -%}
       {%- set ns.p = dict(ns.p, **ns.energy) -%}
-      {%- set tmin = states(temp_min) if temp_min else '' -%}
-      {%- set tmax = states(temp_max) if temp_max else '' -%}
-      {%- set tavg = states(temp_avg) if temp_avg else '' -%}
-      {%- if tmin | is_number and tmax | is_number and tavg | is_number -%}
-        {%- set ns.p = dict(ns.p, weather={'t_min': tmin | float, 't_max': tmax | float, 't_avg': tavg | float}) -%}
-      {%- endif -%}
     {%- else -%}
       {%- set ns.p = dict(ns.p, ts=now().isoformat()) -%}
       {%- set total = read(grid_import) -%}
       {%- if total != '' -%}{%- set ns.energy = dict(ns.energy, grid_import_kwh=total | float) -%}{%- endif -%}
       {%- if ns.energy -%}{%- set ns.p = dict(ns.p, energy=ns.energy) -%}{%- endif -%}
-      {%- set t = temperature(outdoor_temperature) -%}
-      {%- if t | is_number -%}{%- set ns.p = dict(ns.p, weather={'outdoor_temp_c': t | float}) -%}{%- endif -%}
     {%- endif -%}
     {%- if ns.cats -%}{%- set ns.p = dict(ns.p, categories=ns.cats) -%}{%- endif -%}
     {%- set color = (states(tempo_color) | lower) if tempo_color else '' -%}

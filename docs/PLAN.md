@@ -97,7 +97,7 @@ Taille : **S** = 1–2 fichiers · **M** = 3–5 fichiers. Aucune tâche L/XL.
 | T14 | Tarif Custom (règles jour + plage) : cas Zen Week-End | S | T12 | fixture Zen WE ≤ 0,01 € |
 | T15 | Seed démo : 2 ans horaires synthétiques, cohérents (saisons, solaire, chauffe, combustibles) | S | T8 | `pnpm db:seed` remplit un foyer démo exploitable par tous les écrans |
 | T16 | Synchro Tempo : `tempo_calendar`, `TempoSource` (communautaire → seed), `pnpm tempo:sync`, tâche planifiée Coolify, `TEMPO_SYNC=off` | M | T2 | tests MSW de bascule ; sur le staging, l'historique de 2 ans est rempli |
-| T16b | Météo Open-Meteo : localisation du foyer (recherche de commune), `weather_daily` par maille, `WeatherSource` (*forecast* + *archive*), `pnpm weather:sync`, bloc `weather` du payload ignoré | M | T2, T16 | tests MSW ; sur le staging, 3 ans d'historique pour ta commune et la veille mise à jour chaque matin |
+| T16b | Météo Open-Meteo : localisation du foyer (recherche de commune), `weather_daily` par maille, `WeatherSource` (*forecast* + *archive*), `pnpm weather:sync`, bloc `weather` retiré de l'ingestion | M | T2, T16 | tests MSW ; sur le staging, 3 ans d'historique pour ta commune et la veille mise à jour chaque matin |
 | T17 | CRUD contrats : éditeur par type, « définir comme actuel », dupliquer, supprimer | M | T12–T14 | US-6 (création) : chaque type est créable et validé par Zod |
 | T18 | Écran Contrats : comparaison sur 12 mois, encart du meilleur contrat, couverture, bandeau « approximatif » en mode quotidien, calendrier Tempo corrigeable | M | T16, T17 | US-6 : sur le seed, le classement est correct et les écarts affichés justes |
 

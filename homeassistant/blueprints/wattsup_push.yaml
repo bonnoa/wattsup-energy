@@ -31,7 +31,8 @@ blueprint:
     energy:
       name: Compteurs d'énergie
       description: >-
-        Mode horaire : capteurs cumulés (kWh, total_increasing).
+        Mode horaire : capteurs cumulés (total_increasing). Les unités Wh, kWh et MWh
+        sont converties automatiquement en kWh.
         Mode quotidien : utility_meter quotidiens (la valeur de la veille est lue
         dans `last_period`).
       input:
@@ -119,12 +120,14 @@ blueprint:
       input:
         outdoor_temperature:
           name: Température extérieure (mode horaire)
+          description: Sonde extérieure, ou entité météo locale (weather.*) dont l'attribut température est lu.
           default: ""
           selector:
             entity:
               filter:
                 - domain: sensor
                   device_class: temperature
+                - domain: weather
         temp_min:
           name: Température minimale de la veille (mode quotidien)
           default: ""
@@ -191,6 +194,13 @@ variables:
     {%- macro read(e) -%}
       {%- if e -%}
         {%- set v = state_attr(e, 'last_period') if daily else states(e) -%}
+        {%- set factor = {'Wh': 0.001, 'kWh': 1, 'MWh': 1000}.get(state_attr(e, 'unit_of_measurement'), 1) -%}
+        {{- (v | float * factor) if v is not none and v | is_number else '' -}}
+      {%- endif -%}
+    {%- endmacro -%}
+    {%- macro temperature(e) -%}
+      {%- if e -%}
+        {%- set v = state_attr(e, 'temperature') if e.startswith('weather.') else states(e) -%}
         {{- v if v is not none and v | is_number else '' -}}
       {%- endif -%}
     {%- endmacro -%}
@@ -225,7 +235,7 @@ variables:
       {%- set total = read(grid_import) -%}
       {%- if total != '' -%}{%- set ns.energy = dict(ns.energy, grid_import_kwh=total | float) -%}{%- endif -%}
       {%- if ns.energy -%}{%- set ns.p = dict(ns.p, energy=ns.energy) -%}{%- endif -%}
-      {%- set t = states(outdoor_temperature) if outdoor_temperature else '' -%}
+      {%- set t = temperature(outdoor_temperature) -%}
       {%- if t | is_number -%}{%- set ns.p = dict(ns.p, weather={'outdoor_temp_c': t | float}) -%}{%- endif -%}
     {%- endif -%}
     {%- if ns.cats -%}{%- set ns.p = dict(ns.p, categories=ns.cats) -%}{%- endif -%}

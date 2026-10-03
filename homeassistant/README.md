@@ -53,13 +53,15 @@ Créez ensuite une automatisation à partir du blueprint.
 
 ### Mode horaire
 
-| Champ                                                  | Entité attendue                                                  |
-| ------------------------------------------------------ | ---------------------------------------------------------------- |
-| Import réseau                                          | compteur cumulé du linky / de la pince (kWh, `total_increasing`) |
-| Export, production solaire, charge / décharge batterie | compteurs cumulés correspondants (optionnels)                    |
-| Température extérieure                                 | capteur de température local                                     |
-| Couleur Tempo                                          | optionnel : capteur dont l'état vaut bleu / blanc / rouge        |
-| Postes                                                 | `slug: sensor.xxx_energy`, slugs copiés depuis WattsUp           |
+| Champ                                                  | Entité attendue                                                                                |
+| ------------------------------------------------------ | ---------------------------------------------------------------------------------------------- |
+| Import réseau                                          | compteur cumulé **temps réel** (pince, routeur, téléinfo), `total_increasing` ; Wh, kWh ou MWh |
+| Export, production solaire, charge / décharge batterie | compteurs cumulés correspondants (optionnels)                                                  |
+| Température extérieure                                 | sonde extérieure ou entité météo `weather.*`                                                   |
+| Couleur Tempo                                          | optionnel : capteur dont l'état vaut bleu / blanc / rouge                                      |
+| Postes                                                 | `slug: sensor.xxx_energy`, slugs copiés depuis WattsUp                                         |
+
+Évitez les index Linky issus de l'API Enedis : ils ne changent qu'une fois par jour. Évitez aussi les compteurs « du jour » ou « du mois », qui repartent à zéro.
 
 Le premier envoi sert de référence (avertissement `baseline`) ; les consommations
 apparaissent à partir du deuxième.

@@ -9,8 +9,13 @@
     "battery_charge_grid_kwh": 0,
     "battery_discharge_kwh": 1840.2
   },
-  "categories": { "eau-chaude": 3012.4, "chauffage-electrique": 1450.0 },
+  "categories": {
+    "eau-chaude": 3012.4,
+    "chauffage-electrique": 1450.0
+  },
   "tempo_color": "bleu",
-  "weather": { "outdoor_temp_c": 13.4 },
-  "fuel": { "pellet_bags_total": 812, "wood_steres_total": 31.5 }
+  "fuel": {
+    "pellet_bags_total": 812,
+    "wood_steres_total": 31.5
+  }
 }

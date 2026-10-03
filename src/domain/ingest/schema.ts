@@ -3,7 +3,6 @@ import { z } from "zod";
 // Contrat d'ingestion v1 (SPEC §6). Toute rupture impose version: 2.
 
 const kwh = z.number().nonnegative();
-const temperature = z.number().min(-60).max(60);
 
 /** Slug d'un poste de consommation : clé du bloc `categories`. */
 export const categorySlug = z
@@ -31,7 +30,6 @@ const hourlySchema = z.object({
     .optional(),
   categories: categories.optional(),
   tempo_color: tempoColor.optional(),
-  weather: z.object({ outdoor_temp_c: temperature }).optional(),
   fuel: z
     .object({
       pellet_bags_total: z.number().nonnegative(),
@@ -55,12 +53,6 @@ const dailySchema = z.object({
   battery_discharge_kwh: kwh.optional(),
   categories: categories.optional(),
   tempo_color: tempoColor.optional(),
-  weather: z
-    .object({ t_min: temperature, t_max: temperature, t_avg: temperature })
-    .refine((w) => w.t_min <= w.t_avg && w.t_avg <= w.t_max, {
-      message: "attendu : t_min ≤ t_avg ≤ t_max",
-    })
-    .optional(),
   fuel: z
     .object({ pellet_bags: z.number().nonnegative(), wood_steres: z.number().nonnegative() })
     .partial()

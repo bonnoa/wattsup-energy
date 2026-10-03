@@ -1,13 +1,20 @@
 {
   "version": 1,
   "date": "2026-10-01",
-  "grid_import": { "hp_kwh": 6.82, "hc_kwh": 5.31 },
+  "grid_import": {
+    "hp_kwh": 6.82,
+    "hc_kwh": 5.31
+  },
   "grid_export_kwh": 2.4,
   "solar_production_kwh": 11.9,
   "battery_charge_kwh": 3.2,
   "battery_discharge_kwh": 2.9,
-  "categories": { "eau-chaude": 2.1 },
+  "categories": {
+    "eau-chaude": 2.1
+  },
   "tempo_color": "bleu",
-  "weather": { "t_min": 8.1, "t_max": 17.6, "t_avg": 12.4 },
-  "fuel": { "pellet_bags": 1, "wood_steres": 0 }
+  "fuel": {
+    "pellet_bags": 1,
+    "wood_steres": 0
+  }
 }

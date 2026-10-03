@@ -17,6 +17,8 @@ export async function migrateOnBoot(): Promise<void> {
 }
 
 export async function onServerStart(): Promise<void> {
-  if (process.env.NODE_ENV !== "production" || process.env.RUN_MIGRATIONS === "off") return;
-  await migrateOnBoot();
+  if (process.env.NODE_ENV !== "production") return;
+  if (process.env.RUN_MIGRATIONS !== "off") await migrateOnBoot();
+  const { startScheduler } = await import("./scheduler");
+  startScheduler();
 }

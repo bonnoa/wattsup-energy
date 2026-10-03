@@ -167,15 +167,15 @@ Légende des tailles : **S** = 1–2 fichiers · **M** = 3–5 fichiers (hors te
   - Vérifier : `pnpm test tests/integration/tempo-sync` (MSW, aucun appel réel) ; manuel : `tempo_calendar` rempli sur 2 ans sur l'instance Coolify
   - Fichiers : `src/server/tempo/source.ts`, `src/server/tempo/community.ts`, `src/server/tempo/sync.ts`, `scripts/tempo-sync.ts`, `data/tempo-seed.json`
 
-- [ ] **T16b — Météo Open-Meteo** · M · Dépend de : T2, T16
+- [x] **T16b — Météo Open-Meteo** · M · Dépend de : T2, T16
   - Acceptation :
     - `household.location` `{label, lat, lon}` (arrondi à 0,01°) ; recherche de commune par l'API de géocodage Open-Meteo (Server Action, résultats limités à la France en priorité) ; Réglages › Localisation
     - Table `weather_daily` **globale par maille** (`lat_e2`, `lon_e2`, `date`) avec `t_min`, `t_max`, `t_mean`, `sunshine_s`, `radiation_mj_m2`, `source` ; migration qui retire l'ancienne table par foyer alimentée par HA
     - `OpenMeteoSource` derrière `WeatherSource` : *forecast* (`past_days=3`, `timezone=Europe/Paris`) et *archive* (jusqu'à 3 ans en arrière à l'enregistrement de la localisation) ; timeout de 10 s, 3 essais ; une requête par maille, jamais d'identifiant envoyé
-    - `pnpm weather:sync` (veille + rattrapage) dans la même tâche planifiée Coolify que Tempo, à 07:00 ; `WEATHER_SYNC=off` = aucun appel sortant
+    - Planificateur intégré au serveur (`src/server/scheduler.ts`) : passage au démarrage puis chaque jour à partir de 07:00 ; `pnpm weather:sync` (et `--backfill <lat> <lon>`) à la main ; `WEATHER_SYNC=off` = aucun appel sortant ; seuls les jours terminés sont stockés
     - Ingestion : le bloc `weather` est **supprimé** du schéma Zod, de la persistance et des fixtures (aucun code mort ; les clés inconnues étant ignorées, ce n'est pas une rupture). Blueprint et automatisation d'Alexandre : déjà faits le 2026-10-03
     - Domaine : `dju(t_mean)`, conversions (s → h, MJ/m² → kWh/m²)
-  - Vérifier : `pnpm test tests/integration/weather-sync tests/unit/domain/weather` (MSW, aucun appel réel) ; manuel : sur l'instance Coolify, la commune d'Alexandre a 3 ans d'historique et la veille arrive chaque matin
+  - Vérifier : `pnpm test tests/integration/weather-sync tests/unit/domain/weather tests/unit/server/open-meteo` (source et fetch factices, aucun appel réel ; MSW inutile) ; manuel : sur l'instance Coolify, la commune d'Alexandre a 3 ans d'historique et la veille arrive chaque matin
   - Fichiers : `src/server/weather/source.ts`, `src/server/weather/open-meteo.ts`, `src/server/weather/sync.ts`, `scripts/weather-sync.ts`, `src/app/(app)/reglages/location-card.tsx`, `src/domain/weather.ts`
 
 - [ ] **T17 — CRUD des contrats** · M · Dépend de : T12, T13, T14

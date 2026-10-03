@@ -2,14 +2,7 @@ import { and, eq } from "drizzle-orm";
 import { describe, expect, it } from "vitest";
 import { POST } from "@/app/api/v1/ingest/route";
 import { db } from "@/db";
-import {
-  category,
-  energyInterval,
-  ingestLog,
-  meterState,
-  tempoOverride,
-  weatherDaily,
-} from "@/db/schema";
+import { category, energyInterval, ingestLog, meterState, tempoOverride } from "@/db/schema";
 import { updateGranularity } from "@/server/household";
 import { createIngestToken } from "@/server/ingest/token";
 import type { HouseholdContext } from "@/server/context";
@@ -153,23 +146,6 @@ describe("mode horaire", () => {
     expect((await intervals(ctx, "category:eau-chaude"))[0]?.kwh).toBeCloseTo(0.4, 4);
   });
 
-  it("météo : min, max et moyenne du jour local", async () => {
-    const { ctx, push } = await setup();
-    for (const [ts, t] of [
-      ["2026-10-02T06:00:00Z", 8],
-      ["2026-10-02T12:00:00Z", 18],
-      ["2026-10-02T18:00:00Z", 13],
-    ] as const) {
-      await push({ version: 1, ts, weather: { outdoor_temp_c: t } });
-    }
-    const [w] = await db
-      .select()
-      .from(weatherDaily)
-      .where(eq(weatherDaily.householdId, ctx.householdId));
-    expect(w).toMatchObject({ date: "2026-10-02", tMin: 8, tMax: 18, tCount: 3 });
-    expect((w?.tSum ?? 0) / (w?.tCount ?? 1)).toBe(13);
-  });
-
   it("couleur Tempo rattachée au jour Tempo (6 h → 6 h)", async () => {
     const { ctx, push } = await setup();
     await push({ version: 1, ts: "2026-10-02T03:00:00Z", tempo_color: "blanc" }); // 05:00 local
@@ -200,7 +176,6 @@ describe("mode quotidien", () => {
     date: "2026-10-01",
     grid_import: { hp_kwh: hp, hc_kwh: hc },
     solar_production_kwh: 11.9,
-    weather: { t_min: 8.1, t_max: 17.6, t_avg: 12.4 },
   });
 
   it("intervalles journaliers au minuit local, ventilés HP/HC", async () => {
@@ -221,12 +196,6 @@ describe("mode quotidien", () => {
     await push(daily(7, 4));
     const rows = await intervals(ctx, "grid_import");
     expect(rows.map((r) => r.kwh)).toEqual([4, 7]);
-    const weather = await db
-      .select()
-      .from(weatherDaily)
-      .where(eq(weatherDaily.householdId, ctx.householdId));
-    expect(weather).toHaveLength(1);
-    expect(weather[0]).toMatchObject({ tMin: 8.1, tCount: 1 });
   });
 
   it("une correction Tempo manuelle n'est pas écrasée par HA", async () => {

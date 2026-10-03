@@ -344,7 +344,7 @@ Le serveur interroge des API Tempo publiques. **Aucune donnée utilisateur n'est
 | 2 | `data/tempo-seed.json` | — | amorçage de l'historique à la première migration et repli hors-ligne |
 | — | API officielle RTE (OAuth2) | `RTE_CLIENT_ID` / `RTE_CLIENT_SECRET` | **hors V1** : l'interface `TempoSource` permet de l'ajouter sans toucher au reste |
 
-- **Quand** : script `pnpm tempo:sync`, lancé tous les jours à 11:30 et 17:00 (la couleur J+1 est publiée vers 11 h) par une tâche planifiée Coolify, ou par cron dans le `docker-compose`. Au démarrage, une passe de rattrapage complète les trous depuis la dernière date connue.
+- **Quand** : le planificateur intégré au serveur (le même que la météo, §7.9) lance la synchronisation tous les jours à 11:30 et 17:00 (la couleur J+1 est publiée vers 11 h). `pnpm tempo:sync` fait la même chose à la main. Au démarrage, une passe de rattrapage complète les trous depuis la dernière date connue.
 - **Robustesse** : timeout de 5 s, 3 essais avec backoff, puis bascule sur la source suivante. Un échec n'est jamais bloquant ; le compteur « N jours supposés » couvre les trous.
 - **Isolation** : tout l'accès réseau passe par `src/server/tempo/` derrière une interface `TempoSource` ; le domaine reste pur.
 - Variable d'env `TEMPO_SYNC=off` pour les instances qui refusent tout appel sortant.
@@ -360,8 +360,8 @@ La météo ne passe plus par Home Assistant : le serveur la récupère auprès d
 
 - **Localisation du foyer** : l'utilisateur cherche sa commune (API de géocodage Open-Meteo, sans clé) dans l'onboarding ou dans Réglages. On stocke le libellé et les coordonnées **arrondies à 0,01°** (environ 1 km).
 - **Vie privée** : seules ces coordonnées arrondies sont envoyées, sans aucun identifiant. Les foyers d'une même maille partagent les mêmes lignes, donc une seule requête par maille et par jour.
-- **Quand** : script `pnpm weather:sync`, lancé chaque jour à 07:00 par la même tâche planifiée que Tempo. Il demande l'API *forecast* avec `past_days=3` et `timezone=Europe/Paris`, et met à jour les 3 derniers jours, dont la veille, qui fait référence. Au démarrage, une passe de rattrapage comble les trous.
-- **Historique** : à l'enregistrement de la localisation, et pour couvrir les périodes importées en CSV, l'API *archive* (réanalyse ERA5, disponible avec environ 5 jours de retard) remplit jusqu'à 3 ans en arrière. La prévision et les DJU fonctionnent ainsi dès le premier jour, sans attendre un hiver d'historique HA.
+- **Quand** : un planificateur intégré au serveur (`src/server/scheduler.ts`, instance unique en V1, rien à configurer dans Coolify ni en auto-hébergement) lance la synchronisation au démarrage puis chaque jour à partir de 07:00 (Paris). Elle demande l'API *forecast* avec `past_days=7` et `timezone=Europe/Paris`, et met à jour les **jours terminés** (la journée en cours, simple prévision, n'est pas stockée). `pnpm weather:sync` fait la même chose à la main, et `pnpm weather:sync --backfill <lat> <lon>` remplit l'historique d'une maille.
+- **Historique** : à l'enregistrement de la localisation, l'API *archive* (réanalyse ERA5, à jour jusqu'à la veille en pratique) remplit 3 ans en arrière en une requête (environ 1 100 jours). Une valeur d'archive n'est jamais remplacée par une valeur de prévision. La prévision et les DJU fonctionnent ainsi dès le premier jour, sans attendre un hiver d'historique HA.
 - **Robustesse** : timeout de 10 s, 3 essais avec backoff ; un échec n'est jamais bloquant, la journée manquante est reprise au passage suivant. `WEATHER_SYNC=off` désactive tout appel sortant.
 - **Isolation** : l'accès réseau passe par `src/server/weather/`, derrière une interface `WeatherSource` ; les calculs (DJU, rendement) restent dans `src/domain`.
 - **Sans localisation** : les cartes météo affichent un état vide « Indiquez votre commune » avec un lien vers Réglages ; la prévision retombe sur la saisie manuelle des DJU.

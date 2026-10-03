@@ -7,7 +7,6 @@ import {
   ingestLog,
   meterState,
   tempoOverride,
-  weatherDaily,
 } from "@/db/schema";
 import { indexToIntervals, type MeterReading } from "@/domain/ingest/hourly";
 import { dailyToIntervals, hourlyReadings } from "@/domain/ingest/normalize";
@@ -18,7 +17,7 @@ import {
   type PayloadError,
 } from "@/domain/ingest/schema";
 import type { IngestWarning } from "@/domain/ingest/types";
-import { localParts, tempoDay, zonedInstant } from "@/lib/time";
+import { tempoDay, zonedInstant } from "@/lib/time";
 
 // Persistance d'un push HA (SPEC §6). Tout est écrit dans une transaction : un push
 // est appliqué entièrement ou pas du tout.
@@ -151,23 +150,6 @@ async function persistHourly(
     }
   }
 
-  const temp = payload.weather?.outdoor_temp_c;
-  if (temp !== undefined) {
-    const day = localParts(payload.ts, timezone).date;
-    await tx
-      .insert(weatherDaily)
-      .values({ householdId, date: day, tMin: temp, tMax: temp, tSum: temp, tCount: 1 })
-      .onConflictDoUpdate({
-        target: [weatherDaily.householdId, weatherDaily.date],
-        set: {
-          tMin: sql`least(${weatherDaily.tMin}, excluded.t_min)`,
-          tMax: sql`greatest(${weatherDaily.tMax}, excluded.t_max)`,
-          tSum: sql`${weatherDaily.tSum} + excluded.t_sum`,
-          tCount: sql`${weatherDaily.tCount} + 1`,
-        },
-      });
-  }
-
   if (payload.tempo_color) {
     await upsertTempo(tx, householdId, tempoDay(payload.ts, timezone), payload.tempo_color);
   }
@@ -204,15 +186,6 @@ async function persistDaily(
         target: intervalKey,
         set: { kwh: sql`excluded.kwh`, source: sql`'ha'` },
       });
-  }
-
-  const w = payload.weather;
-  if (w) {
-    const values = { tMin: w.t_min, tMax: w.t_max, tSum: w.t_avg, tCount: 1 };
-    await tx
-      .insert(weatherDaily)
-      .values({ householdId, date: payload.date, ...values })
-      .onConflictDoUpdate({ target: [weatherDaily.householdId, weatherDaily.date], set: values });
   }
 
   if (payload.tempo_color) {

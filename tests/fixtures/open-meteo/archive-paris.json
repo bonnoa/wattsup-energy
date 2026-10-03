@@ -1,0 +1,39 @@
+{
+  "latitude": 48.89279,
+  "longitude": 2.2920206,
+  "generationtime_ms": 0.22923946380615234,
+  "utc_offset_seconds": 7200,
+  "timezone": "Europe/Paris",
+  "timezone_abbreviation": "GMT+2",
+  "elevation": 50.0,
+  "daily_units": {
+    "time": "iso8601",
+    "temperature_2m_min": "\u00b0C",
+    "temperature_2m_max": "\u00b0C",
+    "temperature_2m_mean": "\u00b0C",
+    "sunshine_duration": "s",
+    "shortwave_radiation_sum": "MJ/m\u00b2"
+  },
+  "daily": {
+    "time": [
+      "2026-09-23",
+      "2026-09-24",
+      "2026-09-25",
+      "2026-09-26",
+      "2026-09-27",
+      "2026-09-28",
+      "2026-09-29",
+      "2026-09-30",
+      "2026-10-01",
+      "2026-10-02"
+    ],
+    "temperature_2m_min": [12.0, 12.5, 12.6, 14.5, 12.9, 15.6, 16.1, 18.3, 14.7, 10.3],
+    "temperature_2m_max": [26.2, 23.4, 27.7, 23.0, 27.0, 23.4, 26.9, 22.2, 20.4, 20.4],
+    "temperature_2m_mean": [19.2, 18.0, 20.1, 18.8, 20.0, 19.5, 21.2, 20.6, 17.7, 15.1],
+    "sunshine_duration": [
+      41490.86, 29792.58, 41621.63, 36367.32, 39600.0, 25200.0, 38603.79, 2446.18, 37937.82,
+      36447.58
+    ],
+    "shortwave_radiation_sum": [16.21, 12.66, 16.32, 10.81, 14.96, 9.89, 13.58, 4.32, 13.44, 13.85]
+  }
+}

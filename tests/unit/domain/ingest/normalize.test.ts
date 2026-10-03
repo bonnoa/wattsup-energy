@@ -71,16 +71,8 @@ describe("payload sans aucune donnée d'énergie", () => {
     expect(r.warnings).toEqual([{ code: "no_energy_data" }]);
   });
 
-  it("horaire : avertissement no_energy_data, même avec météo ou Tempo", () => {
-    const p = parse(
-      {
-        version: 1,
-        ts: "2026-10-02T12:00:00Z",
-        weather: { outdoor_temp_c: 12 },
-        tempo_color: "bleu",
-      },
-      "hourly",
-    );
+  it("horaire : avertissement no_energy_data, même avec une couleur Tempo", () => {
+    const p = parse({ version: 1, ts: "2026-10-02T12:00:00Z", tempo_color: "bleu" }, "hourly");
     expect(hourlyReadings(p, []).warnings).toEqual([{ code: "no_energy_data" }]);
   });
 

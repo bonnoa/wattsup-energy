@@ -23,7 +23,8 @@
     "db:seed": "node -e \"console.error('Disponible à partir de T15');process.exit(1)\"",
     "tempo:sync": "node -e \"console.error('Disponible à partir de T16');process.exit(1)\"",
     "test:unit": "vitest run --project unit",
-    "test:integration": "vitest run --project integration"
+    "test:integration": "vitest run --project integration",
+    "weather:sync": "tsx --env-file-if-exists=.env.local --tsconfig tsconfig.json scripts/weather-sync.ts"
   },
   "dependencies": {
     "better-auth": "^1.7.7",

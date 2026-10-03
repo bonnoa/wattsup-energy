@@ -39,6 +39,13 @@ export interface HouseholdSettings {
   kwhFactors: { pelletPerKg: number; woodPerStere: number };
 }
 
+/** Commune du foyer pour la météo ; coordonnées arrondies à 0,01° (SPEC §7.9). */
+export interface HouseholdLocation {
+  label: string;
+  lat: number;
+  lon: number;
+}
+
 export const DEFAULT_PROFILE: EnergyProfile = {
   solar: false,
   battery: false,
@@ -68,6 +75,7 @@ export const household = pgTable("household", {
   granularity: granularity("granularity").notNull().default("hourly"),
   profile: jsonb("profile").$type<EnergyProfile>().notNull().default(DEFAULT_PROFILE),
   settings: jsonb("settings").$type<HouseholdSettings>().notNull().default(DEFAULT_SETTINGS),
+  location: jsonb("location").$type<HouseholdLocation>(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true })
     .notNull()
@@ -156,18 +164,25 @@ export const energyInterval = pgTable(
   ],
 );
 
-/** Météo locale agrégée par jour ; moyenne = t_sum / t_count, DJU calculé à la lecture. */
+/**
+ * Météo quotidienne Open-Meteo, globale par maille de 0,01° (coordonnées × 100) :
+ * donnée publique partagée par les foyers d'une même maille. DJU calculé à la lecture.
+ */
 export const weatherDaily = pgTable(
   "weather_daily",
   {
-    householdId: householdRef(),
+    latE2: integer("lat_e2").notNull(),
+    lonE2: integer("lon_e2").notNull(),
     date: date("date").notNull(),
-    tMin: real("t_min").notNull(),
-    tMax: real("t_max").notNull(),
-    tSum: doublePrecision("t_sum").notNull(),
-    tCount: integer("t_count").notNull(),
+    tMin: real("t_min"),
+    tMax: real("t_max"),
+    tMean: real("t_mean"),
+    sunshineS: real("sunshine_s"),
+    radiationMjM2: real("radiation_mj_m2"),
+    source: text("source", { enum: ["forecast", "archive"] }).notNull(),
+    fetchedAt: timestamp("fetched_at", { withTimezone: true }).notNull().defaultNow(),
   },
-  (t) => [primaryKey({ columns: [t.householdId, t.date] })],
+  (t) => [primaryKey({ columns: [t.latE2, t.lonE2, t.date] })],
 );
 
 export const tempoColor = pgEnum("tempo_color", ["bleu", "blanc", "rouge"]);

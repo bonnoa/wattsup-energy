@@ -76,7 +76,8 @@ Briques partagées dans `src/components/ui` : `Card`, `CardFooter`, `Badge`, `St
 5. **Une action principale claire** par carte (bouton plein), les autres en bouton bordé ou en lien discret dans le pied de carte.
 6. **Expliquer plutôt que laisser deviner** : quand une donnée semble incohérente ou qu'une étape manque, un encart `Notice` le dit en une phrase et propose la correction en un clic (« C'est toujours mon contrat », « Générer un token »). Les champs piégeux ont une aide sous le champ.
 7. **Petites aides visuelles** plutôt que du texte brut (frise de 24 h des heures creuses, barres de comparaison).
-8. Mobile d'abord : tout reste lisible à 325 px (pictogramme de carte masqué, tuiles qui passent à la ligne, montants sans retour à la ligne).
+8. **Textes génériques** : l'outil sert à tous les foyers ; aucun libellé, exemple ni aide ne suppose un équipement particulier (routeur solaire, marque de batterie ou d'onduleur…). On décrit ce qui est mesuré (« si vous mesurez l'énergie envoyée au ballon »), pas avec quel appareil.
+9. Mobile d'abord : tout reste lisible à 325 px (pictogramme de carte masqué, tuiles qui passent à la ligne, montants sans retour à la ligne).
 
 ---
 

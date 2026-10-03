@@ -8,7 +8,7 @@ import { Badge, Card } from "@/components/ui";
 const TOGGLES: Record<keyof EnergyProfile, { label: string; desc: string; color: string }> = {
   solar: {
     label: "Production solaire",
-    desc: "Panneaux, micro-onduleurs, routeur",
+    desc: "Panneaux photovoltaïques",
     color: "bg-solar",
   },
   battery: { label: "Batterie", desc: "Cycles de charge et décharge", color: "bg-battery" },

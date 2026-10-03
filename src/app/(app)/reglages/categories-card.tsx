@@ -389,8 +389,8 @@ export function CategoriesCard({
 
       {count === 0 && !editing && unknown.length === 0 && (
         <Notice tone="info" title="Aucun poste pour l'instant.">
-          Ajoutez-en un, par exemple « Chauffe-eau » si votre routeur solaire mesure l&apos;énergie
-          envoyée au ballon.
+          Ajoutez-en un, par exemple « Chauffe-eau » si vous mesurez l&apos;énergie envoyée au
+          ballon.
         </Notice>
       )}
 

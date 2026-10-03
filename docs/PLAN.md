@@ -2,7 +2,7 @@
 
 > Statut : **validé** (phase 2 « Plan »). Détail des tâches : [TASKS.md](./TASKS.md)
 > Source : [SPEC.md](./SPEC.md). Le détail des tâches (fichiers, commandes de vérification) sera produit en phase 3.
-> Dernière mise à jour : 2026-10-02
+> Dernière mise à jour : 2026-10-03
 
 ## Vue d'ensemble
 
@@ -20,6 +20,7 @@ La construction avance par **tranches verticales**. Chaque jalon livre un parcou
 | Calcul de coût en TS (et non en SQL) | les règles Tempo et Custom sont trop riches pour du SQL ; le volume d'un an horaire (8 760 intervalles) reste trivial en mémoire |
 | Montants en centimes entiers, arrondis à l'affichage seulement | évite les dérives d'arrondi sur 12 mois |
 | Calendrier Tempo global, avec surcharge par foyer | donnée publique : une synchro sert tous les foyers |
+| Météo Open-Meteo par maille de 0,01°, côté serveur (2026-10-03) | ajoute l'ensoleillement et l'irradiation que HA ne fournit pas, donne un historique immédiat (archive ERA5) et mutualise les appels ; HA ne pousse plus la météo |
 | Rate limiter en mémoire derrière une interface | instance unique en V1, remplaçable par Redis ou PG plus tard |
 | Déploiement de staging dès le jalon 1 | les vraies données s'accumulent tôt et les risques Docker/Coolify sont levés tôt |
 | Seed synthétique de 2 ans dès le jalon 2 | permet de développer les écrans sans attendre un an de données réelles |
@@ -42,6 +43,7 @@ T1 Socle repo ──► T2 DB + Auth ──► T3 Contexte foyer / isolation
                        │                 │                      │
                        │                 ▼                      ▼
                        │        T15 Seed démo ───────► T16 Sync Tempo ──► T17 CRUD contrats ──► T18 Écran Contrats
+                       │                                  └──► T16b Météo Open-Meteo ──► T20, T25, T29
                        │                 │
                        ├──► T19 Catégories ──► T20 Vue d'ensemble ──► T21 États vides / couverture
                        │                 │
@@ -95,6 +97,7 @@ Taille : **S** = 1–2 fichiers · **M** = 3–5 fichiers. Aucune tâche L/XL.
 | T14 | Tarif Custom (règles jour + plage) : cas Zen Week-End | S | T12 | fixture Zen WE ≤ 0,01 € |
 | T15 | Seed démo : 2 ans horaires synthétiques, cohérents (saisons, solaire, chauffe, combustibles) | S | T8 | `pnpm db:seed` remplit un foyer démo exploitable par tous les écrans |
 | T16 | Synchro Tempo : `tempo_calendar`, `TempoSource` (communautaire → seed), `pnpm tempo:sync`, tâche planifiée Coolify, `TEMPO_SYNC=off` | M | T2 | tests MSW de bascule ; sur le staging, l'historique de 2 ans est rempli |
+| T16b | Météo Open-Meteo : localisation du foyer (recherche de commune), `weather_daily` par maille, `WeatherSource` (*forecast* + *archive*), `pnpm weather:sync`, bloc `weather` du payload ignoré | M | T2, T16 | tests MSW ; sur le staging, 3 ans d'historique pour ta commune et la veille mise à jour chaque matin |
 | T17 | CRUD contrats : éditeur par type, « définir comme actuel », dupliquer, supprimer | M | T12–T14 | US-6 (création) : chaque type est créable et validé par Zod |
 | T18 | Écran Contrats : comparaison sur 12 mois, encart du meilleur contrat, couverture, bandeau « approximatif » en mode quotidien, calendrier Tempo corrigeable | M | T16, T17 | US-6 : sur le seed, le classement est correct et les écarts affichés justes |
 
@@ -105,7 +108,7 @@ Taille : **S** = 1–2 fichiers · **M** = 3–5 fichiers. Aucune tâche L/XL.
 | # | Tâche | Taille | Dépend de | Critère d'acceptation clé |
 |---|---|---|---|---|
 | T19 | Postes de consommation : CRUD avec icône, couleur, case « chauffage », slug affiché pour HA | S | T4 | US-10 ; une clé inconnue dans le payload produit un avertissement |
-| T20 | Vue d'ensemble : budget mois/année avec navigation, coût par source, origine de la conso, postes ; requêtes agrégées | M | T12, T15, T19 | sur le seed, les totaux de la vue égalent ceux du moteur |
+| T20 | Vue d'ensemble : budget mois/année avec navigation, coût par source, origine de la conso, postes, production et ensoleillement ; requêtes agrégées | M | T12, T15, T16b, T19 | sur le seed, les totaux de la vue égalent ceux du moteur |
 | T21 | États vides et badge de couverture (composant transverse) | S | T20 | un foyer neuf ne voit aucune carte cassée ni de NaN |
 | T22 | Import CSV : parsing en flux, validation par ligne, upsert par lots, rapport, UI d'aperçu | M | T8 | US-9 ; 8 760 lignes en < 10 s ; HA écrase le CSV |
 
@@ -117,7 +120,7 @@ Taille : **S** = 1–2 fichiers · **M** = 3–5 fichiers. Aucune tâche L/XL.
 |---|---|---|---|---|
 | T23 | Domaine combustibles : stock courant, consommation par saison, prix moyen pondéré | S | T1 | TDD : snapshot + achats − consommations |
 | T24 | Saisie rapide : « + Sac versé » avec annulation 10 s, « + ½ stère », Achat, Corriger le stock, journal modifiable | M | T23, T4 | ajouter un sac versé prend 1 tap sur mobile ; le stock se met à jour |
-| T25 | Domaine : DJU de saison, équivalences kWh, coût de chauffe (élec chauffage + combustibles) | S | T12, T23 | tests des facteurs (4,8 kWh/kg, 15 kg, 1 800 kWh/stère) |
+| T25 | Domaine : DJU de saison (température Open-Meteo), équivalences kWh, coût de chauffe (élec chauffage + combustibles) | S | T12, T16b, T23 | tests des facteurs (4,8 kWh/kg, 15 kg, 1 800 kWh/stère) |
 | T26 | Vue Chauffage : KPI, graphe coût + température, ligne d'équivalence kWh | M | T24, T25 | US-4 : aucune trace de bois si le bois est désactivé |
 | T27 | Prévision de réapprovisionnement : domaine (conso par DJU, scénarios, arrondi palette ou demi-stère) + encart UI + état « données insuffisantes » | M | T25, T26 | US-7 / parcours PRD 2 reproduit sur le seed |
 
@@ -128,7 +131,7 @@ Taille : **S** = 1–2 fichiers · **M** = 3–5 fichiers. Aucune tâche L/XL.
 | # | Tâche | Taille | Dépend de | Critère d'acceptation clé |
 |---|---|---|---|---|
 | T28 | Équipements (feuille « Modifier ») et réglages solaire/batterie (revente + prix, charge depuis le réseau) | S | T4 | les champs sont persistés et validés |
-| T29 | Domaine ROI solaire et batterie (autoconso, revente optionnelle, charge réseau, projection) | S | T12, T28 | TDD sur 4 combinaisons revente × charge réseau |
+| T29 | Domaine ROI solaire et batterie (autoconso, revente optionnelle, charge réseau, projection) et rendement solaire normalisé (kWh produits ÷ kWh/m²) | S | T12, T16b, T28 | TDD sur 4 combinaisons revente × charge réseau |
 | T30 | Écran Rentabilité : jauges, frise d'amortissement, lignes conditionnelles | M | T29 | US-8 / parcours PRD 3 |
 
 **Checkpoint F** : toutes les fonctionnalités V1 sont présentes sur le staging.
@@ -137,7 +140,7 @@ Taille : **S** = 1–2 fichiers · **M** = 3–5 fichiers. Aucune tâche L/XL.
 
 | # | Tâche | Taille | Dépend de | Critère d'acceptation clé |
 |---|---|---|---|---|
-| T31 | Onboarding en 4 étapes (profil → contrat → HA avec attente du 1er push → CSV facultatif) | M | T9, T17, T22 | un compte neuf atteint un dashboard alimenté sans lire de doc |
+| T31 | Onboarding en 5 étapes (profil → commune → contrat → HA avec attente du 1er push → CSV facultatif) | M | T9, T16b, T17, T22 | un compte neuf atteint un dashboard alimenté sans lire de doc |
 | T32 | Réglages restants : combustibles, journal des 20 derniers pushes, compte (mot de passe, suppression du compte et des données), `SIGNUP_MODE` | M | T9 | la suppression du compte efface toutes les lignes du foyer (test) |
 | T33 | E2E Playwright (parcours PRD 1–3, onboarding, 5 profils × 2 viewports), test de charge sur l'ingestion, Lighthouse | M | T31 | critères de réussite n° 4, 5 et 7 |
 | T34 | Docs open source (README, `docs/api.md`, `docs/csv-format.md`, CONTRIBUTING), image publiée, déploiement de prod | S | T33 | une install depuis le README seul fonctionne |
@@ -161,6 +164,7 @@ Taille : **S** = 1–2 fichiers · **M** = 3–5 fichiers. Aucune tâche L/XL.
 | Format ou disponibilité de l'API Tempo (service communautaire non garanti) | Moyen | repli sur le seed, interface `TempoSource` prête pour RTE ; tests MSW ; « jours supposés » visibles |
 | Better Auth avec Next 15 et Drizzle (versions récentes) | Moyen | traité dès T2 (fail fast) ; repli possible sur Auth.js |
 | Perf des agrégats si un foyer pousse plus fin que prévu | Faible | index `(household_id, start)` ; mesure au T33 ; vue matérialisée journalière si besoin |
+| Disponibilité ou conditions d'Open-Meteo (gratuit en non commercial, environ 10 000 appels par jour) | Faible | une requête par maille et par jour, interface `WeatherSource` remplaçable (Météo-France, par exemple), journée manquante reprise au passage suivant |
 | Cron Coolify pour `tempo:sync` | Faible | repli : passe de rattrapage au démarrage et à la consultation de Contrats |
 | Exactitude des grilles tarifaires de référence (prix 2026) | Moyen | fixtures avec les prix saisis à la main, sourcés dans le fichier de fixture |
 | Mode quotidien sans Tempo ni plages HC alternatives | Faible | limite documentée, bandeau UI (T18) |
@@ -169,3 +173,4 @@ Taille : **S** = 1–2 fichiers · **M** = 3–5 fichiers. Aucune tâche L/XL.
 
 - Coolify : projet **« wattsup »**, domaine **`wattsup-energy.kraftpunk.app`**. Il sert d'instance de recette (appelée « staging » dans ce plan) dès T11, puis de prod.
 - Tempo : **service communautaire seul** en V1, plus le seed ; RTE reporté.
+- Météo (2026-10-03) : **Open-Meteo** côté serveur à la place de HA, avec la durée d'ensoleillement et l'irradiation pour la production solaire ; nouvelle tâche T16b.

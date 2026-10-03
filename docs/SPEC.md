@@ -2,7 +2,7 @@
 
 > Statut : **validée** (phase 1 « Specify »), réponses du 2026-10-02 intégrées.
 > Sources : [PRD](./PRD%20HA%20energy%20analyze.md) · maquette [`wattsup-energy-app-design/project/WattsUpApp.dc.html`](./wattsup-energy-app-design/project/WattsUpApp.dc.html)
-> Dernière mise à jour : 2026-10-02
+> Dernière mise à jour : 2026-10-03 (météo via Open-Meteo, retours du branchement HA réel)
 
 ---
 
@@ -13,7 +13,7 @@ Application web open source (SaaS + auto-hébergeable) qui reçoit les données 
 1. affiche le budget énergie mensuel et annuel, toutes sources confondues ;
 2. simule le coût de la consommation réelle sur plusieurs contrats (Base, HP/HC, Tempo, complexes) et désigne le moins cher ;
 3. calcule le ROI de l'installation solaire et de la batterie ;
-4. consolide le coût de chauffe (électricité dédiée + granulés + bois) face à la météo locale ;
+4. consolide le coût de chauffe (électricité dédiée + granulés + bois) face à la météo locale, et met la production solaire en regard de l'ensoleillement ;
 5. prévoit les achats de combustible pour la saison suivante ;
 6. masque tout module non déclaré dans le profil énergétique.
 
@@ -83,6 +83,7 @@ pnpm db:generate               # drizzle-kit generate (nouvelle migration)
 pnpm db:migrate                # drizzle-kit migrate
 pnpm db:seed                   # foyer démo + 2 ans de données synthétiques
 pnpm tempo:sync                # récupère les couleurs Tempo manquantes (communautaire → seed)
+pnpm weather:sync              # météo Open-Meteo de la veille (et rattrapage) pour chaque maille de foyers
 docker compose up -d db        # Postgres local pour dev et tests
 docker compose up --build      # stack complète (app + db)
 ```
@@ -120,6 +121,7 @@ docker compose up --build      # stack complète (app + db)
 ├─ drizzle/                        → migrations SQL générées
 ├─ data/tempo-seed.json            → amorçage de l'historique Tempo (repli hors-ligne)
 ├─ scripts/tempo-sync.ts           → synchronisation du calendrier Tempo
+├─ scripts/weather-sync.ts         → synchronisation météo Open-Meteo
 ├─ homeassistant/
 │  ├─ blueprints/wattsup_push.yaml → blueprint d'automatisation
 │  └─ README.md                    → installation côté HA (rest_command + secrets)
@@ -142,12 +144,12 @@ Toutes les tables métier portent `household_id` (FK, `ON DELETE CASCADE`). **Au
 | Table | Rôle | Colonnes clés |
 |---|---|---|
 | `user`, `session`, `account`, `verification` | Better Auth | — |
-| `household` | foyer (1 par user en V1) | `id`, `owner_id`, `name`, `timezone` (défaut `Europe/Paris`), `granularity` (`hourly`\|`daily`), `profile` JSONB `{solar,battery,pellet,wood,electricHeating}` |
+| `household` | foyer (1 par user en V1) | `id`, `owner_id`, `name`, `timezone` (défaut `Europe/Paris`), `granularity` (`hourly`\|`daily`), `profile` JSONB `{solar,battery,pellet,wood,electricHeating}`, `location` JSONB `{label, lat, lon}` (coordonnées arrondies à 0,01°, voir §7.9) |
 | `ingest_token` | tokens HA | `id`, `household_id`, `prefix` (affiché), `hash` (sha-256), `created_at`, `last_used_at`, `revoked_at` |
 | `ingest_log` | journal des pushes (30 j) | `household_id`, `received_at`, `status`, `error`, `payload_size` |
 | `meter_state` | dernier index connu par métrique, pour calculer les deltas | `household_id`, `metric`, `ts`, `value` |
 | `energy_interval` | **table de faits** | `household_id`, `start` (timestamptz), `granularity` (`hour`\|`day`), `metric`, `tariff_slot` (`all`\|`hp`\|`hc`), `kwh` numeric(12,4), `source` (`ha`\|`csv`) — PK `(household_id, metric, start, granularity, tariff_slot)` |
-| `weather_daily` | météo locale agrégée | `household_id`, `date`, `t_min`, `t_max`, `t_sum`, `t_count` (moyenne et DJU calculés à la lecture) |
+| `weather_daily` | météo quotidienne **globale par maille** (donnée publique Open-Meteo, partagée entre les foyers d'une même maille de 0,01°) | `lat_e2`, `lon_e2` (coordonnées × 100, entiers), `date`, `t_min`, `t_max`, `t_mean`, `sunshine_s`, `radiation_mj_m2`, `source` (`forecast`\|`archive`), `fetched_at` — PK `(lat_e2, lon_e2, date)`. DJU calculé à la lecture. Remplace la table par foyer alimentée par HA jusqu'à T16b |
 | `tempo_calendar` | couleurs Tempo **globales** (partagées entre tous les foyers, donnée publique) | `date` PK, `color` (`bleu`\|`blanc`\|`rouge`), `source` (`rte`\|`community`\|`seed`), `fetched_at` |
 | `tempo_override` | couleur poussée par HA ou corrigée à la main, par foyer | `household_id`, `date`, `color`, `source` (`ha`\|`manual`) |
 | `category` | postes sur mesure | `id`, `household_id`, `name`, `slug` (clé du payload), `icon`, `color`, `is_heating` |
@@ -199,7 +201,7 @@ Règles :
 - Une valeur **inférieure** à l'index précédent est traitée comme un reset : le delta vaut la nouvelle valeur.
 - Un trou de plus de 24 h ne crée pas de données : le delta est absorbé et un avertissement est consigné dans `ingest_log`.
 - Une clé de `categories` inconnue est ignorée, avec un avertissement dans la réponse.
-- La température est stockée en min, max et moyenne par jour, et le DJU est calculé en fin de journée (base 18 °C).
+- Le bloc `weather` reste accepté (compatibilité du contrat v1) mais **n'est plus exploité à partir de T16b** : il renvoie l'avertissement `ignored_block`. La météo vient d'Open-Meteo (§7.9).
 
 ### 6.2 Mode quotidien (`household.granularity = daily`)
 
@@ -220,6 +222,8 @@ HA envoie **les totaux de la veille** (utility_meter quotidiens HP et HC), une f
   "fuel": { "pellet_bags": 1, "wood_steres": 0 }
 }
 ```
+
+`weather` : même règle qu'en horaire, accepté mais ignoré à partir de T16b.
 
 Règles :
 - `grid_import` vaut `{ hp_kwh, hc_kwh }` (contrat HP/HC ou Tempo) ou `{ kwh }` (contrat Base), jamais un mélange des deux.
@@ -288,7 +292,7 @@ Le rate limiting utilise une fenêtre glissante en mémoire, par token (instance
   - bois : 1 800 kWh/stère (feuillu sec, < 20 % d'humidité) ;
   - électrique : 1 kWh = 1 kWh.
 - **Saison de chauffe** : du 1er octobre au 30 avril (paramétrable).
-- **DJU** = Σ max(0, 18 − t_avg) par jour.
+- **DJU** = Σ max(0, 18 − t_mean) par jour, avec `t_mean` issue d'Open-Meteo (§7.9).
 
 ### 7.5 Prévision de réapprovisionnement
 ```
@@ -345,6 +349,23 @@ Le serveur interroge des API Tempo publiques. **Aucune donnée utilisateur n'est
 - **Isolation** : tout l'accès réseau passe par `src/server/tempo/` derrière une interface `TempoSource` ; le domaine reste pur.
 - Variable d'env `TEMPO_SYNC=off` pour les instances qui refusent tout appel sortant.
 
+### 7.9 Météo (Open-Meteo)
+La météo ne passe plus par Home Assistant : le serveur la récupère auprès d'**Open-Meteo** (gratuit pour un usage non commercial ou open source, sans clé). Les données de la veille suffisent : aucune donnée en temps réel n'est nécessaire.
+
+| Variable quotidienne Open-Meteo | Stockage | Usage |
+|---|---|---|
+| `temperature_2m_min` / `_max` / `_mean` | `t_min`, `t_max`, `t_mean` (°C) | DJU, corrélation avec le chauffage, scénario de la prévision |
+| `sunshine_duration` | `sunshine_s` (secondes, affichées en heures) | production solaire mise en regard de l'ensoleillement |
+| `shortwave_radiation_sum` | `radiation_mj_m2` (MJ/m², affiché en kWh/m² = ÷ 3,6) | rendement solaire normalisé : kWh produits ÷ kWh/m² reçus |
+
+- **Localisation du foyer** : l'utilisateur cherche sa commune (API de géocodage Open-Meteo, sans clé) dans l'onboarding ou dans Réglages. On stocke le libellé et les coordonnées **arrondies à 0,01°** (environ 1 km).
+- **Vie privée** : seules ces coordonnées arrondies sont envoyées, sans aucun identifiant. Les foyers d'une même maille partagent les mêmes lignes, donc une seule requête par maille et par jour.
+- **Quand** : script `pnpm weather:sync`, lancé chaque jour à 07:00 par la même tâche planifiée que Tempo. Il demande l'API *forecast* avec `past_days=3` et `timezone=Europe/Paris`, et met à jour les 3 derniers jours, dont la veille, qui fait référence. Au démarrage, une passe de rattrapage comble les trous.
+- **Historique** : à l'enregistrement de la localisation, et pour couvrir les périodes importées en CSV, l'API *archive* (réanalyse ERA5, disponible avec environ 5 jours de retard) remplit jusqu'à 3 ans en arrière. La prévision et les DJU fonctionnent ainsi dès le premier jour, sans attendre un hiver d'historique HA.
+- **Robustesse** : timeout de 10 s, 3 essais avec backoff ; un échec n'est jamais bloquant, la journée manquante est reprise au passage suivant. `WEATHER_SYNC=off` désactive tout appel sortant.
+- **Isolation** : l'accès réseau passe par `src/server/weather/`, derrière une interface `WeatherSource` ; les calculs (DJU, rendement) restent dans `src/domain`.
+- **Sans localisation** : les cartes météo affichent un état vide « Indiquez votre commune » avec un lien vers Réglages ; la prévision retombe sur la saisie manuelle des DJU.
+
 ## 8. Blueprint Home Assistant (livré en V1)
 
 `homeassistant/blueprints/wattsup_push.yaml` :
@@ -352,6 +373,10 @@ Le serveur interroge des API Tempo publiques. **Aucune donnée utilisateur n'est
 - Déclencheur : `time_pattern` toutes les heures (minute 0), ou `time` à 00:05 en mode quotidien.
 - Action : `rest_command.wattsup_push`. L'URL et le token vivent dans `secrets.yaml` (README pas à pas).
 - Les capteurs `unavailable` ou `unknown` sont omis du payload au lieu d'envoyer 0.
+- Les unités Wh, kWh et MWh sont converties en kWh d'après `unit_of_measurement`.
+- Un envoi accepté sans aucune donnée d'énergie (`no_energy_data`) déclenche, comme un refus, une notification persistante dans HA.
+- Les entrées météo (température, min, max, moyenne) restent présentes pour ne pas casser les automatisations existantes, mais deviennent **facultatives et ignorées** à partir de T16b ; leur description l'indique.
+- Retours du branchement réel (2026-10-03) : en horaire, il faut des **index cumulés temps réel**. Les index Linky issus de l'API Enedis ne changent qu'une fois par jour ; les compteurs « du jour » ou « du mois » repartent à zéro. Le mode quotidien n'accepte que des `utility_meter`, qui exposent l'attribut `last_period`.
 
 ---
 
@@ -361,13 +386,13 @@ Ce qui est ajouté ou modifié par rapport au prototype pour couvrir la spec :
 
 | Écran | Ajouts / changements |
 |---|---|
-| **Auth & onboarding** (nouveau) | Connexion et inscription. Assistant en 4 étapes : profil énergétique → contrat actuel (Base / HP/HC / Tempo, prix, plages HC) → connexion HA (token + téléchargement du blueprint + test « en attente du 1er push ») → import CSV facultatif. |
+| **Auth & onboarding** (nouveau) | Connexion et inscription. Assistant en 5 étapes : profil énergétique → **commune** (recherche, pour la météo) → contrat actuel (Base / HP/HC / Tempo, prix, plages HC) → connexion HA (token + téléchargement du blueprint + test « en attente du 1er push ») → import CSV facultatif. |
 | **États vides** (nouveau, transverse) | Chaque carte gère « aucune donnée » (CTA connecter HA ou importer). Un badge de couverture (% d'heures ou de jours reçus) apparaît sur les calculs. |
-| **Vue d'ensemble** | Mois et années issus des données réelles, plus de listes figées. Sélecteur période mois / année avec navigation ‹ ›. En mode quotidien, la carte « Origine de la consommation » passe au jour (pas d'intrajournalier). |
-| **Chauffage** | Barre d'actions rapides : **« + Sac versé »** (avec toast d'annulation de 10 s), « + ½ stère », « Achat », « Corriger le stock ». Le stepper de stock affiche le **stock calculé** et le modifier crée une correction. Journal des derniers événements (modifiables et supprimables). Ligne d'équivalence kWh et DJU de la saison. État « données insuffisantes » pour la prévision. |
-| **Rentabilité** | Bouton « Modifier » sur chaque carte → feuille équipement (libellé libre, capacité, date d'installation, coût). La ligne « dont revente surplus » n'apparaît que si la revente est activée. Mention « charge réseau incluse » si l'option est active. |
+| **Vue d'ensemble** | Mois et années issus des données réelles, plus de listes figées. Sélecteur période mois / année avec navigation ‹ ›. En mode quotidien, la carte « Origine de la consommation » passe au jour (pas d'intrajournalier). Si le solaire est actif, carte **« Production et ensoleillement »** : 30 derniers jours, barres de production quotidienne et courbe des heures d'ensoleillement, avec le rendement du mois (kWh produits par kWh/m² reçu) comparé au même mois de l'année précédente. |
+| **Chauffage** | Barre d'actions rapides : **« + Sac versé »** (avec toast d'annulation de 10 s), « + ½ stère », « Achat », « Corriger le stock ». Le stepper de stock affiche le **stock calculé** et le modifier crée une correction. Journal des derniers événements (modifiables et supprimables). Ligne d'équivalence kWh et DJU de la saison (température Open-Meteo, avec la commune en légende). État « données insuffisantes » pour la prévision. |
+| **Rentabilité** | Bouton « Modifier » sur chaque carte → feuille équipement (libellé libre, capacité, date d'installation, coût). La ligne « dont revente surplus » n'apparaît que si la revente est activée. Mention « charge réseau incluse » si l'option est active. Sur la carte solaire, l'écart au rendement attendu (même ensoleillement) signale une baisse de production : panneaux sales, onduleur en défaut. |
 | **Contrats** | Le bouton « + Simuler un nouveau contrat » ouvre un **éditeur** par type (Base, HP/HC avec plages multiples, Tempo avec 6 prix, Custom avec règles jour et plage). Actions dupliquer, supprimer et « définir comme actuel ». Calendrier Tempo de la période avec indicateur de source et correction manuelle d'un jour. Bandeau « simulation approximative » en mode quotidien pour un contrat HP/HC dont les plages diffèrent du contrat actuel. |
-| **Réglages** | Sections : Profil énergétique · **Ingestion** (granularité horaire / quotidienne, token avec régénérer et révoquer, journal des 20 derniers pushes, téléchargement du blueprint) · **Solaire & batterie** (revente + prix, charge depuis le réseau) · **Combustibles** (poids du sac, sacs par palette, saison de chauffe, facteurs kWh) · Postes de consommation (icône, couleur, case « chauffage », slug affiché pour HA) · Import CSV (aperçu + rapport d'erreurs) · Compte (mot de passe, suppression du compte et des données). |
+| **Réglages** | Sections : Profil énergétique · **Localisation** (recherche de commune, coordonnées arrondies affichées, état de la dernière synchro météo) · **Ingestion** (granularité horaire / quotidienne, token avec régénérer et révoquer, journal des 20 derniers pushes, téléchargement du blueprint) · **Solaire & batterie** (revente + prix, charge depuis le réseau) · **Combustibles** (poids du sac, sacs par palette, saison de chauffe, facteurs kWh) · Postes de consommation (icône, couleur, case « chauffage », slug affiché pour HA) · Import CSV (aperçu + rapport d'erreurs) · Compte (mot de passe, suppression du compte et des données). |
 
 Les dimensions, couleurs et composants de base (cartes, segmented control, jauges, barres SVG) reprennent la maquette. Pour les nouveaux écrans, on applique le même langage visuel sans maquette dédiée.
 
@@ -412,6 +437,7 @@ Conventions :
 |---|---|---|---|
 | Unitaire | Vitest | `src/domain/**` : tarifs (Base, HP/HC multi-plages, Tempo et sa frontière 6 h, changement d'heure été/hiver), deltas d'index et resets, DJU, prévision, ROI, `visibleModules` | **≥ 90 % de lignes** sur `src/domain` ; TDD pour le moteur tarifaire |
 | Intégration (Tempo) | Vitest + MSW (HTTP mocké) | `TempoSource` : succès de la source communautaire, repli sur le seed en cas de timeout, de 5xx ou de format inattendu, idempotence de l'upsert, `TEMPO_SYNC=off` = zéro appel réseau | aucun appel réseau réel en CI |
+| Intégration (météo) | Vitest + MSW | `WeatherSource` : parsing *forecast* et *archive*, conversions (s → h, MJ/m² → kWh/m²), mutualisation par maille, reprise après échec, `WEATHER_SYNC=off` = zéro appel réseau ; domaine : DJU et rendement solaire | aucun appel réseau réel en CI |
 | Intégration | Vitest + Postgres Docker | route `/api/v1/ingest` (200/400/401/409/413/429), idempotence quotidienne, import CSV, **isolation multi-tenant** (le foyer A ne lit ni n'écrit jamais les données du foyer B, testé sur chaque action serveur) | tous les codes de retour couverts |
 | E2E | Playwright (Chromium, viewports 1280 et 390) | parcours PRD 1, 2 et 3 + onboarding + copie du token | 1 test par parcours |
 | Fixtures de référence | JSON | 1 an de données réelles anonymisées + coût attendu calculé à la main pour 3 contrats | écart ≤ 0,01 € |
@@ -440,7 +466,7 @@ Les tests d'intégration démarrent sur une base vide migrée (`pnpm db:migrate`
 - Committer un secret ou un token, ou logguer un token en clair (préfixe seulement).
 - Stocker un token non haché.
 - Interroger l'instance HA de l'utilisateur (pull exclu de la V1).
-- Appeler des API tierces en V1 (fournisseurs, météo…), **sauf** les sources Tempo du §7.8, et jamais avec une donnée utilisateur.
+- Appeler des API tierces en V1 (fournisseurs…), **sauf** les sources Tempo (§7.8) et Open-Meteo (§7.9), et jamais avec une donnée utilisateur. Seule exception : les coordonnées arrondies à 0,01°, envoyées sans identifiant.
 - Supprimer ou désactiver un test en échec sans accord.
 
 ---
@@ -459,7 +485,7 @@ Les tests d'intégration démarrent sur une base vide migrée (`pnpm db:migrate`
 ---
 
 ## 14. Hors périmètre V1 (rappel PRD)
-Pull HA, API des fournisseurs ou de la météo, appli native, foyers multi-membres, alertes de stock (phase 4), vues comparatives annuelles avancées (phase 4).
+Pull HA, API des fournisseurs, appli native, foyers multi-membres, alertes de stock (phase 4), vues comparatives annuelles avancées (phase 4).
 
 ---
 
@@ -474,8 +500,9 @@ Pull HA, API des fournisseurs ou de la météo, appli native, foyers multi-membr
 | Licence | **GPL-3.0-or-later**. NB : la GPL n'oblige pas un tiers qui opère un fork en SaaS à publier ses modifications (seule l'AGPL le fait). |
 | Maquette | Référence de **principe** (identité visuelle, ton, structure). Les écrans sont adaptés aux fonctionnalités et décisions de cette spec (§9). |
 | Granulés et bois | Saisie manuelle prioritaire (« + Sac versé », « Achat », « Corriger le stock ») ; compteur HA optionnel ; poids du sac paramétrable (15 kg par défaut). |
-| Hébergement | Projet Coolify **« wattsup »** sur le VPS, domaine **`wattsup-energy.kraftpunk.app`** (app + Postgres). Sert d'instance de recette dès le jalon 1, puis de prod. |
+| Hébergement | Projet Coolify « WattsUp Energy » sur le VPS, application Dockerfile, domaine **`wattsup-energy.kraftpunk.app`** ; base `wattsup` sur la ressource partagée `postgres-partage` (une base par appli), sauvegardée chaque nuit et vérifiée par `check-backups`. Sert d'instance de recette dès le jalon 1, puis de prod. |
 | Inscription SaaS | Variable d'env `SIGNUP_MODE=open\|invite\|closed` (défaut `open` en auto-hébergé). |
+| Météo (2026-10-03) | Récupérée côté serveur auprès d'**Open-Meteo** (température min/max/moyenne, durée d'ensoleillement, irradiation) pour la commune du foyer, données de la veille ; HA ne fournit plus la météo. Exception assumée au « pas d'API météo » du PRD, au même titre que Tempo. |
 | Fiche équipement | Feuille « Modifier l'équipement » ouverte depuis chaque carte ROI (libellé, capacité, date d'installation, coût). |
 
 ## 16. Questions ouvertes

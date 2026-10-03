@@ -2,7 +2,7 @@
 
 > Statut : **brouillon à valider** (phase 3 « Tasks »)
 > Sources : [SPEC.md](./SPEC.md) · [PLAN.md](./PLAN.md)
-> Dernière mise à jour : 2026-10-02
+> Dernière mise à jour : 2026-10-03
 
 ## Définition de « terminé » (s'applique à chaque tâche)
 
@@ -167,6 +167,17 @@ Légende des tailles : **S** = 1–2 fichiers · **M** = 3–5 fichiers (hors te
   - Vérifier : `pnpm test tests/integration/tempo-sync` (MSW, aucun appel réel) ; manuel : `tempo_calendar` rempli sur 2 ans sur l'instance Coolify
   - Fichiers : `src/server/tempo/source.ts`, `src/server/tempo/community.ts`, `src/server/tempo/sync.ts`, `scripts/tempo-sync.ts`, `data/tempo-seed.json`
 
+- [ ] **T16b — Météo Open-Meteo** · M · Dépend de : T2, T16
+  - Acceptation :
+    - `household.location` `{label, lat, lon}` (arrondi à 0,01°) ; recherche de commune par l'API de géocodage Open-Meteo (Server Action, résultats limités à la France en priorité) ; Réglages › Localisation
+    - Table `weather_daily` **globale par maille** (`lat_e2`, `lon_e2`, `date`) avec `t_min`, `t_max`, `t_mean`, `sunshine_s`, `radiation_mj_m2`, `source` ; migration qui retire l'ancienne table par foyer alimentée par HA
+    - `OpenMeteoSource` derrière `WeatherSource` : *forecast* (`past_days=3`, `timezone=Europe/Paris`) et *archive* (jusqu'à 3 ans en arrière à l'enregistrement de la localisation) ; timeout de 10 s, 3 essais ; une requête par maille, jamais d'identifiant envoyé
+    - `pnpm weather:sync` (veille + rattrapage) dans la même tâche planifiée Coolify que Tempo, à 07:00 ; `WEATHER_SYNC=off` = aucun appel sortant
+    - Ingestion : le bloc `weather` du payload renvoie `ignored_block` ; les entrées météo du blueprint sont décrites comme obsolètes (clés conservées) et retirées de l'automatisation d'Alexandre
+    - Domaine : `dju(t_mean)`, conversions (s → h, MJ/m² → kWh/m²)
+  - Vérifier : `pnpm test tests/integration/weather-sync tests/unit/domain/weather` (MSW, aucun appel réel) ; manuel : sur l'instance Coolify, la commune d'Alexandre a 3 ans d'historique et la veille arrive chaque matin
+  - Fichiers : `src/server/weather/source.ts`, `src/server/weather/open-meteo.ts`, `src/server/weather/sync.ts`, `scripts/weather-sync.ts`, `src/app/(app)/reglages/location-card.tsx`, `src/domain/weather.ts`
+
 - [ ] **T17 — CRUD des contrats** · M · Dépend de : T12, T13, T14
   - Acceptation :
     - Éditeur par type (Base / HP-HC avec plages multiples / Tempo à 6 prix / Custom à règles), validé par Zod
@@ -195,10 +206,11 @@ Légende des tailles : **S** = 1–2 fichiers · **M** = 3–5 fichiers (hors te
   - Vérifier : `pnpm test tests/integration/categories` (+ isolation)
   - Fichiers : `src/server/actions/categories.ts`, `src/app/(app)/reglages/categories-card.tsx`
 
-- [ ] **T20 — Vue d'ensemble** · M · Dépend de : T12, T15, T19
+- [ ] **T20 — Vue d'ensemble** · M · Dépend de : T12, T15, T16b, T19
   - Acceptation :
     - Requêtes agrégées par mois et par jour dans le fuseau du foyer ; périodes issues des données (navigation ‹ › mois/année)
     - Cartes : budget toutes sources (élec via le moteur, combustibles au prix moyen pondéré), KPI solaire/batterie/réseau conditionnés au profil, coût mensuel par source avec détail du mois sélectionné, origine de la conso (le jour en mode quotidien), postes
+    - Si le solaire est actif : carte « Production et ensoleillement » (30 jours, barres de production et courbe des heures d'ensoleillement, rendement du mois en kWh par kWh/m², comparé à N-1)
   - Vérifier : test d'intégration sur le seed (total de la vue = somme moteur + combustibles) ; manuel à 1280 et 390 px
   - Fichiers : `src/server/queries/overview.ts`, `src/app/(app)/page.tsx`, `src/components/charts/stacked-bars.tsx`, `src/components/cards/*`
 
@@ -239,9 +251,9 @@ Légende des tailles : **S** = 1–2 fichiers · **M** = 3–5 fichiers (hors te
   - Vérifier : `pnpm test tests/integration/fuel-events` (+ isolation) ; manuel sur mobile
   - Fichiers : `src/server/actions/fuel.ts`, `src/app/(app)/chauffage/quick-actions.tsx`, `src/app/(app)/chauffage/fuel-log.tsx`
 
-- [ ] **T25 — DJU, équivalences et coût de chauffe (domaine)** · S · Dépend de : T12, T23
+- [ ] **T25 — DJU, équivalences et coût de chauffe (domaine)** · S · Dépend de : T12, T16b, T23
   - Acceptation :
-    - DJU de saison (base 18 °C, bornes de saison paramétrables)
+    - DJU de saison (base 18 °C, `t_mean` Open-Meteo, bornes de saison paramétrables)
     - Équivalences kWh (4,8 kWh/kg, sac de 15 kg, 1 800 kWh/stère, modifiables)
     - Coût de chauffe = catégories `is_heating` passées au moteur + combustibles au prix moyen pondéré
   - Vérifier : `pnpm test tests/unit/domain/heating`
@@ -274,9 +286,10 @@ Légende des tailles : **S** = 1–2 fichiers · **M** = 3–5 fichiers (hors te
   - Vérifier : `pnpm test tests/integration/equipment` (+ isolation)
   - Fichiers : `src/server/actions/equipment.ts`, `src/app/(app)/rentabilite/equipment-sheet.tsx`, `src/app/(app)/reglages/solar-battery-card.tsx`
 
-- [ ] **T29 — ROI solaire et batterie (domaine)** · S · Dépend de : T12, T28
+- [ ] **T29 — ROI solaire et batterie (domaine)** · S · Dépend de : T12, T16b, T28
   - Acceptation :
     - Formules de la spec §7.2–7.3 ; prix du kWh évité au créneau via le moteur sur le contrat actuel
+    - Rendement solaire normalisé : kWh produits ÷ kWh/m² reçus (irradiation Open-Meteo), par jour et par mois ; écart au rendement de référence (médiane des 12 derniers mois)
     - Tests sur les 4 combinaisons revente × charge réseau ; projection de la date d'amortissement (économie moyenne sur 12 mois)
   - Vérifier : `pnpm test tests/unit/domain/roi`
   - Fichiers : `src/domain/roi/solar.ts`, `src/domain/roi/battery.ts`
@@ -285,6 +298,7 @@ Légende des tailles : **S** = 1–2 fichiers · **M** = 3–5 fichiers (hors te
   - Acceptation :
     - Carte par équipement actif : jauge % amorti, économies cumulées et mensuelles, frise de l'installation à l'amortissement, statut
     - Ligne « dont revente » seulement si la revente est activée ; mention si la charge réseau est active
+    - Carte solaire : rendement normalisé du mois et alerte si la production est sous le rendement attendu pour l'ensoleillement reçu (seuil de −15 %)
   - Vérifier : e2e parcours PRD 3 ; manuel
   - Fichiers : `src/app/(app)/rentabilite/page.tsx`, `src/server/queries/roi.ts`, `src/components/charts/ring-gauge.tsx`
 
@@ -294,9 +308,9 @@ Légende des tailles : **S** = 1–2 fichiers · **M** = 3–5 fichiers (hors te
 
 ## Jalon 6 : Onboarding, finitions, release
 
-- [ ] **T31 — Onboarding** · M · Dépend de : T9, T17, T22
+- [ ] **T31 — Onboarding** · M · Dépend de : T9, T16b, T17, T22
   - Acceptation :
-    - 4 étapes, reprenables : profil → contrat actuel → HA (token, téléchargement du blueprint, attente du 1er push en direct) → CSV facultatif
+    - 5 étapes, reprenables : profil → commune (météo) → contrat actuel → HA (token, téléchargement du blueprint, attente du 1er push en direct) → CSV facultatif
     - Affiché à la première connexion ; peut être sauté ; relançable depuis Réglages
   - Vérifier : e2e « compte neuf → dashboard alimenté »
   - Fichiers : `src/app/(app)/bienvenue/*`, `src/server/actions/onboarding.ts`

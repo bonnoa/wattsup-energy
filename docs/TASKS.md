@@ -210,7 +210,7 @@ Légende des tailles : **S** = 1–2 fichiers · **M** = 3–5 fichiers (hors te
 
 ## Jalon 3 : Vue d'ensemble, postes et historique
 
-- [ ] **T19 — Postes de consommation** · S · Dépend de : T4
+- [x] **T19 — Postes de consommation** · S · Dépend de : T4
   - Acceptation :
     - CRUD : nom, slug (généré, modifiable, unique par foyer), icône (jeu d'icônes intégré), couleur, case `is_heating`
     - Le slug est affiché avec un bouton « copier pour HA » ; une clé inconnue dans le payload renvoie un avertissement (déjà géré en T8, test ajouté)

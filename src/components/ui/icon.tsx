@@ -9,6 +9,17 @@ const PATHS = {
   key: "M14.5 9.5a4 4 0 1 0-1.4 3.1L21 20.5M17 16.5l2-2M15 14.5l1.5-1.5",
   pin: "M12 21s-6.5-6-6.5-11a6.5 6.5 0 0 1 13 0c0 5-6.5 11-6.5 11zM12 12.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z",
   sliders: "M4 7h10M18 7h2M4 17h4M12 17h8M14 4.5v5M8 14.5v5",
+  // Postes de consommation (CATEGORY_ICONS, src/domain/categories.ts)
+  droplet: "M12 3s-6 6.5-6 11a6 6 0 0 0 12 0c0-4.5-6-11-6-11z",
+  flame: "M12 2c1 4 5 6 5 11a5 5 0 0 1-10 0c0-2 1-3.5 2-4.5 0 2 1 3 2 3 0-3-1-6 1-9.5z",
+  plug: "M9 3v5M15 3v5M6 8h12v3a6 6 0 0 1-12 0zM12 17v4",
+  car: "M5 16V11l2-5h10l2 5v5M3 16h18v3H3zM7 19v2M17 19v2M5 11h14",
+  washer: "M5 3h14v18H5zM5 7h14M12 10.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7zM8 5h.01",
+  snowflake: "M12 2v20M3.3 7l17.4 10M3.3 17 20.7 7M9 4l3 2 3-2M9 20l3-2 3 2",
+  fan: "M12 12c0-4 1-8 4-8s2 5-4 8zM12 12c4 0 8 1 8 4s-5 2-8-4zM12 12c0 4-1 8-4 8s-2-5 4-8zM12 12c-4 0-8-1-8-4s5-2 8 4z",
+  waves: "M2 9c2.5-2 4.5-2 7 0s4.5 2 7 0 4.5-2 6 0M2 15c2.5-2 4.5-2 7 0s4.5 2 7 0 4.5-2 6 0",
+  monitor: "M3 4h18v12H3zM8 20h8M12 16v4",
+  home: "M3 10.5 12 3l9 7.5V21h-6v-6H9v6H3z",
 } as const;
 
 export type IconName = keyof typeof PATHS;

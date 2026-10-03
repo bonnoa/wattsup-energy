@@ -215,6 +215,7 @@ Règles :
 - Une valeur **inférieure** à l'index précédent est traitée comme un reset : le delta vaut la nouvelle valeur.
 - Un trou de plus de 24 h ne crée pas de données : le delta est absorbé et un avertissement est consigné dans `ingest_log`.
 - Une clé de `categories` inconnue est ignorée, avec un avertissement dans la réponse.
+- **Postes de consommation** (T19) : slug proposé à partir du nom (minuscules sans accents, tirets), modifiable, unique par foyer. Changer le slug renomme les données déjà reçues (`energy_interval` et `meter_state`, métrique `category:<slug>`) ; supprimer un poste supprime ses données. Les slugs signalés `unknown_category` par les envois des 7 derniers jours sont proposés à la création dans Réglages (« Créer le poste »). Pictogrammes et couleurs pris dans un jeu fixe (`CATEGORY_ICONS`, tokens de la charte).
 - Le bloc `weather` est **retiré du contrat en T16b** (schéma, persistance, table par foyer). Ce n'est pas une rupture : l'API ignore déjà les clés inconnues. La météo vient d'Open-Meteo (§7.9).
 
 ### 6.2 Mode quotidien (`household.granularity = daily`)

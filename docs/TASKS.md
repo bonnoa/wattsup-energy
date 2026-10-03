@@ -137,7 +137,7 @@ Légende des tailles : **S** = 1–2 fichiers · **M** = 3–5 fichiers (hors te
   - Vérifier : `pnpm test tests/unit/domain/tariff`
   - Fichiers : `src/domain/tariff/types.ts`, `src/domain/tariff/engine.ts`, `src/domain/tariff/pricer.ts`, `src/domain/tariff/base-hphc.ts`, `src/lib/time.ts`
 
-- [ ] **T13 — Tarif Tempo** · S · Dépend de : T12
+- [x] **T13 — Tarif Tempo** · S · Dépend de : T12
   - Acceptation :
     - 6 prix, HC de 22 h à 6 h, jour Tempo de 6 h à 6 h (0–6 h appartient à la veille)
     - `colorOf` injecté ; jour inconnu → bleu + compteur `assumedDays`

@@ -22,7 +22,16 @@ export interface HphcContract {
   hcRanges: TimeRange[];
 }
 
-export type Contract = BaseContract | HphcContract;
+export type TempoColor = "bleu" | "blanc" | "rouge";
+
+/** Tempo : 6 prix (couleur × créneau). Heures creuses fixes de 22 h à 6 h. */
+export interface TempoContract {
+  kind: "tempo";
+  subscriptionEurYear: number;
+  prices: Record<TempoColor, Record<Slot, number>>;
+}
+
+export type Contract = BaseContract | HphcContract | TempoContract;
 
 export type PriceableInterval =
   | { granularity: "hour"; start: Date; kwh: number }
@@ -32,6 +41,8 @@ export interface PricingContext {
   timezone: string;
   /** Période d'abonnement, jours locaux [from, to). */
   period: { from: string; to: string };
+  /** Couleur d'un jour Tempo (AAAA-MM-JJ) ; undefined si inconnue. Requis pour Tempo. */
+  tempoColor?: (day: string) => TempoColor | undefined;
 }
 
 export interface MonthBreakdown {
@@ -53,4 +64,6 @@ export interface PricedResult {
   bySlot: Record<string, { kwh: number; energyCents: number }>;
   /** kWh dont la ventilation a dû être supposée (total journalier sans créneau). */
   approximatedKwh: number;
+  /** Jours Tempo de couleur inconnue, facturés en bleu. */
+  assumedTempoDays: number;
 }

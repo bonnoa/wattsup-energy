@@ -14,4 +14,6 @@ export interface Share {
 export interface Pricer {
   hour(local: LocalParts, start: Date): Share[];
   day(date: string, slot: Slot | null): { shares: Share[]; approximated: boolean };
+  /** Nombre de jours dont un paramètre a dû être supposé (couleur Tempo inconnue). */
+  assumedDays?(): number;
 }

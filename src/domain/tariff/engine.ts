@@ -1,5 +1,6 @@
 import { daysInYear, eachDay, localParts } from "@/lib/time";
 import { basePricer, hphcPricer } from "./base-hphc";
+import { tempoPricer } from "./tempo";
 import type { Pricer } from "./pricer";
 import type {
   Contract,
@@ -12,12 +13,14 @@ import type {
 // Les montants sont cumulés en euros exacts puis arrondis au centime une seule fois,
 // à la sortie : arrondir chaque heure ferait dériver le total de plusieurs centimes par an.
 
-function pricerFor(contract: Contract): Pricer {
+function pricerFor(contract: Contract, ctx: PricingContext): Pricer {
   switch (contract.kind) {
     case "base":
       return basePricer(contract);
     case "hphc":
       return hphcPricer(contract);
+    case "tempo":
+      return tempoPricer(contract, ctx);
   }
 }
 
@@ -34,7 +37,7 @@ export function priceIntervals(
   contract: Contract,
   ctx: PricingContext,
 ): PricedResult {
-  const pricer = pricerFor(contract);
+  const pricer = pricerFor(contract, ctx);
   const months = new Map<string, Acc>();
   const slots = new Map<string, { kwh: number; eur: number }>();
   let approximatedKwh = 0;
@@ -106,5 +109,6 @@ export function priceIntervals(
     byMonth,
     bySlot,
     approximatedKwh,
+    assumedTempoDays: pricer.assumedDays?.() ?? 0,
   };
 }

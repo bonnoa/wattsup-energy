@@ -63,3 +63,32 @@ describe("hourlyReadings", () => {
     expect(r.warnings).toEqual([{ code: "unknown_category", key: "chauffage-electrique" }]);
   });
 });
+
+describe("payload sans aucune donnée d'énergie", () => {
+  it("quotidien : avertissement no_energy_data", () => {
+    const r = dailyToIntervals(parse({ version: 1, date: "2026-10-02" }, "daily"), []);
+    expect(r.intervals).toEqual([]);
+    expect(r.warnings).toEqual([{ code: "no_energy_data" }]);
+  });
+
+  it("horaire : avertissement no_energy_data, même avec météo ou Tempo", () => {
+    const p = parse(
+      {
+        version: 1,
+        ts: "2026-10-02T12:00:00Z",
+        weather: { outdoor_temp_c: 12 },
+        tempo_color: "bleu",
+      },
+      "hourly",
+    );
+    expect(hourlyReadings(p, []).warnings).toEqual([{ code: "no_energy_data" }]);
+  });
+
+  it("seules des catégories inconnues : les deux avertissements", () => {
+    const p = parse({ version: 1, date: "2026-10-02", categories: { piscine: 3 } }, "daily");
+    expect(dailyToIntervals(p, []).warnings).toEqual([
+      { code: "unknown_category", key: "piscine" },
+      { code: "no_energy_data" },
+    ]);
+  });
+});

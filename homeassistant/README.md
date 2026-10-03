@@ -94,12 +94,13 @@ Base). Pour la météo, utilisez trois capteurs `statistics` (min, max, moyenne 
 
 - WattsUp : « Home Assistant connecté · Dernier push il y a X min » dans la navigation.
 - Home Assistant : en cas de refus (token, mode, format), une notification persistante
-  « WattsUp Energy — envoi refusé » affiche le statut et le message de l'API ; elle
-  disparaît au premier envoi accepté.
+  « WattsUp Energy — envoi refusé ou vide » affiche le statut et le message de l'API ;
+  elle disparaît au premier envoi accepté contenant des données.
 
-| Statut | Cause probable                                                         |
-| ------ | ---------------------------------------------------------------------- |
-| 401    | token absent, mal recopié (le préfixe `Bearer ` est requis) ou révoqué |
-| 409    | granularité du blueprint ≠ granularité choisie dans WattsUp            |
-| 400    | champ invalide : le message indique lequel                             |
-| 429    | plus de 120 envois par minute (automatisation en boucle ?)             |
+| Statut                 | Cause probable                                                                                                                                    |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 401                    | token absent, mal recopié (le préfixe `Bearer ` est requis) ou révoqué                                                                            |
+| 409                    | granularité du blueprint ≠ granularité choisie dans WattsUp                                                                                       |
+| 400                    | champ invalide : le message indique lequel                                                                                                        |
+| 200 + `no_energy_data` | aucun capteur lisible : en mode quotidien, ce ne sont pas des `utility_meter` (pas d'attribut `last_period`) ; en horaire, capteurs indisponibles |
+| 429                    | plus de 120 envois par minute (automatisation en boucle ?)                                                                                        |

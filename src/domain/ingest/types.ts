@@ -20,7 +20,9 @@ export type IngestWarning =
   | { code: "implausible"; metric: Metric; kwhPerHour: number }
   | { code: "unknown_category"; key: string }
   /** Bloc reçu mais pas encore exploité par cette version (ex. `fuel` avant T23). */
-  | { code: "ignored_block"; key: string };
+  | { code: "ignored_block"; key: string }
+  /** Payload valide mais sans aucune valeur d'énergie exploitable (capteurs mal choisis ?). */
+  | { code: "no_energy_data" };
 
 export interface HourlyInterval {
   metric: Metric;

@@ -187,7 +187,10 @@ describe("mode horaire", () => {
       ts: "2026-10-02T12:00:00Z",
       fuel: { pellet_bags_total: 3 },
     });
-    expect(r.json.warnings).toEqual([{ code: "ignored_block", key: "fuel" }]);
+    expect(r.json.warnings).toEqual([
+      { code: "no_energy_data" },
+      { code: "ignored_block", key: "fuel" },
+    ]);
   });
 });
 

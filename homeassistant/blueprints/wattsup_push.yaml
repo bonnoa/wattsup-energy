@@ -245,12 +245,15 @@ actions:
     continue_on_error: true
   - if:
       - condition: template
-        value_template: "{{ wattsup_response is not defined or wattsup_response.status != 200 }}"
+        # Refus, ou envoi accepté sans aucune donnée d'énergie (capteurs mal choisis).
+        value_template: >-
+          {{ wattsup_response is not defined or wattsup_response.status != 200
+             or 'no_energy_data' in (wattsup_response.content | string) }}
     then:
       - action: persistent_notification.create
         data:
           notification_id: wattsup_push_error
-          title: WattsUp Energy — envoi refusé
+          title: WattsUp Energy — envoi refusé ou vide
           message: >-
             Statut {{ wattsup_response.status if wattsup_response is defined else 'inconnu' }} :
             {{ wattsup_response.content if wattsup_response is defined else 'pas de réponse' }}

@@ -57,7 +57,9 @@ export function hourlyReadings(
   }
   const cats = knownCategories(payload.categories, knownSlugs);
   for (const [metric, value] of cats.entries) readings.push({ metric, ts: payload.ts, value });
-  return { readings, warnings: cats.warnings };
+  const warnings = [...cats.warnings];
+  if (readings.length === 0) warnings.push({ code: "no_energy_data" });
+  return { readings, warnings };
 }
 
 export function dailyToIntervals(
@@ -82,5 +84,7 @@ export function dailyToIntervals(
   const cats = knownCategories(payload.categories, knownSlugs);
   for (const [metric, value] of cats.entries) push(metric, value);
 
-  return { intervals, warnings: cats.warnings };
+  const warnings = [...cats.warnings];
+  if (intervals.length === 0) warnings.push({ code: "no_energy_data" });
+  return { intervals, warnings };
 }

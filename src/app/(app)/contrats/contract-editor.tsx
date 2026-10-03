@@ -4,13 +4,7 @@ import { useState, useTransition } from "react";
 import { CONTRACT_PRESETS, type ContractInput } from "@/domain/tariff/schema";
 import type { Contract, CustomRule, TempoColor, TimeRange } from "@/domain/tariff/types";
 import { saveContractAction } from "@/server/actions/contracts";
-
-export const KIND_LABELS: Record<Contract["kind"], string> = {
-  base: "Base",
-  hphc: "HP/HC",
-  tempo: "Tempo",
-  custom: "Sur mesure",
-};
+import { KIND_LABELS } from "./labels";
 
 const DAYS = ["L", "M", "M", "J", "V", "S", "D"];
 const DAY_NAMES = ["lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi", "dimanche"];

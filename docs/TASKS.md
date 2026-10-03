@@ -187,9 +187,9 @@ Légende des tailles : **S** = 1–2 fichiers · **M** = 3–5 fichiers (hors te
   - Vérifier : `pnpm test tests/integration/contracts` (+ isolation)
   - Fichiers : `src/server/actions/contracts.ts`, `src/app/(app)/contrats/contract-editor.tsx`, `src/domain/tariff/schema.ts`
 
-- [ ] **T18 — Écran Contrats** · M · Dépend de : T16, T17
+- [x] **T18 — Écran Contrats** · M · Dépend de : T16, T17
   - Acceptation :
-    - Coût simulé de chaque contrat sur les 12 derniers mois glissants ; écart avec le contrat actuel ; encart du contrat le plus économique (avec nombre de jours rouges et de jours supposés) ; badge de couverture
+    - Coût simulé de chaque contrat sur les 12 derniers mois glissants (ou depuis la première donnée, annualisé, à partir de 7 jours) ; écart avec le contrat actuel ; encart du contrat le plus économique (avec nombre de jours rouges et de jours supposés) ; badge de couverture
     - Bandeau « simulation approximative » en mode quotidien pour un contrat HP/HC dont les plages diffèrent de celles du contrat actuel
     - Calendrier Tempo de la période avec la source de chaque jour ; correction manuelle d'un jour (`tempo_override` en source `manual`)
   - Vérifier : sur le seed, le classement et les montants égalent `priceIntervals` (test d'intégration) ; manuel à 390 px

@@ -263,7 +263,7 @@ Le rate limiting utilise une fenêtre glissante en mémoire, par token (instance
 
   Ce calendrier permet à un utilisateur en HP/HC sans capteur Tempo de simuler Tempo sur ses 12 derniers mois.
 - **Jour Tempo encore inconnu** (récent, pas encore dans le calendrier embarqué) : on suppose bleu et un compteur « N jours supposés » s'affiche.
-- La comparaison porte sur les 12 derniers mois glissants disposant de données ; un badge indique la couverture (% d'heures présentes).
+- La comparaison porte sur les 12 derniers mois glissants disposant de données ; un badge indique la couverture (% d'heures présentes). Avec un historique plus court, la période démarre à la première donnée et les coûts sont annualisés (« estimation sur N jours ») ; en dessous de 7 jours, l'écran affiche « données insuffisantes ».
 
 ### 7.2 ROI solaire
 - Autoconsommation directe = `solar_production − grid_export − battery_charge_solar`.

@@ -93,3 +93,54 @@ export async function tempoColorsFor(
   for (const row of overrides) colors.set(row.date, row.color);
   return colors;
 }
+
+export type TempoDaySource = "manual" | "ha" | "community" | "seed";
+
+/** Jours [from, to] avec leur couleur et sa provenance, pour le calendrier de l'écran Contrats. */
+export async function tempoCalendarView(householdId: string, from: string, to: string) {
+  const calendar = await db
+    .select({ date: tempoCalendar.date, color: tempoCalendar.color, source: tempoCalendar.source })
+    .from(tempoCalendar)
+    .where(and(gte(tempoCalendar.date, from), lte(tempoCalendar.date, to)));
+  const overrides = await db
+    .select({ date: tempoOverride.date, color: tempoOverride.color, source: tempoOverride.source })
+    .from(tempoOverride)
+    .where(
+      and(
+        eq(tempoOverride.householdId, householdId),
+        gte(tempoOverride.date, from),
+        lte(tempoOverride.date, to),
+      ),
+    );
+  const days = new Map<string, { color: TempoColor; source: TempoDaySource }>();
+  for (const r of calendar) days.set(r.date, { color: r.color, source: r.source });
+  for (const r of overrides) days.set(r.date, { color: r.color, source: r.source });
+  return days;
+}
+
+/** Correction manuelle d'un jour (null : retire la correction, le calendrier reprend la main). */
+export async function setManualTempoColor(
+  householdId: string,
+  date: string,
+  color: TempoColor | null,
+) {
+  if (color === null) {
+    await db
+      .delete(tempoOverride)
+      .where(
+        and(
+          eq(tempoOverride.householdId, householdId),
+          eq(tempoOverride.date, date),
+          eq(tempoOverride.source, "manual"),
+        ),
+      );
+    return;
+  }
+  await db
+    .insert(tempoOverride)
+    .values({ householdId, date, color, source: "manual" })
+    .onConflictDoUpdate({
+      target: [tempoOverride.householdId, tempoOverride.date],
+      set: { color, source: "manual" },
+    });
+}

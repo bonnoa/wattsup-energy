@@ -10,6 +10,7 @@ import {
   setCurrentContract,
   updateContract,
 } from "../contracts";
+import { setManualTempoColor } from "../tempo/sync";
 
 export type ContractActionResult =
   { ok: true; id: string } | { ok: false; errors: { path: string; message: string }[] };
@@ -50,4 +51,14 @@ export async function setCurrentContractAction(id: string): Promise<{ ok: boolea
   const ok = await setCurrentContract(await getHouseholdContext(), id);
   revalidatePath("/contrats");
   return { ok };
+}
+
+export async function setTempoColorAction(date: unknown, color: unknown): Promise<{ ok: boolean }> {
+  if (typeof date !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(date)) return { ok: false };
+  if (color !== null && color !== "bleu" && color !== "blanc" && color !== "rouge")
+    return { ok: false };
+  const ctx = await getHouseholdContext();
+  await setManualTempoColor(ctx.householdId, date, color);
+  revalidatePath("/contrats");
+  return { ok: true };
 }

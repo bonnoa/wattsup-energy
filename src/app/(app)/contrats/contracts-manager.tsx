@@ -9,7 +9,8 @@ import {
   duplicateContractAction,
   setCurrentContractAction,
 } from "@/server/actions/contracts";
-import { ContractEditor, KIND_LABELS } from "./contract-editor";
+import { ContractEditor } from "./contract-editor";
+import { KIND_LABELS } from "./labels";
 
 export interface ContractItem {
   id: string;

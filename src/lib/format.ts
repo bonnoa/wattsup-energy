@@ -8,6 +8,10 @@ function number(value: number, digits: number): string {
   });
 }
 
+export function formatNumber(value: number, digits = 0): string {
+  return number(value, digits);
+}
+
 export function formatEur(value: number, digits = 0): string {
   return `${number(value, digits)} €`;
 }

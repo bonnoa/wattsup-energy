@@ -217,7 +217,7 @@ Légende des tailles : **S** = 1–2 fichiers · **M** = 3–5 fichiers (hors te
   - Vérifier : `pnpm test tests/integration/categories` (+ isolation)
   - Fichiers : `src/server/actions/categories.ts`, `src/app/(app)/reglages/categories-card.tsx`
 
-- [ ] **T20 — Vue d'ensemble** · M · Dépend de : T12, T15, T16b, T19
+- [x] **T20 — Vue d'ensemble** · M · Dépend de : T12, T15, T16b, T19
   - Acceptation :
     - Requêtes agrégées par mois et par jour dans le fuseau du foyer ; périodes issues des données (navigation ‹ › mois/année)
     - Cartes : budget toutes sources (élec via le moteur, combustibles au prix moyen pondéré), KPI solaire/batterie/réseau conditionnés au profil, coût mensuel par source avec détail du mois sélectionné, origine de la conso (le jour en mode quotidien), postes

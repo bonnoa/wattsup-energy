@@ -4,12 +4,12 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { Badge, button, Card, CardFooter, Icon, Notice } from "@/components/ui";
 import {
-  CATEGORY_COLORS,
-  CATEGORY_ICONS,
-  slugify,
-  type CategoryColor,
-  type CategoryInput,
-} from "@/domain/categories";
+  CATEGORY_SWATCH,
+  CategoryTile,
+  categoryColor,
+  categoryIcon,
+} from "@/components/ui/category";
+import { CATEGORY_COLORS, CATEGORY_ICONS, slugify, type CategoryInput } from "@/domain/categories";
 import {
   deleteCategoryAction,
   saveCategoryAction,
@@ -28,15 +28,6 @@ export interface CategoryItem {
   lastDataAt: string | null;
 }
 
-// Classes statiques (Tailwind ne voit que les noms écrits en entier).
-const SWATCH: Record<CategoryColor, { bg: string; tile: string; label: string }> = {
-  grid: { bg: "bg-grid", tile: "bg-grid/12 text-grid", label: "Bleu" },
-  solar: { bg: "bg-solar", tile: "bg-solar/15 text-[#9A6E0C]", label: "Jaune" },
-  battery: { bg: "bg-battery", tile: "bg-battery/15 text-positive", label: "Vert" },
-  pellet: { bg: "bg-pellet", tile: "bg-pellet/15 text-pellet", label: "Orange" },
-  wood: { bg: "bg-wood", tile: "bg-wood/15 text-wood", label: "Brun" },
-  eheat: { bg: "bg-eheat", tile: "bg-eheat/12 text-eheat", label: "Rouge" },
-};
 const ICON_LABELS: Record<(typeof CATEGORY_ICONS)[number], string> = {
   droplet: "Eau",
   flame: "Chauffage",
@@ -49,11 +40,6 @@ const ICON_LABELS: Record<(typeof CATEGORY_ICONS)[number], string> = {
   monitor: "Bureau",
   home: "Maison",
 };
-
-const isColor = (c: string | null): c is CategoryColor =>
-  (CATEGORY_COLORS as readonly string[]).includes(c ?? "");
-const isIcon = (i: string | null): i is (typeof CATEGORY_ICONS)[number] =>
-  (CATEGORY_ICONS as readonly string[]).includes(i ?? "");
 
 const kwhFmt = (n: number) =>
   n.toLocaleString("fr-FR", { minimumFractionDigits: n < 10 ? 1 : 0, maximumFractionDigits: 1 });
@@ -178,7 +164,7 @@ function CategoryForm({
               onClick={() => set({ icon })}
               className={`flex size-10 items-center justify-center rounded-[8px] border ${
                 value.icon === icon
-                  ? `border-ink ${SWATCH[value.color].tile}`
+                  ? `border-ink ${CATEGORY_SWATCH[value.color].tile}`
                   : "border-border text-muted hover:bg-bg"
               }`}
             >
@@ -197,10 +183,10 @@ function CategoryForm({
               type="button"
               role="radio"
               aria-checked={value.color === color}
-              aria-label={SWATCH[color].label}
-              title={SWATCH[color].label}
+              aria-label={CATEGORY_SWATCH[color].label}
+              title={CATEGORY_SWATCH[color].label}
               onClick={() => set({ color })}
-              className={`size-8 rounded-full ${SWATCH[color].bg} ${
+              className={`size-8 rounded-full ${CATEGORY_SWATCH[color].bg} ${
                 value.color === color ? "ring-2 ring-ink ring-offset-2" : ""
               }`}
             />
@@ -255,8 +241,6 @@ function CategoryRow({
   onEdit: () => void;
   onDelete: () => void;
 }) {
-  const color = isColor(item.color) ? item.color : "grid";
-  const icon = isIcon(item.icon) ? item.icon : "plug";
   const last =
     item.lastDataAt &&
     new Date(item.lastDataAt).toLocaleString("fr-FR", {
@@ -269,11 +253,7 @@ function CategoryRow({
   return (
     <li className="flex flex-col gap-3 rounded-control border border-border p-3">
       <div className="flex items-start gap-3">
-        <span
-          className={`flex size-9 flex-none items-center justify-center rounded-[8px] ${SWATCH[color].tile}`}
-        >
-          <Icon name={icon} size={18} />
-        </span>
+        <CategoryTile icon={item.icon} color={item.color} />
         <div className="flex min-w-0 flex-1 flex-col gap-1">
           <div className="flex flex-wrap items-center gap-2">
             <h3 className="text-sm font-semibold">{item.name}</h3>
@@ -423,8 +403,8 @@ export function CategoriesCard({
                     initial: {
                       name: item.name,
                       slug: item.slug,
-                      icon: isIcon(item.icon) ? item.icon : "plug",
-                      color: isColor(item.color) ? item.color : "grid",
+                      icon: categoryIcon(item.icon),
+                      color: categoryColor(item.color),
                       isHeating: item.isHeating,
                     },
                   })

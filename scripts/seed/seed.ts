@@ -143,5 +143,5 @@ export async function seedDemo({
   }
 
   const intervals = await db.$count(energyInterval, eq(energyInterval.householdId, householdId));
-  return { householdId, from, to, hours: demo.hours.length, intervals };
+  return { userId, householdId, from, to, hours: demo.hours.length, intervals };
 }

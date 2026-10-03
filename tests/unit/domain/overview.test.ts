@@ -1,0 +1,110 @@
+import { describe, expect, it } from "vitest";
+import { energyBalance, parsePeriod, periodNav, solarYield, yearMonths } from "@/domain/overview";
+
+const TODAY = "2026-10-03";
+
+describe("parsePeriod", () => {
+  it("mois ou année ; par défaut le mois en cours ; fin bornée au lendemain d'aujourd'hui", () => {
+    expect(parsePeriod("2026-09", TODAY)).toEqual({
+      kind: "month",
+      key: "2026-09",
+      from: "2026-09-01",
+      to: "2026-10-01",
+      label: "septembre 2026",
+      complete: true,
+    });
+    expect(parsePeriod(undefined, TODAY)).toMatchObject({
+      key: "2026-10",
+      from: "2026-10-01",
+      to: "2026-10-04",
+      complete: false,
+    });
+    expect(parsePeriod("2026", TODAY)).toMatchObject({
+      kind: "year",
+      from: "2026-01-01",
+      to: "2026-10-04",
+      label: "2026",
+    });
+    expect(parsePeriod("2025", TODAY)).toMatchObject({ to: "2026-01-01", complete: true });
+  });
+
+  it("une saisie invalide ou future retombe sur le mois en cours", () => {
+    expect(parsePeriod("2026-13", TODAY).key).toBe("2026-10");
+    expect(parsePeriod("n'importe quoi", TODAY).key).toBe("2026-10");
+    expect(parsePeriod("2027-01", TODAY).key).toBe("2026-10");
+  });
+});
+
+describe("periodNav", () => {
+  it("précédent jusqu'à la première donnée, suivant jusqu'au mois en cours", () => {
+    expect(periodNav(parsePeriod("2026-09", TODAY), "2024-10-03", TODAY)).toEqual({
+      prev: "2026-08",
+      next: "2026-10",
+    });
+    expect(periodNav(parsePeriod("2024-10", TODAY), "2024-10-03", TODAY)).toEqual({
+      prev: null,
+      next: "2024-11",
+    });
+    expect(periodNav(parsePeriod("2026", TODAY), "2024-10-03", TODAY)).toEqual({
+      prev: "2025",
+      next: null,
+    });
+    expect(periodNav(parsePeriod("2024", TODAY), "2024-10-03", TODAY).prev).toBeNull();
+  });
+});
+
+describe("yearMonths", () => {
+  it("les 12 mois de l'année, sans ceux après aujourd'hui", () => {
+    expect(yearMonths("2026", TODAY)).toEqual([
+      "2026-01",
+      "2026-02",
+      "2026-03",
+      "2026-04",
+      "2026-05",
+      "2026-06",
+      "2026-07",
+      "2026-08",
+      "2026-09",
+      "2026-10",
+    ]);
+    expect(yearMonths("2025", TODAY)).toHaveLength(12);
+  });
+});
+
+describe("energyBalance", () => {
+  const totals = {
+    grid_import: 200,
+    grid_export: 40,
+    solar_production: 300,
+    battery_charge: 60,
+    battery_discharge: 50,
+  };
+
+  it("consommation du foyer et origine : réseau, solaire direct, batterie", () => {
+    const b = energyBalance(totals, { batteryGridCharging: false });
+    // 200 + 300 + 50 − 40 − 60
+    expect(b.consumption).toBe(450);
+    expect(b.origin).toEqual({ grid: 200, solar: 200, battery: 50 });
+    expect(b.selfConsumptionRate).toBeCloseTo(260 / 300, 6);
+  });
+
+  it("charge depuis le réseau : retirée de la part réseau, pas du solaire", () => {
+    const b = energyBalance({ ...totals, battery_charge_grid: 20 }, { batteryGridCharging: true });
+    expect(b.origin).toEqual({ grid: 180, solar: 220, battery: 50 });
+    expect(b.consumption).toBe(450);
+  });
+
+  it("sans solaire ni batterie : tout vient du réseau ; métriques absentes = 0", () => {
+    const b = energyBalance({ grid_import: 12 }, { batteryGridCharging: false });
+    expect(b).toMatchObject({ consumption: 12, origin: { grid: 12, solar: 0, battery: 0 } });
+    expect(b.selfConsumptionRate).toBeNull();
+  });
+});
+
+describe("solarYield", () => {
+  it("kWh produits par kWh/m² reçu ; null sans irradiation", () => {
+    expect(solarYield(300, 150)).toBe(2);
+    expect(solarYield(300, 0)).toBeNull();
+    expect(solarYield(300, null)).toBeNull();
+  });
+});

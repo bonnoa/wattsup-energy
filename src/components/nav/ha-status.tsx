@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { pushState } from "@/domain/ingest/push-state";
 
 interface Props {
   lastPushAt: string | null;
@@ -19,9 +20,6 @@ function ago(ms: number): string {
   return `il y a ${Math.round(h / 24)} j`;
 }
 
-// Un push est « en retard » au-delà de 2 h (horaire) ou 26 h (quotidien).
-const STALE_MS = { hourly: 2 * 3_600_000, daily: 26 * 3_600_000 };
-
 export function HaStatus({ lastPushAt, granularity, renderedAt, compact }: Props) {
   const [now, setNow] = useState(() => Date.parse(renderedAt));
   useEffect(() => {
@@ -31,7 +29,7 @@ export function HaStatus({ lastPushAt, granularity, renderedAt, compact }: Props
   }, []);
 
   const last = lastPushAt ? Date.parse(lastPushAt) : null;
-  const state = last === null ? "never" : now - last > STALE_MS[granularity] ? "stale" : "ok";
+  const state = pushState(last, now, granularity);
   const dot = { never: "bg-subtle", stale: "bg-pellet", ok: "bg-battery" }[state];
   const since = last === null ? "" : ago(now - last);
 
@@ -53,7 +51,7 @@ export function HaStatus({ lastPushAt, granularity, renderedAt, compact }: Props
             ? "Home Assistant silencieux"
             : "Home Assistant connecté"}
       </div>
-      <div className="font-mono text-[11px] text-[#7D817A]">
+      <div className="text-[11px] text-[#A9ADA6] tabular-nums">
         {state === "never" ? "En attente du premier push" : `Dernier push ${since}`}
       </div>
     </div>

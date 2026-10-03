@@ -6,17 +6,22 @@ import {
   revokeIngestTokenAction,
   setGranularityAction,
 } from "@/server/actions/ingest-token";
+import type { PushState } from "@/domain/ingest/push-state";
+import { Badge, button, Card, CardFooter, Icon, Notice, StatTile } from "@/components/ui";
 
 interface ActiveToken {
   prefix: string;
   createdAt: string;
-  lastUsedAt: string | null;
 }
 
 type Granularity = "hourly" | "daily";
 
 interface Props {
   endpoint: string;
+  /** État de la liaison d'après le dernier push accepté (même règle que la navigation). */
+  link: PushState;
+  /** Dernier push accepté (ISO), null si aucun. */
+  lastPushAt: string | null;
   active: ActiveToken | null;
   granularity: Granularity;
 }
@@ -35,32 +40,34 @@ const MODES: { id: Granularity; label: string; help: string }[] = [
 ];
 
 const fmt = (iso: string) =>
-  new Date(iso).toLocaleString("fr-FR", { dateStyle: "short", timeStyle: "short" });
+  new Date(iso).toLocaleString("fr-FR", {
+    day: "numeric",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 
 const mono = "font-mono text-xs bg-bg rounded-[8px] px-3 py-2.5";
-const darkButton =
-  "flex min-h-10 flex-none items-center rounded-[8px] bg-ink px-3.5 text-[13px] font-medium text-bg disabled:opacity-60";
-const lightButton =
-  "flex min-h-10 flex-none items-center rounded-[8px] border border-border-strong px-3.5 text-[13px] text-[#5E625C] hover:bg-bg disabled:opacity-60";
 
 function CopyButton({ value }: { value: string }) {
   const [copied, setCopied] = useState(false);
   return (
     <button
       type="button"
-      className={darkButton}
+      className={`${button.secondary} h-auto min-h-9`}
       onClick={async () => {
         await navigator.clipboard.writeText(value);
         setCopied(true);
         setTimeout(() => setCopied(false), 1600);
       }}
     >
+      <Icon name={copied ? "check" : "copy"} size={14} />
       {copied ? "Copié" : "Copier"}
     </button>
   );
 }
 
-export function IngestCard({ endpoint, active, granularity }: Props) {
+export function IngestCard({ endpoint, active, granularity, link, lastPushAt }: Props) {
   const [fresh, setFresh] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const [mode, setMode] = useState(granularity);
@@ -93,11 +100,49 @@ export function IngestCard({ endpoint, active, granularity }: Props) {
   };
 
   return (
-    <section className="flex flex-col gap-3 rounded-card border border-border bg-surface p-5">
-      <h2 className="text-[15px] font-semibold">API d&apos;ingestion</h2>
-      <p className="text-xs text-subtle">
-        Home Assistant pousse les données. Aucun port entrant à ouvrir.
-      </p>
+    <Card
+      icon="key"
+      title="API d'ingestion"
+      highlight={Boolean(active) && link === "ok"}
+      badges={
+        !active ? (
+          <Badge>Aucun token</Badge>
+        ) : link === "ok" ? (
+          <Badge tone="positive">Connecté</Badge>
+        ) : link === "stale" ? (
+          <Badge tone="warning">Silencieux</Badge>
+        ) : (
+          <Badge tone="warning">En attente du premier envoi</Badge>
+        )
+      }
+      description="Home Assistant pousse les données. Aucun port entrant à ouvrir."
+    >
+      {active && !fresh && (
+        <div className="grid grid-cols-2 gap-2">
+          <StatTile label="Dernier envoi" value={lastPushAt ? fmt(lastPushAt) : "jamais"} />
+        </div>
+      )}
+
+      {!active && !fresh && (
+        <Notice
+          tone="info"
+          title="Aucun token actif."
+          action={
+            <button type="button" onClick={generate} disabled={pending} className={button.primary}>
+              Générer un token
+            </button>
+          }
+        >
+          Générez-en un, puis collez-le dans le secrets.yaml de Home Assistant avec l&apos;endpoint
+          ci-dessous.
+        </Notice>
+      )}
+
+      {fresh && (
+        <Notice tone="warning" title="Copiez le token maintenant :">
+          il ne sera plus jamais affiché. Collez-le dans le secrets.yaml de Home Assistant.
+        </Notice>
+      )}
 
       <div className="flex flex-col gap-1.5">
         <span className="text-xs text-muted">Granularité des envois</span>
@@ -128,45 +173,40 @@ export function IngestCard({ endpoint, active, granularity }: Props) {
         </div>
       </div>
 
-      <div className="flex flex-col gap-1.5">
-        <span className="text-xs text-muted">Token</span>
-        {fresh ? (
-          <>
+      {(fresh || active) && (
+        <div className="flex flex-col gap-1.5">
+          <span className="text-xs text-muted">Token</span>
+          {fresh ? (
             <div className="flex gap-2">
               <div className={`${mono} min-w-0 flex-1 break-all`}>{fresh}</div>
               <CopyButton value={fresh} />
             </div>
-            <p role="status" className="text-xs text-pellet">
-              Copiez-le maintenant : il ne sera plus jamais affiché. Collez-le dans le secrets.yaml
-              de Home Assistant.
-            </p>
-          </>
-        ) : active ? (
-          <div className={`${mono} truncate`}>{active.prefix}••••••••••••</div>
-        ) : (
-          <p className="text-sm text-muted">Aucun token actif.</p>
-        )}
-      </div>
-
-      {active && (
-        <div className="flex justify-between gap-2 font-mono text-[11px] text-muted">
-          <span>créé le {fmt(active.createdAt)}</span>
-          <span>
-            {active.lastUsedAt ? `dernier usage ${fmt(active.lastUsedAt)}` : "jamais utilisé"}
-          </span>
+          ) : (
+            active && (
+              <>
+                <div className={`${mono} truncate`}>{active.prefix}••••••••••••</div>
+                <span className="text-[11px] text-subtle">créé le {fmt(active.createdAt)}</span>
+              </>
+            )
+          )}
         </div>
       )}
 
-      <div className="flex flex-wrap gap-2">
-        <button type="button" onClick={generate} disabled={pending} className={darkButton}>
-          {active ? "Régénérer le token" : "Générer un token"}
-        </button>
-        {active && (
-          <button type="button" onClick={revoke} disabled={pending} className={lightButton}>
-            Révoquer
+      {active && (
+        <CardFooter>
+          <button
+            type="button"
+            onClick={revoke}
+            disabled={pending}
+            className="mr-auto text-xs text-negative hover:text-ink disabled:opacity-60"
+          >
+            Révoquer le token
           </button>
-        )}
-      </div>
-    </section>
+          <button type="button" onClick={generate} disabled={pending} className={button.secondary}>
+            Régénérer le token
+          </button>
+        </CardFooter>
+      )}
+    </Card>
   );
 }

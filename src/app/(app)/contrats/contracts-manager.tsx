@@ -24,8 +24,8 @@ import {
   SubscriptionFields,
   type SubscriptionValue,
 } from "./contract-editor";
+import { Badge, button, Card, CardFooter, GroupTitle, Icon, Notice } from "@/components/ui";
 import { GridView, gridSummary } from "./grid-view";
-import { Icon } from "./icons";
 import { KIND_LABELS } from "./labels";
 
 export interface ContractItem {
@@ -59,11 +59,10 @@ function dates(item: ContractItem, today: string): string {
 }
 
 function statusBadge(item: ContractItem, today: string) {
-  if (item.isCurrent) return { label: "En cours", className: "bg-grid text-white" };
+  if (item.isCurrent) return { label: "En cours", tone: "active" } as const;
   if (item.status === "simulated") return null;
-  if ((item.startDate ?? "") > today)
-    return { label: "À venir", className: "bg-chip text-[#5E625C]" };
-  return { label: "Terminé", className: "bg-track text-[#5E625C]" };
+  if ((item.startDate ?? "") > today) return { label: "À venir", tone: "soft" } as const;
+  return { label: "Terminé", tone: "neutral" } as const;
 }
 
 type Period = { id: string | null; validFrom: string; contract: Contract };
@@ -189,16 +188,6 @@ function PeriodForm({
   );
 }
 
-const iconButton =
-  "flex size-8 items-center justify-center rounded-[8px] border border-border text-muted hover:bg-bg hover:text-ink disabled:opacity-60";
-const dangerIconButton =
-  "flex size-8 items-center justify-center rounded-[8px] border border-border text-negative hover:bg-[#FBEDEA] disabled:opacity-60";
-const actionButton =
-  "flex h-8 items-center gap-1.5 rounded-[8px] border border-border-strong px-3 text-xs font-medium hover:bg-bg disabled:opacity-60";
-const primaryButton =
-  "flex h-8 items-center gap-1.5 rounded-[8px] bg-ink px-3 text-xs font-medium text-bg disabled:opacity-60";
-const badge = "rounded-[5px] px-1.5 py-0.5 text-[11px] font-medium";
-
 interface CardProps {
   item: ContractItem;
   today: string;
@@ -226,18 +215,14 @@ function PriceHistory({
             <div className="flex min-w-0 flex-1 flex-col gap-0.5">
               <span className="flex flex-wrap items-center gap-2 text-[13px] font-medium">
                 Depuis le {fmtDate(p.validFrom)}
-                {item.isCurrent && p.id === shownId && (
-                  <span className={`${badge} bg-grid/10 text-grid`}>en vigueur</span>
-                )}
-                {p.validFrom > today && (
-                  <span className={`${badge} bg-chip text-[#5E625C]`}>à venir</span>
-                )}
+                {item.isCurrent && p.id === shownId && <Badge tone="soft">en vigueur</Badge>}
+                {p.validFrom > today && <Badge>à venir</Badge>}
               </span>
               <span className="text-xs text-muted tabular-nums">{gridSummary(p.contract)}</span>
             </div>
             <button
               type="button"
-              className={iconButton}
+              className={button.icon}
               aria-label={`Modifier les prix du ${fmtDate(p.validFrom)}`}
               title="Modifier ces prix"
               onClick={() => onEdit({ mode: "period", item, period: p })}
@@ -248,7 +233,7 @@ function PriceHistory({
               <button
                 type="button"
                 disabled={pending}
-                className={dangerIconButton}
+                className={button.iconDanger}
                 aria-label={`Supprimer les prix du ${fmtDate(p.validFrom)}`}
                 title="Supprimer ces prix"
                 onClick={() => {
@@ -288,7 +273,7 @@ function SwitchPanel({
         type="button"
         disabled={pending || !date}
         onClick={() => onAct(() => switchContractAction(item.id, date))}
-        className={`${primaryButton} h-10 px-3.5 text-[13px]`}
+        className={`${button.primary} h-10`}
       >
         Confirmer
       </button>
@@ -319,31 +304,23 @@ function ContractCard(props: CardProps) {
   const count = item.periods.length;
 
   return (
-    <li
-      className={`flex flex-col gap-4 rounded-card border bg-surface p-4 sm:p-5 ${
-        item.isCurrent ? "border-grid shadow-[0_0_0_3px_rgba(61,90,128,0.12)]" : "border-border"
-      }`}
-    >
-      <div className="flex items-start gap-3">
-        <span
-          className={`hidden size-10 flex-none items-center justify-center rounded-control sm:flex ${
-            item.isCurrent ? "bg-grid text-white" : "bg-bg text-subtle"
-          }`}
-        >
-          <Icon name="bolt" size={18} />
-        </span>
-        <div className="flex min-w-0 flex-1 flex-col gap-1">
-          <div className="flex flex-wrap items-center gap-2">
-            <h3 className="text-[15px] font-semibold">{item.name}</h3>
-            <span className={`${badge} bg-track text-[#5E625C]`}>{KIND_LABELS[item.kind]}</span>
-            {status && <span className={`${badge} ${status.className}`}>{status.label}</span>}
-          </div>
-          <span className="text-xs text-muted">{dates(item, today)}</span>
-        </div>
-        <div className="flex flex-none gap-1.5">
+    <Card
+      as="li"
+      icon="bolt"
+      highlight={item.isCurrent}
+      title={item.name}
+      badges={
+        <>
+          <Badge>{KIND_LABELS[item.kind]}</Badge>
+          {status && <Badge tone={status.tone}>{status.label}</Badge>}
+        </>
+      }
+      description={dates(item, today)}
+      actions={
+        <>
           <button
             type="button"
-            className={iconButton}
+            className={button.icon}
             aria-label={`Modifier le nom et les dates de « ${item.name} »`}
             title="Nom et dates"
             onClick={() => onEdit({ mode: "identity", item })}
@@ -353,7 +330,7 @@ function ContractCard(props: CardProps) {
           <button
             type="button"
             disabled={pending}
-            className={iconButton}
+            className={button.icon}
             aria-label={`Dupliquer « ${item.name} » en offre à comparer`}
             title="Dupliquer en offre à comparer"
             onClick={() => onAct(() => duplicateContractAction(item.id))}
@@ -363,7 +340,7 @@ function ContractCard(props: CardProps) {
           <button
             type="button"
             disabled={pending}
-            className={dangerIconButton}
+            className={button.iconDanger}
             aria-label={`Supprimer « ${item.name} »`}
             title="Supprimer"
             onClick={() => {
@@ -374,9 +351,9 @@ function ContractCard(props: CardProps) {
           >
             <Icon name="trash" />
           </button>
-        </div>
-      </div>
-
+        </>
+      }
+    >
       <div className="flex flex-col gap-2">
         {subscribed && (
           <span className="text-[11px] text-muted">
@@ -404,12 +381,12 @@ function ContractCard(props: CardProps) {
           onCancel={() => setSwitching(false)}
         />
       ) : (
-        <div className="flex flex-wrap items-center gap-2 border-t border-track pt-3">
+        <CardFooter>
           {subscribed ? (
             <>
               <button
                 type="button"
-                className="mr-auto text-xs text-muted hover:text-ink"
+                className={`${button.link} mr-auto`}
                 aria-expanded={showHistory}
                 onClick={() => setShowHistory((v) => !v)}
               >
@@ -418,7 +395,7 @@ function ContractCard(props: CardProps) {
               </button>
               <button
                 type="button"
-                className={actionButton}
+                className={button.secondary}
                 onClick={() =>
                   onEdit({
                     mode: "period",
@@ -435,21 +412,21 @@ function ContractCard(props: CardProps) {
             <>
               <button
                 type="button"
-                className={`${actionButton} mr-auto`}
+                className={`${button.secondary} mr-auto`}
                 onClick={() => onEdit({ mode: "period", item, period: shown })}
               >
                 <Icon name="edit" size={14} />
                 Modifier les prix
               </button>
-              <button type="button" className={primaryButton} onClick={() => setSwitching(true)}>
+              <button type="button" className={button.primary} onClick={() => setSwitching(true)}>
                 <Icon name="check" size={14} />
                 J&apos;ai souscrit cette offre
               </button>
             </>
           )}
-        </div>
+        </CardFooter>
       )}
-    </li>
+    </Card>
   );
 }
 
@@ -458,32 +435,30 @@ function LapsedNotice({ item, pending, onAct }: Pick<CardProps, "item" | "pendin
   if (!item.startDate || !item.endDate) return null;
   const startDate = item.startDate;
   return (
-    <div
-      role="status"
-      className="flex flex-col gap-3 rounded-card border border-pellet/40 bg-[#FBF3EA] p-4 text-[13px] text-pretty"
+    <Notice
+      title="Aucun contrat en cours aujourd'hui."
+      action={
+        <button
+          type="button"
+          disabled={pending}
+          className={button.primary}
+          onClick={() =>
+            onAct(() =>
+              updateContractAction(item.id, {
+                name: item.name,
+                subscription: { startDate, endDate: null },
+              }),
+            )
+          }
+        >
+          C&apos;est toujours mon contrat
+        </button>
+      }
     >
-      <p>
-        <span className="font-semibold">Aucun contrat en cours aujourd&apos;hui.</span> «{" "}
-        {item.name} » s&apos;est terminé le {fmtDate(item.endDate)}. Si c&apos;est toujours votre
-        contrat, retirez sa date de fin : une hausse de prix se saisit avec « Nouveaux prix », sans
-        clore le contrat.
-      </p>
-      <button
-        type="button"
-        disabled={pending}
-        className={`${primaryButton} self-start`}
-        onClick={() =>
-          onAct(() =>
-            updateContractAction(item.id, {
-              name: item.name,
-              subscription: { startDate, endDate: null },
-            }),
-          )
-        }
-      >
-        C&apos;est toujours mon contrat
-      </button>
-    </div>
+      « {item.name} » s&apos;est terminé le {fmtDate(item.endDate)}. Si c&apos;est toujours votre
+      contrat, retirez sa date de fin : une hausse de prix se saisit avec « Nouveaux prix », sans
+      clore le contrat.
+    </Notice>
   );
 }
 
@@ -545,7 +520,7 @@ export function ContractsManager({
       <Errors errors={errors} />
       {groups.map((g) => (
         <section key={g.title} className="flex flex-col gap-2">
-          <h2 className="px-1 text-xs font-medium tracking-wide text-muted uppercase">{g.title}</h2>
+          <GroupTitle>{g.title}</GroupTitle>
           <ul className="flex flex-col gap-3">
             {g.items.map((item) => (
               <ContractCard

@@ -1,6 +1,8 @@
 import { PageHeader } from "@/components/page-header";
 import { PlaceholderCard } from "@/components/placeholder-card";
 import { headers } from "next/headers";
+import { pushState } from "@/domain/ingest/push-state";
+import { getLastPushAt } from "@/server/ingest/status";
 import { getActiveIngestToken } from "@/server/ingest/token";
 import { getLocationStatus } from "@/server/location";
 import { pageContext } from "@/server/page";
@@ -12,7 +14,11 @@ export const metadata = { title: "Réglages · WattsUp Energy" };
 
 export default async function SettingsPage() {
   const ctx = await pageContext("/reglages");
-  const [active, location] = await Promise.all([getActiveIngestToken(ctx), getLocationStatus(ctx)]);
+  const [active, location, lastPushAt] = await Promise.all([
+    getActiveIngestToken(ctx),
+    getLocationStatus(ctx),
+    getLastPushAt(ctx),
+  ]);
   const h = await headers();
   const origin = `${h.get("x-forwarded-proto") ?? "http"}://${h.get("host") ?? "localhost:3000"}`;
   return (
@@ -30,11 +36,12 @@ export default async function SettingsPage() {
           <IngestCard
             endpoint={`${origin}/api/v1/ingest`}
             granularity={ctx.granularity}
+            lastPushAt={lastPushAt?.toISOString() ?? null}
+            link={pushState(lastPushAt?.getTime() ?? null, Date.now(), ctx.granularity)}
             active={
               active && {
                 prefix: active.prefix,
                 createdAt: active.createdAt.toISOString(),
-                lastUsedAt: active.lastUsedAt?.toISOString() ?? null,
               }
             }
           />

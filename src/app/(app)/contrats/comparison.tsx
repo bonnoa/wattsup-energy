@@ -1,3 +1,4 @@
+import { Badge } from "@/components/ui";
 import type { ContractComparison } from "@/server/queries/contracts";
 import { KIND_LABELS } from "./labels";
 
@@ -102,14 +103,8 @@ export function ComparisonList({ comparison }: { comparison: Ok }) {
               <div className="flex items-center justify-between gap-2">
                 <span className="flex min-w-0 flex-wrap items-center gap-2">
                   <span className="text-sm font-semibold">{r.name}</span>
-                  <span className="rounded-[5px] bg-track px-1.5 py-0.5 text-[11px] text-[#5E625C]">
-                    {KIND_LABELS[r.contract.kind]}
-                  </span>
-                  {r.isCurrent && (
-                    <span className="rounded-[5px] bg-grid px-1.5 py-0.5 text-[11px] text-white">
-                      En cours
-                    </span>
-                  )}
+                  <Badge>{KIND_LABELS[r.contract.kind]}</Badge>
+                  {r.isCurrent && <Badge tone="active">En cours</Badge>}
                 </span>
                 <span className="flex flex-none flex-col items-end">
                   <span className="text-[15px] font-semibold whitespace-nowrap tabular-nums">

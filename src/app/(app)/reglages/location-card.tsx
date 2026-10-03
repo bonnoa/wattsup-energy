@@ -3,6 +3,7 @@
 import { useState, useTransition, type FormEvent } from "react";
 import type { CommuneResult } from "@/domain/weather";
 import { searchCommunesAction, setLocationAction } from "@/server/actions/location";
+import { Badge, button, Card, Icon, Notice, StatTile, tiles } from "@/components/ui";
 
 interface Status {
   location: { label: string; lat: number; lon: number };
@@ -11,13 +12,11 @@ interface Status {
 }
 
 const fmtDate = (iso: string) =>
-  new Date(`${iso}T12:00:00Z`).toLocaleDateString("fr-FR", { day: "numeric", month: "long" });
+  new Date(`${iso}T12:00:00Z`).toLocaleDateString("fr-FR", { day: "numeric", month: "short" });
 const fmtCoord = (n: number) => n.toLocaleString("fr-FR", { minimumFractionDigits: 2 });
 
 const inputClass =
   "h-10 min-w-0 flex-1 rounded-[8px] border border-border-strong bg-surface px-3 text-[13px] outline-none focus:border-ink";
-const darkButton =
-  "flex h-10 flex-none items-center rounded-[8px] bg-ink px-3.5 text-[13px] font-medium text-bg disabled:opacity-60";
 
 export function LocationCard({ status }: { status: Status | null }) {
   const [editing, setEditing] = useState(status === null);
@@ -48,35 +47,65 @@ export function LocationCard({ status }: { status: Status | null }) {
   };
 
   return (
-    <section className="flex flex-col gap-3 rounded-card border border-border bg-surface p-5">
-      <h2 className="text-[15px] font-semibold">Localisation</h2>
-      <p className="text-xs text-subtle">
-        Pour la météo (température, ensoleillement), récupérée chaque jour auprès d&apos;Open-Meteo.
-        Seules des coordonnées arrondies à 1 km environ sont transmises.
-      </p>
+    <Card
+      icon="pin"
+      title="Localisation"
+      badges={
+        status === null ? (
+          <Badge>À renseigner</Badge>
+        ) : status.lastDate ? (
+          <Badge tone="positive">Météo à jour</Badge>
+        ) : (
+          <Badge tone="warning">Météo en attente</Badge>
+        )
+      }
+      description={
+        <>
+          Pour la météo (température, ensoleillement), récupérée chaque jour auprès
+          d&apos;Open-Meteo. Seules des coordonnées arrondies à 1 km environ sont transmises.
+        </>
+      }
+      actions={
+        status &&
+        !editing && (
+          <button
+            type="button"
+            className={button.icon}
+            aria-label="Changer de commune"
+            title="Changer de commune"
+            onClick={() => setEditing(true)}
+          >
+            <Icon name="edit" />
+          </button>
+        )
+      }
+    >
+      {status === null && (
+        <Notice tone="info" title="Aucune commune.">
+          Sans elle, ni la météo ni les degrés-jours du chauffage ne peuvent être calculés.
+        </Notice>
+      )}
 
       {status && !editing && (
         <div className="flex flex-col gap-2">
-          <div className="flex items-center justify-between gap-2">
-            <span className="text-sm font-medium">{status.location.label}</span>
-            <button
-              type="button"
-              onClick={() => setEditing(true)}
-              className="text-xs text-grid hover:text-ink"
-            >
-              Modifier
-            </button>
-          </div>
-          <div className="flex justify-between gap-2 font-mono text-[11px] text-muted">
-            <span>
+          <div className="flex flex-wrap items-baseline justify-between gap-x-3">
+            <span className="text-[17px] font-semibold tracking-tight">
+              {status.location.label}
+            </span>
+            <span className="font-mono text-[11px] text-subtle">
               {fmtCoord(status.location.lat)} · {fmtCoord(status.location.lon)}
             </span>
-            <span>
-              {status.lastDate
-                ? `${status.days} jours · jusqu'au ${fmtDate(status.lastDate)}`
-                : "météo en attente"}
-            </span>
           </div>
+          {status.lastDate && (
+            <div className={tiles}>
+              <StatTile
+                label="Historique météo"
+                value={status.days.toLocaleString("fr-FR")}
+                unit="jours"
+              />
+              <StatTile label="Dernière journée" value={fmtDate(status.lastDate)} />
+            </div>
+          )}
         </div>
       )}
 
@@ -91,7 +120,7 @@ export function LocationCard({ status }: { status: Status | null }) {
               className={inputClass}
               autoComplete="address-level2"
             />
-            <button type="submit" disabled={pending} className={darkButton}>
+            <button type="submit" disabled={pending} className={`${button.primary} h-10`}>
               Chercher
             </button>
           </form>
@@ -109,7 +138,7 @@ export function LocationCard({ status }: { status: Status | null }) {
                     className="flex min-h-11 w-full items-center justify-between gap-2 border-t border-track py-2 text-left text-sm hover:bg-bg disabled:opacity-60"
                   >
                     <span>{r.label}</span>
-                    <span className="font-mono text-[11px] text-subtle">{r.country}</span>
+                    <span className="text-[11px] text-subtle">{r.country}</span>
                   </button>
                 </li>
               ))}
@@ -122,7 +151,7 @@ export function LocationCard({ status }: { status: Status | null }) {
                 setEditing(false);
                 setResults(null);
               }}
-              className="self-start text-xs text-muted hover:text-ink"
+              className={`${button.link} self-start`}
             >
               Annuler
             </button>
@@ -135,6 +164,6 @@ export function LocationCard({ status }: { status: Status | null }) {
           {message}
         </p>
       )}
-    </section>
+    </Card>
   );
 }

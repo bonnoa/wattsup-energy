@@ -1,3 +1,4 @@
+import { StatTile, tiles } from "@/components/ui";
 import type { Contract, TempoColor, TimeRange } from "@/domain/tariff/types";
 
 // Lecture d'une grille de prix : chiffres en Instrument Sans tabulaire (lisibles en petit
@@ -18,37 +19,9 @@ const TEMPO_ROWS: { color: TempoColor; label: string; dot: string }[] = [
   { color: "rouge", label: "Rouge", dot: "bg-eheat" },
 ];
 
-function Tile({
-  label,
-  value,
-  unit,
-  sub,
-  dot,
-}: {
-  label: string;
-  value: string;
-  unit: string;
-  sub?: string;
-  dot?: string;
-}) {
-  return (
-    <div className="flex min-w-0 flex-col gap-0.5 rounded-control bg-bg px-2.5 py-2.5">
-      <span className="flex items-center gap-1.5 text-[11px] text-muted">
-        {dot && <span className={`size-2 rounded-full ${dot}`} />}
-        {label}
-      </span>
-      <span className="flex flex-wrap items-baseline gap-x-1">
-        <span className="text-[17px] font-semibold tracking-tight tabular-nums">{value}</span>
-        <span className="text-[11px] text-subtle">{unit}</span>
-      </span>
-      {sub && <span className="text-[11px] text-subtle tabular-nums">{sub}</span>}
-    </div>
-  );
-}
-
 function SubscriptionTile({ eurYear }: { eurYear: number }) {
   return (
-    <Tile
+    <StatTile
       label="Abonnement"
       value={fmtEur(eurYear / 12)}
       unit="€/mois"
@@ -102,15 +75,13 @@ function HcBar({ ranges }: { ranges: TimeRange[] }) {
   );
 }
 
-const tiles = "grid grid-cols-[repeat(auto-fit,minmax(104px,1fr))] gap-2";
-
 /** Prix d'une grille, mis en forme selon le type de contrat. */
 export function GridView({ contract }: { contract: Contract }) {
   switch (contract.kind) {
     case "base":
       return (
         <div className={tiles}>
-          <Tile label="Prix du kWh" value={fmtPrice(contract.priceEurKwh)} unit="€/kWh" />
+          <StatTile label="Prix du kWh" value={fmtPrice(contract.priceEurKwh)} unit="€/kWh" />
           <SubscriptionTile eurYear={contract.subscriptionEurYear} />
         </div>
       );
@@ -118,8 +89,8 @@ export function GridView({ contract }: { contract: Contract }) {
       return (
         <div className="flex flex-col gap-3">
           <div className={tiles}>
-            <Tile label="Heures pleines" value={fmtPrice(contract.prices.hp)} unit="€/kWh" />
-            <Tile
+            <StatTile label="Heures pleines" value={fmtPrice(contract.prices.hp)} unit="€/kWh" />
+            <StatTile
               label="Heures creuses"
               value={fmtPrice(contract.prices.hc)}
               unit="€/kWh"
@@ -172,7 +143,7 @@ export function GridView({ contract }: { contract: Contract }) {
       return (
         <div className={tiles}>
           {contract.rules.map((r) => (
-            <Tile key={r.label} label={r.label} value={fmtPrice(r.price)} unit="€/kWh" />
+            <StatTile key={r.label} label={r.label} value={fmtPrice(r.price)} unit="€/kWh" />
           ))}
           <SubscriptionTile eurYear={contract.subscriptionEurYear} />
         </div>

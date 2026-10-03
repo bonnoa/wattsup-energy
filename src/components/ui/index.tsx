@@ -1,0 +1,171 @@
+import type { ReactNode } from "react";
+import { Icon, type IconName } from "./icon";
+
+// Briques d'interface partagées (SPEC §2 « Principes d'interface ») : une carte par objet,
+// l'élément actif mis en évidence, chiffres lisibles avec libellé et unité, statut explicite,
+// actions secondaires en icônes et une action principale claire.
+
+export { Icon, type IconName };
+
+export const button = {
+  primary:
+    "flex h-9 flex-none items-center justify-center gap-1.5 rounded-[8px] bg-ink px-3.5 text-[13px] font-medium text-bg disabled:opacity-60",
+  secondary:
+    "flex h-9 flex-none items-center justify-center gap-1.5 rounded-[8px] border border-border-strong px-3.5 text-[13px] font-medium hover:bg-bg disabled:opacity-60",
+  icon: "flex size-8 flex-none items-center justify-center rounded-[8px] border border-border text-muted hover:bg-bg hover:text-ink disabled:opacity-60",
+  iconDanger:
+    "flex size-8 flex-none items-center justify-center rounded-[8px] border border-border text-negative hover:bg-[#FBEDEA] disabled:opacity-60",
+  /** Lien d'action discret dans un texte ou un pied de carte. */
+  link: "text-xs text-muted hover:text-ink",
+};
+
+export type BadgeTone = "active" | "neutral" | "soft" | "positive" | "warning";
+
+const BADGE: Record<BadgeTone, string> = {
+  active: "bg-grid text-white",
+  neutral: "bg-track text-[#5E625C]",
+  soft: "bg-grid/10 text-grid",
+  positive: "bg-battery/15 text-positive",
+  warning: "bg-pellet/15 text-pellet",
+};
+
+/** Pastille de type ou de statut (« En cours », « Terminé », « HP/HC »…). */
+export function Badge({ tone = "neutral", children }: { tone?: BadgeTone; children: ReactNode }) {
+  return (
+    <span className={`rounded-[5px] px-1.5 py-0.5 text-[11px] font-medium ${BADGE[tone]}`}>
+      {children}
+    </span>
+  );
+}
+
+/**
+ * Carte d'écran : pictogramme, titre, pastilles, description et actions en icônes.
+ * `highlight` encadre l'élément actif (contrat en cours, source connectée…).
+ */
+export function Card({
+  icon,
+  title,
+  badges,
+  description,
+  actions,
+  highlight = false,
+  as: Tag = "section",
+  children,
+}: {
+  icon?: IconName;
+  title: ReactNode;
+  badges?: ReactNode;
+  description?: ReactNode;
+  actions?: ReactNode;
+  highlight?: boolean;
+  as?: "section" | "li";
+  children?: ReactNode;
+}) {
+  // Dans une liste, la carte est sous un titre de groupe (h2) : son titre devient h3.
+  const Heading = Tag === "li" ? "h3" : "h2";
+  return (
+    <Tag
+      className={`flex flex-col gap-4 rounded-card border bg-surface p-4 sm:p-5 ${
+        highlight ? "border-grid shadow-[0_0_0_3px_rgba(61,90,128,0.12)]" : "border-border"
+      }`}
+    >
+      <div className="flex items-start gap-3">
+        {icon && (
+          <span
+            className={`hidden size-10 flex-none items-center justify-center rounded-control sm:flex ${
+              highlight ? "bg-grid text-white" : "bg-bg text-subtle"
+            }`}
+          >
+            <Icon name={icon} size={18} />
+          </span>
+        )}
+        <div className="flex min-w-0 flex-1 flex-col gap-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <Heading className="text-[15px] font-semibold">{title}</Heading>
+            {badges}
+          </div>
+          {description && <div className="text-xs text-muted text-pretty">{description}</div>}
+        </div>
+        {actions && <div className="flex flex-none gap-1.5">{actions}</div>}
+      </div>
+      {children}
+    </Tag>
+  );
+}
+
+/** Pied de carte : lien discret à gauche, action(s) à droite. */
+export function CardFooter({ children }: { children: ReactNode }) {
+  return (
+    <div className="flex flex-wrap items-center gap-2 border-t border-track pt-3">{children}</div>
+  );
+}
+
+/** Grille de tuiles : autant de colonnes que la largeur le permet. */
+export const tiles = "grid grid-cols-[repeat(auto-fit,minmax(104px,1fr))] gap-2";
+
+/** Valeur chiffrée lisible : libellé au-dessus, chiffre tabulaire, unité à côté. */
+export function StatTile({
+  label,
+  value,
+  unit,
+  sub,
+  dot,
+}: {
+  label: string;
+  value: string;
+  unit?: string;
+  sub?: string;
+  /** Classe de couleur d'une pastille devant le libellé (ex. `bg-grid`). */
+  dot?: string;
+}) {
+  return (
+    <div className="flex min-w-0 flex-col gap-0.5 rounded-control bg-bg px-2.5 py-2.5">
+      <span className="flex items-center gap-1.5 text-[11px] text-muted">
+        {dot && <span className={`size-2 rounded-full ${dot}`} />}
+        {label}
+      </span>
+      <span className="flex flex-wrap items-baseline gap-x-1">
+        <span className="text-[17px] font-semibold tracking-tight tabular-nums">{value}</span>
+        {unit && <span className="text-[11px] text-subtle">{unit}</span>}
+      </span>
+      {sub && <span className="text-[11px] text-subtle tabular-nums">{sub}</span>}
+    </div>
+  );
+}
+
+/**
+ * Encart d'explication : une donnée incohérente ou une étape manquante, dite en clair,
+ * avec si possible l'action qui la corrige en un clic.
+ */
+export function Notice({
+  tone = "warning",
+  title,
+  children,
+  action,
+}: {
+  tone?: "warning" | "info";
+  title: ReactNode;
+  children?: ReactNode;
+  action?: ReactNode;
+}) {
+  return (
+    <div
+      role="status"
+      className={`flex flex-col gap-3 rounded-card border p-4 text-[13px] text-pretty ${
+        tone === "warning" ? "border-pellet/40 bg-[#FBF3EA]" : "border-grid/25 bg-grid/[0.05]"
+      }`}
+    >
+      <p>
+        <span className="font-semibold">{title}</span> {children}
+      </p>
+      {action && <div className="flex flex-wrap gap-2">{action}</div>}
+    </div>
+  );
+}
+
+/** Titre de groupe au-dessus d'une liste de cartes. */
+export function GroupTitle({ children }: { children: ReactNode }) {
+  return (
+    <h2 className="px-1 text-xs font-medium tracking-wide text-muted uppercase">{children}</h2>
+  );
+}

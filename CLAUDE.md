@@ -21,6 +21,9 @@ Assistant et calcule budget, contrats, chauffage et rentabilité. Interface et �
   commit atomique `feat|fix|chore|docs(scope): …` qui cite `Txx`, puis push.
 - TDD pour tout `src/domain/**` (≥ 90 % de lignes) ; test d'isolation multi-tenant
   (`describeTenantIsolation`, `tests/helpers/tenancy.ts`) pour chaque opération serveur.
+- Interface : suivre les « Principes d'interface » de `docs/SPEC.md` §2 et réutiliser les
+  briques de `src/components/ui` (carte par objet, élément actif mis en évidence, chiffres en
+  Instrument Sans tabulaire, statut explicite, encart `Notice` avec correction en un clic).
 - Vérifier dans le navigateur intégré (serveur `wattsup-dev`, `.claude/launch.json`) tout
   changement visible, compte de démo local : identifiants dans `.env.example`.
 - « Demander d'abord » : changement de schéma DB hors tâche, nouvelle dépendance runtime,

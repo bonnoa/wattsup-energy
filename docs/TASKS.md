@@ -195,6 +195,15 @@ Légende des tailles : **S** = 1–2 fichiers · **M** = 3–5 fichiers (hors te
   - Vérifier : sur le seed, le classement et les montants égalent `priceIntervals` (test d'intégration) ; manuel à 390 px
   - Fichiers : `src/app/(app)/contrats/page.tsx`, `src/server/queries/contracts.ts`, `src/app/(app)/contrats/tempo-calendar.tsx`
 
+- [x] **T18b — Contrats datés et historique de prix** · M · Dépend de : T17, T18
+  - Acceptation :
+    - Schéma : `contract` (`status` souscrit/simulé, `start_date`, `end_date`) et `contract_period` (`valid_from`, `config`) ; migration sans perte des contrats existants (l'actuel devient souscrit depuis la première donnée du foyer, les autres simulés)
+    - Domaine pur (TDD) : grille en vigueur à une date, contrat actuel, chevauchements refusés, frise de segments sur une période, `priceTimeline()` qui valorise chaque intervalle avec le contrat et la grille du jour (abonnement par segment, jours sans contrat comptés)
+    - Opérations : créer (souscrit ou simulé), modifier une période, ajouter une période « nouveaux prix à partir du… », supprimer une période (jamais la dernière), changer de contrat à une date (clôt l'actuel la veille), supprimer ; isolation multi-tenant sur chacune
+    - Écran Contrats : groupes Actuel / Historique / Simulés, frise, historique des grilles, ligne « Réellement payé » dans la comparaison ; seed de démo avec une hausse de prix au 1er février 2026
+  - Vérifier : `pnpm test tests/unit/domain/tariff/timeline tests/integration/contracts tests/integration/contract-comparison` ; manuel : changer de contrat et ajouter une grille dans le navigateur
+  - Fichiers : `src/domain/tariff/timeline.ts`, `src/db/schema.ts`, `src/server/contracts.ts`, `src/server/queries/contracts.ts`, `src/app/(app)/contrats/*`
+
 ### ✅ Checkpoint C : les 4 contrats de référence sont exacts à 1 centime près ; Tempo est simulé sur les données HP/HC réelles d'Alexandre.
 
 ---

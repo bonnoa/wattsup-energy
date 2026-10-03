@@ -50,6 +50,20 @@
       "when": 1791049918746,
       "tag": "0006_contracts",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1791051930417,
+      "tag": "0007_contract_history",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1791051972867,
+      "tag": "0008_contract_history_cleanup",
+      "breakpoints": true
     }
   ]
 }

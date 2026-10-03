@@ -1,87 +1,259 @@
-import { and, asc, desc, eq, ne } from "drizzle-orm";
+import { and, asc, eq } from "drizzle-orm";
 import { db } from "@/db";
-import { contract } from "@/db/schema";
-import type { ContractInput } from "@/domain/tariff/schema";
+import { contract, contractPeriod } from "@/db/schema";
+import {
+  currentContract,
+  findOverlaps,
+  latestGrid,
+  type DatedContract,
+} from "@/domain/tariff/timeline";
+import type { Contract } from "@/domain/tariff/types";
+import { addDays, localParts } from "@/lib/time";
 import type { HouseholdContext } from "./context";
 
-// Contrats du foyer (T17). Toutes les opérations filtrent par ctx.householdId ; un id
-// d'un autre foyer se comporte comme un id inconnu.
+// Contrats datés et historique de prix (T18b). Toutes les opérations filtrent par
+// ctx.householdId : un id d'un autre foyer se comporte comme un id inconnu. Les écritures
+// qui touchent aux dates vérifient l'absence de chevauchement dans la même transaction.
 
-export type ContractRow = typeof contract.$inferSelect;
+export interface ContractWithPeriods extends DatedContract {
+  kind: Contract["kind"];
+  periods: (DatedContract["periods"][number] & { id: string })[];
+}
 
-const own = (ctx: HouseholdContext, id: string) =>
-  and(eq(contract.id, id), eq(contract.householdId, ctx.householdId));
+export interface Subscription {
+  startDate: string;
+  endDate: string | null;
+}
 
-/** Contrats du foyer : l'actuel d'abord, puis du plus récent au plus ancien. */
-export function listContracts(ctx: HouseholdContext): Promise<ContractRow[]> {
-  return db
+/** Refus métier, messages en français pour l'interface. */
+export class ContractError extends Error {
+  constructor(readonly messages: string[]) {
+    super(messages.join(" ; "));
+  }
+}
+
+type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
+
+const today = (ctx: HouseholdContext) => localParts(new Date(), ctx.timezone).date;
+
+async function load(tx: Tx | typeof db, ctx: HouseholdContext): Promise<ContractWithPeriods[]> {
+  const contracts = await tx
     .select()
     .from(contract)
     .where(eq(contract.householdId, ctx.householdId))
-    .orderBy(desc(contract.isCurrent), desc(contract.createdAt), asc(contract.name));
+    .orderBy(asc(contract.createdAt));
+  const periods = await tx
+    .select()
+    .from(contractPeriod)
+    .where(eq(contractPeriod.householdId, ctx.householdId))
+    .orderBy(asc(contractPeriod.validFrom));
+  return contracts.map((c) => ({
+    id: c.id,
+    name: c.name,
+    kind: c.kind,
+    status: c.status,
+    startDate: c.startDate,
+    endDate: c.endDate,
+    periods: periods
+      .filter((p) => p.contractId === c.id)
+      .map((p) => ({ id: p.id, validFrom: p.validFrom, contract: p.config })),
+  }));
 }
 
-export async function getContract(ctx: HouseholdContext, id: string): Promise<ContractRow | null> {
-  const [row] = await db.select().from(contract).where(own(ctx, id));
+async function assertNoOverlap(tx: Tx, ctx: HouseholdContext) {
+  const errors = findOverlaps(await load(tx, ctx));
+  if (errors.length > 0) throw new ContractError(errors);
+}
+
+/** Contrats du foyer : l'actuel, puis les souscrits du plus récent au plus ancien, puis les simulés. */
+export async function listContracts(ctx: HouseholdContext): Promise<ContractWithPeriods[]> {
+  const all = await load(db, ctx);
+  const current = currentContract(all, today(ctx));
+  const rank = (c: ContractWithPeriods) =>
+    c.id === current?.id ? 0 : c.status === "subscribed" ? 1 : 2;
+  return [...all].sort(
+    (a, b) => rank(a) - rank(b) || (b.startDate ?? "").localeCompare(a.startDate ?? ""),
+  );
+}
+
+export async function getContract(ctx: HouseholdContext, id: string) {
+  return (await load(db, ctx)).find((c) => c.id === id) ?? null;
+}
+
+export interface NewContract {
+  name: string;
+  contract: Contract;
+  /** null : offre simulée. */
+  subscription: Subscription | null;
+}
+
+export async function createContract(ctx: HouseholdContext, input: NewContract) {
+  return db.transaction(async (tx) => {
+    const [row] = await tx
+      .insert(contract)
+      .values({
+        householdId: ctx.householdId,
+        name: input.name,
+        kind: input.contract.kind,
+        status: input.subscription ? "subscribed" : "simulated",
+        startDate: input.subscription?.startDate ?? null,
+        endDate: input.subscription?.endDate ?? null,
+      })
+      .returning();
+    if (!row) return null;
+    await tx.insert(contractPeriod).values({
+      contractId: row.id,
+      householdId: ctx.householdId,
+      validFrom: input.subscription?.startDate ?? today(ctx),
+      config: input.contract,
+    });
+    await assertNoOverlap(tx, ctx);
+    return row;
+  });
+}
+
+/** Nom et dates de souscription (les prix passent par les périodes). */
+export async function updateContract(
+  ctx: HouseholdContext,
+  id: string,
+  input: { name: string; subscription: Subscription | null },
+) {
+  return db.transaction(async (tx) => {
+    const [row] = await tx
+      .update(contract)
+      .set({
+        name: input.name,
+        status: input.subscription ? "subscribed" : "simulated",
+        startDate: input.subscription?.startDate ?? null,
+        endDate: input.subscription?.endDate ?? null,
+      })
+      .where(and(eq(contract.id, id), eq(contract.householdId, ctx.householdId)))
+      .returning();
+    if (row) await assertNoOverlap(tx, ctx);
+    return row ?? null;
+  });
+}
+
+async function ownedContract(tx: Tx | typeof db, ctx: HouseholdContext, id: string) {
+  const [row] = await tx
+    .select()
+    .from(contract)
+    .where(and(eq(contract.id, id), eq(contract.householdId, ctx.householdId)));
   return row ?? null;
 }
 
-/** Crée un contrat ; le premier du foyer devient le contrat actuel. */
-export async function createContract(ctx: HouseholdContext, input: ContractInput) {
-  const existing = await db.$count(contract, eq(contract.householdId, ctx.householdId));
+const kindMismatch = new ContractError(["le type d'un contrat ne peut pas changer"]);
+
+/** « Nouveaux prix à partir du… » : ajoute une grille datée. */
+export async function addPricePeriod(
+  ctx: HouseholdContext,
+  contractId: string,
+  input: { validFrom: string; contract: Contract },
+) {
+  const owner = await ownedContract(db, ctx, contractId);
+  if (!owner) return null;
+  if (owner.kind !== input.contract.kind) throw kindMismatch;
   const [row] = await db
-    .insert(contract)
+    .insert(contractPeriod)
     .values({
+      contractId,
       householdId: ctx.householdId,
-      name: input.name,
-      kind: input.contract.kind,
+      validFrom: input.validFrom,
       config: input.contract,
-      isCurrent: existing === 0,
+    })
+    .onConflictDoUpdate({
+      target: [contractPeriod.contractId, contractPeriod.validFrom],
+      set: { config: input.contract },
     })
     .returning();
   return row ?? null;
 }
 
-export async function updateContract(ctx: HouseholdContext, id: string, input: ContractInput) {
+export async function updatePricePeriod(
+  ctx: HouseholdContext,
+  periodId: string,
+  input: { validFrom: string; contract: Contract },
+) {
+  const [period] = await db
+    .select({ contractId: contractPeriod.contractId, kind: contract.kind })
+    .from(contractPeriod)
+    .innerJoin(contract, eq(contract.id, contractPeriod.contractId))
+    .where(and(eq(contractPeriod.id, periodId), eq(contractPeriod.householdId, ctx.householdId)));
+  if (!period) return null;
+  if (period.kind !== input.contract.kind) throw kindMismatch;
   const [row] = await db
-    .update(contract)
-    .set({ name: input.name, kind: input.contract.kind, config: input.contract })
-    .where(own(ctx, id))
+    .update(contractPeriod)
+    .set({ validFrom: input.validFrom, config: input.contract })
+    .where(and(eq(contractPeriod.id, periodId), eq(contractPeriod.householdId, ctx.householdId)))
     .returning();
   return row ?? null;
 }
 
+/** Supprime une grille ; la dernière d'un contrat ne peut pas l'être. */
+export async function deletePricePeriod(ctx: HouseholdContext, periodId: string): Promise<boolean> {
+  return db.transaction(async (tx) => {
+    const [period] = await tx
+      .select()
+      .from(contractPeriod)
+      .where(and(eq(contractPeriod.id, periodId), eq(contractPeriod.householdId, ctx.householdId)));
+    if (!period) return false;
+    const siblings = await tx.$count(
+      contractPeriod,
+      eq(contractPeriod.contractId, period.contractId),
+    );
+    if (siblings <= 1) throw new ContractError(["un contrat garde au moins une grille de prix"]);
+    await tx.delete(contractPeriod).where(eq(contractPeriod.id, periodId));
+    return true;
+  });
+}
+
+/** Copie simulée d'un contrat, avec sa grille actuelle. */
 export async function duplicateContract(ctx: HouseholdContext, id: string) {
   const source = await getContract(ctx, id);
   if (!source) return null;
-  const [row] = await db
-    .insert(contract)
-    .values({
-      householdId: ctx.householdId,
-      name: `${source.name} (copie)`.slice(0, 60),
-      kind: source.kind,
-      config: source.config,
-      isCurrent: false,
-    })
-    .returning();
-  return row ?? null;
+  return createContract(ctx, {
+    name: `${source.name} (copie)`.slice(0, 60),
+    contract: latestGrid(source),
+    subscription: null,
+  });
 }
 
 export async function deleteContract(ctx: HouseholdContext, id: string): Promise<boolean> {
-  const rows = await db.delete(contract).where(own(ctx, id)).returning({ id: contract.id });
+  const rows = await db
+    .delete(contract)
+    .where(and(eq(contract.id, id), eq(contract.householdId, ctx.householdId)))
+    .returning({ id: contract.id });
   return rows.length > 0;
 }
 
-/** Désigne le contrat actuel (un seul par foyer). */
-export async function setCurrentContract(ctx: HouseholdContext, id: string): Promise<boolean> {
+/**
+ * « J'ai changé de contrat le… » : le contrat en cours à cette date est clos la veille et
+ * le contrat cible (une offre simulée) devient souscrit à partir de cette date.
+ */
+export async function switchContract(ctx: HouseholdContext, targetId: string, date: string) {
   return db.transaction(async (tx) => {
-    const [target] = await tx.select({ id: contract.id }).from(contract).where(own(ctx, id));
+    const all = await load(tx, ctx);
+    const target = all.find((c) => c.id === targetId);
     if (!target) return false;
+    if (target.status === "subscribed") {
+      throw new ContractError(["ce contrat est déjà souscrit : modifiez ses dates"]);
+    }
+    const previous =
+      currentContract(all, date) ??
+      all.find(
+        (c) => c.status === "subscribed" && c.endDate === null && (c.startDate ?? "") < date,
+      );
+    if (previous) {
+      await tx
+        .update(contract)
+        .set({ endDate: addDays(date, -1) })
+        .where(eq(contract.id, previous.id));
+    }
     await tx
       .update(contract)
-      .set({ isCurrent: false })
-      .where(and(eq(contract.householdId, ctx.householdId), ne(contract.id, id)));
-    await tx.update(contract).set({ isCurrent: true }).where(own(ctx, id));
+      .set({ status: "subscribed", startDate: date, endDate: null })
+      .where(eq(contract.id, targetId));
+    await assertNoOverlap(tx, ctx);
     return true;
   });
 }

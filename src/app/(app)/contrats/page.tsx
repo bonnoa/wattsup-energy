@@ -1,4 +1,5 @@
 import { PageHeader } from "@/components/page-header";
+import { currentContract } from "@/domain/tariff/timeline";
 import { tempoSeasonOf } from "@/domain/tempo-calendar";
 import { addDays, eachDay, localParts } from "@/lib/time";
 import { listContracts } from "@/server/contracts";
@@ -19,7 +20,8 @@ export default async function ContractsPage() {
   ]);
 
   // Calendrier Tempo de la saison en cours, jusqu'au lendemain (couleur publiée vers 11 h).
-  const hasTempo = contracts.some((c) => c.config.kind === "tempo");
+  const current = currentContract(contracts, localParts(new Date(), ctx.timezone).date);
+  const hasTempo = contracts.some((c) => c.kind === "tempo");
   const today = localParts(new Date(), ctx.timezone).date;
   const season = tempoSeasonOf(today);
   let calendar: CalendarDay[] = [];
@@ -56,8 +58,12 @@ export default async function ContractsPage() {
           contracts={contracts.map((c) => ({
             id: c.id,
             name: c.name,
-            isCurrent: c.isCurrent,
-            contract: c.config,
+            kind: c.kind,
+            status: c.status,
+            startDate: c.startDate,
+            endDate: c.endDate,
+            isCurrent: c.id === current?.id,
+            periods: c.periods,
           }))}
         />
       </div>

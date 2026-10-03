@@ -23,7 +23,9 @@ describe("seedDemo", () => {
       .from(contract)
       .where(eq(contract.householdId, r.householdId));
     expect(contracts).toHaveLength(4);
-    expect(contracts.filter((c) => c.isCurrent).map((c) => c.kind)).toEqual(["hphc"]);
+    expect(
+      contracts.filter((c) => c.status === "subscribed").map((c) => [c.kind, c.startDate]),
+    ).toEqual([["hphc", "2026-09-23"]]);
     const imports = await db
       .select()
       .from(energyInterval)

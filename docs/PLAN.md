@@ -100,6 +100,7 @@ Taille : **S** = 1–2 fichiers · **M** = 3–5 fichiers. Aucune tâche L/XL.
 | T16b | Météo Open-Meteo : localisation du foyer (recherche de commune), `weather_daily` par maille, `WeatherSource` (*forecast* + *archive*), `pnpm weather:sync`, bloc `weather` retiré de l'ingestion | M | T2, T16 | tests MSW ; sur le staging, 3 ans d'historique pour ta commune et la veille mise à jour chaque matin |
 | T17 | CRUD contrats : éditeur par type, « définir comme actuel », dupliquer, supprimer | M | T12–T14 | US-6 (création) : chaque type est créable et validé par Zod |
 | T18 | Écran Contrats : comparaison sur 12 mois, encart du meilleur contrat, couverture, bandeau « approximatif » en mode quotidien, calendrier Tempo corrigeable | M | T16, T17 | US-6 : sur le seed, le classement est correct et les écarts affichés justes |
+| T18b | Contrats datés (souscrits / simulés) et historique de prix par contrat ; coût réel de l'historique valorisé au contrat et à la grille du jour | M | T17, T18 | migration sans perte ; changer de contrat et ajouter une grille fonctionnent ; « Réellement payé » affiché |
 
 **Checkpoint C** : critère de réussite n° 3 atteint (4 contrats de référence à 0,01 € près). Tempo simulé sur tes données HP/HC réelles du staging.
 
@@ -173,4 +174,5 @@ Taille : **S** = 1–2 fichiers · **M** = 3–5 fichiers. Aucune tâche L/XL.
 
 - Coolify : projet **« wattsup »**, domaine **`wattsup-energy.kraftpunk.app`**. Il sert d'instance de recette (appelée « staging » dans ce plan) dès T11, puis de prod.
 - Tempo : **service communautaire seul** en V1, plus le seed ; RTE reporté.
+- Contrats (2026-10-03) : contrats **datés** et **historique de prix par contrat** (T18b), prérequis de la Vue d'ensemble, du chauffage et de la rentabilité.
 - Météo (2026-10-03) : **Open-Meteo** côté serveur à la place de HA, avec la durée d'ensoleillement et l'irradiation pour la production solaire ; nouvelle tâche T16b.

@@ -1,9 +1,8 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState } from "react";
 import { CONTRACT_PRESETS, type ContractInput } from "@/domain/tariff/schema";
 import type { Contract, CustomRule, TempoColor, TimeRange } from "@/domain/tariff/types";
-import { saveContractAction } from "@/server/actions/contracts";
 import { KIND_LABELS } from "./labels";
 
 const DAYS = ["L", "M", "M", "J", "V", "S", "D"];
@@ -168,70 +167,54 @@ function RuleEditor({
   );
 }
 
-interface Props {
-  id: string | null;
-  initial: ContractInput;
-  onDone: () => void;
-}
-
-export function ContractEditor({ id, initial, onDone }: Props) {
-  const [name, setName] = useState(initial.name);
-  const [contract, setContract] = useState<Contract>(initial.contract);
-  const [errors, setErrors] = useState<string[]>([]);
-  const [pending, startTransition] = useTransition();
+/** Champs d'une grille de prix ; le type n'est modifiable qu'à la création d'un contrat. */
+export function GridFields({
+  contract,
+  onChange,
+  kindLocked,
+}: {
+  contract: Contract;
+  onChange: (c: Contract) => void;
+  kindLocked?: boolean;
+}) {
   // Remonter les champs décimaux quand le type change (leur texte est local).
   const [formKey, setFormKey] = useState(0);
-
   const switchKind = (kind: Contract["kind"]) => {
     if (kind === contract.kind) return;
-    setContract(presetFor(kind).contract);
+    onChange(presetFor(kind).contract);
     setFormKey((k) => k + 1);
   };
 
-  const save = () =>
-    startTransition(async () => {
-      const res = await saveContractAction(id, { name, contract });
-      if (res.ok) onDone();
-      else setErrors(res.errors.map((e) => e.message));
-    });
-
   return (
-    <section className="flex flex-col gap-4 rounded-card border border-border bg-surface p-5">
-      <h2 className="text-[15px] font-semibold">
-        {id ? "Modifier le contrat" : "Nouveau contrat"}
-      </h2>
-
-      <label className={labelClass}>
-        Nom
-        <input value={name} onChange={(e) => setName(e.target.value)} className={inputClass} />
-      </label>
-
-      <div className="flex flex-col gap-1.5">
-        <span className="text-xs text-muted">Type</span>
-        <div role="radiogroup" className="flex gap-1 rounded-[10px] bg-chip p-[3px]">
-          {(Object.keys(KIND_LABELS) as Contract["kind"][]).map((kind) => (
-            <button
-              key={kind}
-              type="button"
-              role="radio"
-              aria-checked={contract.kind === kind}
-              onClick={() => switchKind(kind)}
-              className={`flex-1 rounded-[8px] px-2 py-2 text-[13px] font-medium ${
-                contract.kind === kind ? "bg-surface shadow-[0_1px_2px_rgba(0,0,0,0.08)]" : ""
-              }`}
-            >
-              {KIND_LABELS[kind]}
-            </button>
-          ))}
+    <>
+      {!kindLocked && (
+        <div className="flex flex-col gap-1.5">
+          <span className="text-xs text-muted">Type</span>
+          <div role="radiogroup" className="flex gap-1 rounded-[10px] bg-chip p-[3px]">
+            {(Object.keys(KIND_LABELS) as Contract["kind"][]).map((kind) => (
+              <button
+                key={kind}
+                type="button"
+                role="radio"
+                aria-checked={contract.kind === kind}
+                onClick={() => switchKind(kind)}
+                className={`flex-1 rounded-[8px] px-2 py-2 text-[13px] font-medium ${
+                  contract.kind === kind ? "bg-surface shadow-[0_1px_2px_rgba(0,0,0,0.08)]" : ""
+                }`}
+              >
+                {KIND_LABELS[kind]}
+              </button>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
       <div key={formKey} className="flex flex-col gap-4">
         <DecimalField
           label="Abonnement"
           value={contract.subscriptionEurYear}
           unit="€/an"
-          onChange={(subscriptionEurYear) => setContract({ ...contract, subscriptionEurYear })}
+          onChange={(subscriptionEurYear) => onChange({ ...contract, subscriptionEurYear })}
         />
 
         {contract.kind === "base" && (
@@ -239,7 +222,7 @@ export function ContractEditor({ id, initial, onDone }: Props) {
             label="Prix du kWh"
             value={contract.priceEurKwh}
             unit="€/kWh"
-            onChange={(priceEurKwh) => setContract({ ...contract, priceEurKwh })}
+            onChange={(priceEurKwh) => onChange({ ...contract, priceEurKwh })}
           />
         )}
 
@@ -250,20 +233,20 @@ export function ContractEditor({ id, initial, onDone }: Props) {
                 label="Heures pleines"
                 value={contract.prices.hp}
                 unit="€/kWh"
-                onChange={(hp) => setContract({ ...contract, prices: { ...contract.prices, hp } })}
+                onChange={(hp) => onChange({ ...contract, prices: { ...contract.prices, hp } })}
               />
               <DecimalField
                 label="Heures creuses"
                 value={contract.prices.hc}
                 unit="€/kWh"
-                onChange={(hc) => setContract({ ...contract, prices: { ...contract.prices, hc } })}
+                onChange={(hc) => onChange({ ...contract, prices: { ...contract.prices, hc } })}
               />
             </div>
             <div className="flex flex-col gap-1.5">
               <span className="text-xs text-muted">Plages d&apos;heures creuses</span>
               <RangesField
                 ranges={contract.hcRanges}
-                onChange={(hcRanges) => setContract({ ...contract, hcRanges })}
+                onChange={(hcRanges) => onChange({ ...contract, hcRanges })}
               />
             </div>
           </>
@@ -287,7 +270,7 @@ export function ContractEditor({ id, initial, onDone }: Props) {
                     value={contract.prices[c.id][slot]}
                     unit="€/kWh"
                     onChange={(v) =>
-                      setContract({
+                      onChange({
                         ...contract,
                         prices: {
                           ...contract.prices,
@@ -313,7 +296,7 @@ export function ContractEditor({ id, initial, onDone }: Props) {
                 key={i}
                 rule={rule}
                 onChange={(r) =>
-                  setContract({
+                  onChange({
                     ...contract,
                     rules: contract.rules.map((x, j) => (j === i ? r : x)),
                   })
@@ -321,7 +304,7 @@ export function ContractEditor({ id, initial, onDone }: Props) {
                 onRemove={
                   contract.rules.length > 1
                     ? () =>
-                        setContract({
+                        onChange({
                           ...contract,
                           rules: contract.rules.filter((_, j) => j !== i),
                         })
@@ -332,7 +315,7 @@ export function ContractEditor({ id, initial, onDone }: Props) {
             <button
               type="button"
               onClick={() =>
-                setContract({
+                onChange({
                   ...contract,
                   rules: [
                     ...contract.rules,
@@ -352,32 +335,110 @@ export function ContractEditor({ id, initial, onDone }: Props) {
           </div>
         )}
       </div>
-
-      {errors.length > 0 && (
-        <ul role="alert" className="flex flex-col gap-1 text-sm text-negative">
-          {errors.map((e) => (
-            <li key={e}>{e}</li>
-          ))}
-        </ul>
-      )}
-
-      <div className="flex gap-2">
-        <button
-          type="button"
-          onClick={save}
-          disabled={pending}
-          className="flex h-10 items-center rounded-[8px] bg-ink px-4 text-[13px] font-medium text-bg disabled:opacity-60"
-        >
-          Enregistrer
-        </button>
-        <button
-          type="button"
-          onClick={onDone}
-          className="flex h-10 items-center rounded-[8px] border border-border-strong px-4 text-[13px] text-[#5E625C] hover:bg-bg"
-        >
-          Annuler
-        </button>
-      </div>
-    </section>
+    </>
   );
 }
+
+export function Errors({ errors }: { errors: string[] }) {
+  if (errors.length === 0) return null;
+  return (
+    <ul role="alert" className="flex flex-col gap-1 text-sm text-negative">
+      {errors.map((e) => (
+        <li key={e}>{e}</li>
+      ))}
+    </ul>
+  );
+}
+
+export function FormButtons({
+  pending,
+  onSave,
+  onCancel,
+}: {
+  pending: boolean;
+  onSave: () => void;
+  onCancel: () => void;
+}) {
+  return (
+    <div className="flex gap-2">
+      <button
+        type="button"
+        onClick={onSave}
+        disabled={pending}
+        className="flex h-10 items-center rounded-[8px] bg-ink px-4 text-[13px] font-medium text-bg disabled:opacity-60"
+      >
+        Enregistrer
+      </button>
+      <button
+        type="button"
+        onClick={onCancel}
+        className="flex h-10 items-center rounded-[8px] border border-border-strong px-4 text-[13px] text-[#5E625C] hover:bg-bg"
+      >
+        Annuler
+      </button>
+    </div>
+  );
+}
+
+export interface SubscriptionValue {
+  startDate: string;
+  endDate: string | null;
+}
+
+/** Contrat souscrit (avec dates) ou simple offre à comparer. */
+export function SubscriptionFields({
+  value,
+  onChange,
+}: {
+  value: SubscriptionValue | null;
+  onChange: (v: SubscriptionValue | null) => void;
+}) {
+  const today = new Date().toISOString().slice(0, 10);
+  return (
+    <div className="flex flex-col gap-3">
+      <div role="radiogroup" className="flex gap-1 rounded-[10px] bg-chip p-[3px]">
+        {[
+          { on: true, label: "Contrat souscrit" },
+          { on: false, label: "Offre à comparer" },
+        ].map((o) => (
+          <button
+            key={o.label}
+            type="button"
+            role="radio"
+            aria-checked={(value !== null) === o.on}
+            onClick={() => onChange(o.on ? (value ?? { startDate: today, endDate: null }) : null)}
+            className={`flex-1 rounded-[8px] px-2 py-2 text-[13px] font-medium ${
+              (value !== null) === o.on ? "bg-surface shadow-[0_1px_2px_rgba(0,0,0,0.08)]" : ""
+            }`}
+          >
+            {o.label}
+          </button>
+        ))}
+      </div>
+      {value && (
+        <div className="grid grid-cols-2 gap-3">
+          <label className={labelClass}>
+            Début
+            <input
+              type="date"
+              value={value.startDate}
+              onChange={(e) => onChange({ ...value, startDate: e.target.value })}
+              className={inputClass}
+            />
+          </label>
+          <label className={labelClass}>
+            Fin (vide si en cours)
+            <input
+              type="date"
+              value={value.endDate ?? ""}
+              onChange={(e) => onChange({ ...value, endDate: e.target.value || null })}
+              className={inputClass}
+            />
+          </label>
+        </div>
+      )}
+    </div>
+  );
+}
+
+export { inputClass, labelClass };

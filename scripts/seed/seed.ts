@@ -3,6 +3,7 @@ import { db } from "../../src/db";
 import {
   category,
   contract,
+  contractPeriod,
   energyInterval,
   household,
   meterState,
@@ -75,17 +76,33 @@ export async function seedDemo({
     await tx.delete(meterState).where(eq(meterState.householdId, householdId));
     await tx.delete(category).where(eq(category.householdId, householdId));
     await tx.insert(category).values(CATEGORIES.map((c) => ({ ...c, householdId })));
-    // Les 4 offres de référence ; le contrat actuel est le HP/HC, comme dans la maquette.
+    // Les 4 offres de référence. Le HP/HC est souscrit depuis le début des données, avec une
+    // hausse de prix au 1er février 2026 ; les autres sont des offres à comparer.
     await tx.delete(contract).where(eq(contract.householdId, householdId));
-    await tx.insert(contract).values(
-      CONTRACT_PRESETS.map((p) => ({
-        householdId,
-        name: p.name,
-        kind: p.contract.kind,
-        config: p.contract,
-        isCurrent: p.contract.kind === "hphc",
-      })),
-    );
+    for (const p of CONTRACT_PRESETS) {
+      const subscribed = p.contract.kind === "hphc";
+      const [row] = await tx
+        .insert(contract)
+        .values({
+          householdId,
+          name: p.name,
+          kind: p.contract.kind,
+          status: subscribed ? "subscribed" : "simulated",
+          startDate: subscribed ? from : null,
+        })
+        .returning({ id: contract.id });
+      if (!row) continue;
+      const periods =
+        subscribed && p.contract.kind === "hphc"
+          ? [
+              { validFrom: from, config: { ...p.contract, prices: { hp: 0.2516, hc: 0.1915 } } },
+              { validFrom: "2026-02-01", config: p.contract },
+            ]
+          : [{ validFrom: to, config: p.contract }];
+      await tx
+        .insert(contractPeriod)
+        .values(periods.map((x) => ({ ...x, contractId: row.id, householdId })));
+    }
 
     const rows = demo.hours.flatMap((h) => {
       const base = {

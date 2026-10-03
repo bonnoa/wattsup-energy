@@ -46,7 +46,14 @@ describe("getContractComparison", () => {
   it("30 jours horaires : coûts du moteur, annualisation, couverture complète", async () => {
     const ctx = await createTestHousehold();
     const rows = await hourlyImport(ctx.householdId, 30);
-    for (const p of CONTRACT_PRESETS) await createContract(ctx, p);
+    // Base souscrit depuis 2026-01-01 ; les autres offres simulées.
+    for (const p of CONTRACT_PRESETS) {
+      await createContract(ctx, {
+        ...p,
+        subscription:
+          p.contract.kind === "base" ? { startDate: "2026-01-01", endDate: null } : null,
+      });
+    }
     const r = await getContractComparison(ctx, now);
     if (r.status !== "ok") throw new Error(r.status);
     expect(r).toMatchObject({ from: "2026-09-03", to: "2026-10-03", periodDays: 30, kwh: 720 });
@@ -59,7 +66,13 @@ describe("getContractComparison", () => {
       { timezone: "Europe/Paris", period: { from: "2026-09-03", to: "2026-10-03" } },
     );
     expect(base?.totalCents).toBe(expected.totalCents);
-    expect(r.rows.find((c) => c.isCurrent)?.contract.kind).toBe("base"); // premier créé
+    expect(r.rows.find((c) => c.isCurrent)?.contract.kind).toBe("base");
+    // Base souscrit sur toute la période : le coût réel égale sa simulation.
+    expect(r.real).toEqual({
+      totalCents: expected.totalCents,
+      annualCents: base?.annualCents,
+      unknownContractDays: 0,
+    });
   });
 
   it("couverture partielle : heures manquantes comptées", async () => {
@@ -67,7 +80,10 @@ describe("getContractComparison", () => {
     const rows = await hourlyImport(ctx.householdId, 10);
     await db.delete(energyInterval); // repart à vide pour ce foyer et les autres
     await db.insert(energyInterval).values(rows.filter((_, i) => i % 2 === 0));
-    await createContract(ctx, preset(0));
+    await createContract(ctx, {
+      ...preset(0),
+      subscription: { startDate: "2026-01-01", endDate: null },
+    });
     const r = await getContractComparison(ctx, now);
     expect(r.status === "ok" && r.coverage).toBeCloseTo(0.5, 5);
   });
@@ -75,7 +91,10 @@ describe("getContractComparison", () => {
   it("jours rouges : couleur du foyer prioritaire", async () => {
     const ctx = await createTestHousehold();
     await hourlyImport(ctx.householdId, 10);
-    await createContract(ctx, preset(2));
+    await createContract(ctx, {
+      ...preset(2),
+      subscription: { startDate: "2026-01-01", endDate: null },
+    });
     await db.insert(tempoOverride).values([
       { householdId: ctx.householdId, date: "2026-09-28", color: "rouge", source: "manual" },
       { householdId: ctx.householdId, date: "2026-09-29", color: "rouge", source: "ha" },
@@ -107,7 +126,10 @@ describe("getContractComparison", () => {
       }
     }
     await db.insert(energyInterval).values(rows);
-    await createContract(ctx, preset(1));
+    await createContract(ctx, {
+      ...preset(1),
+      subscription: { startDate: "2026-01-01", endDate: null },
+    });
     const r = await getContractComparison({ ...ctx, granularity: "daily" }, now);
     if (r.status !== "ok") throw new Error(r.status);
     expect(r.periodDays).toBe(12); // du 21/09 au 03/10
@@ -137,7 +159,10 @@ describe("calendrier Tempo du foyer", () => {
 describeTenantIsolation("comparaison des contrats", {
   setup: async (b) => {
     await hourlyImport(b.householdId, 10);
-    await createContract(b, preset(0));
+    await createContract(b, {
+      ...preset(0),
+      subscription: { startDate: "2026-01-01", endDate: null },
+    });
     return b.householdId;
   },
   attempt: async (a) => {

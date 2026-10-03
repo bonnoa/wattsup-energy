@@ -79,6 +79,19 @@ export function ComparisonList({ comparison }: { comparison: Ok }) {
           couverture {Math.round(comparison.coverage * 100)} %
         </span>
       </div>
+      {comparison.real && (
+        <div className="flex items-center justify-between gap-2 rounded-[10px] bg-bg px-3 py-2.5">
+          <span className="flex flex-col">
+            <span className="text-[13px] font-medium">Réellement payé</span>
+            <span className="text-[11px] text-subtle">
+              contrats et prix en vigueur chaque jour
+              {comparison.real.unknownContractDays > 0 &&
+                ` · ${comparison.real.unknownContractDays} j sans contrat, estimés au tarif actuel`}
+            </span>
+          </span>
+          <span className="font-mono text-sm">{eur(comparison.real.annualCents)}/an</span>
+        </div>
+      )}
       <ul className="flex flex-col gap-3">
         {comparison.rows.map((r) => {
           const delta = r.deltaAnnualCents;

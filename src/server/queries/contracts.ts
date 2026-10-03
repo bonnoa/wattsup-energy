@@ -2,6 +2,12 @@ import { and, asc, eq, gte, lt } from "drizzle-orm";
 import { db } from "@/db";
 import { energyInterval } from "@/db/schema";
 import { compareContracts, type ComparedContract } from "@/domain/tariff/compare";
+import {
+  buildTimeline,
+  currentContract,
+  latestGrid,
+  priceTimeline,
+} from "@/domain/tariff/timeline";
 import type { PriceableInterval } from "@/domain/tariff/types";
 import { addDays, eachDay, localParts, zonedInstant } from "@/lib/time";
 import type { HouseholdContext } from "../context";
@@ -27,6 +33,8 @@ export type ContractComparison =
       granularity: "hourly" | "daily";
       redDays: number;
       rows: ComparedContract[];
+      /** Coût réellement payé sur la période (contrat et grille en vigueur chaque jour). */
+      real: { totalCents: number; annualCents: number; unknownContractDays: number } | null;
     };
 
 export async function getContractComparison(
@@ -72,13 +80,37 @@ export async function getContractComparison(
 
   // La veille de la période est incluse : ses heures de 0 h à 6 h sont du jour Tempo précédent.
   const colors = await tempoColorsFor(ctx.householdId, addDays(from, -1), today);
+  const tempoColor = (d: string) => colors.get(d);
   const contracts = await listContracts(ctx);
+  const current = currentContract(contracts, today);
+  // Chaque offre est simulée avec sa grille actuelle : ce qu'elle coûterait aujourd'hui.
   const compared = compareContracts(
-    contracts.map((c) => ({ id: c.id, name: c.name, isCurrent: c.isCurrent, contract: c.config })),
+    contracts.map((c) => ({
+      id: c.id,
+      name: c.name,
+      isCurrent: c.id === current?.id,
+      contract: latestGrid(c),
+    })),
     intervals,
-    { timezone: tz, period: { from, to: today }, tempoColor: (d) => colors.get(d) },
+    { timezone: tz, period: { from, to: today }, tempoColor },
     periodDays,
   );
+
+  // Coût réel : contrat souscrit et grille en vigueur à chaque date.
+  const hasSubscribed = contracts.some((c) => c.status === "subscribed");
+  const timeline = hasSubscribed
+    ? priceTimeline(intervals, buildTimeline(contracts, from, today, today), {
+        timezone: tz,
+        tempoColor,
+      })
+    : null;
+  const real = timeline
+    ? {
+        totalCents: timeline.totalCents,
+        annualCents: Math.round((timeline.totalCents * 365) / periodDays),
+        unknownContractDays: timeline.unknownContractDays,
+      }
+    : null;
 
   // Couverture : heures reçues (mode horaire) ou jours reçus (mode quotidien).
   const hours = intervals.filter((i) => i.granularity === "hour").length;
@@ -96,5 +128,6 @@ export async function getContractComparison(
     granularity: ctx.granularity,
     redDays,
     rows: compared,
+    real,
   };
 }

@@ -224,7 +224,10 @@ export const ingestLog = pgTable(
   (t) => [index("ingest_log_household_received_idx").on(t.householdId, t.receivedAt)],
 );
 
-/** Contrats d'électricité : l'actuel (au plus un par foyer) et les offres simulées. */
+/**
+ * Contrats d'électricité (T18b) : souscrits (datés, sans chevauchement) ou simulés. Le
+ * type est fixe ; les prix vivent dans contract_period (historique des grilles).
+ */
 export const contract = pgTable(
   "contract",
   {
@@ -232,19 +235,35 @@ export const contract = pgTable(
     householdId: householdRef(),
     name: text("name").notNull(),
     kind: text("kind", { enum: ["base", "hphc", "tempo", "custom"] }).notNull(),
-    /** Grille complète, validée par parseContractInput (src/domain/tariff/schema.ts). */
-    config: jsonb("config").$type<Contract>().notNull(),
-    isCurrent: boolean("is_current").notNull().default(false),
+    status: text("status", { enum: ["subscribed", "simulated"] })
+      .notNull()
+      .default("simulated"),
+    /** Contrat souscrit : premier jour (inclus). */
+    startDate: date("start_date"),
+    /** Contrat souscrit terminé : dernier jour (inclus) ; vide = en cours. */
+    endDate: date("end_date"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true })
       .notNull()
       .defaultNow()
       .$onUpdate(() => new Date()),
   },
-  (t) => [
-    index("contract_household_idx").on(t.householdId),
-    uniqueIndex("contract_one_current_idx")
-      .on(t.householdId)
-      .where(sql`${t.isCurrent}`),
-  ],
+  (t) => [index("contract_household_idx").on(t.householdId)],
+);
+
+/** Historique des grilles de prix d'un contrat (T18b) : chacune s'applique de validFrom à la suivante. */
+export const contractPeriod = pgTable(
+  "contract_period",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    contractId: uuid("contract_id")
+      .notNull()
+      .references(() => contract.id, { onDelete: "cascade" }),
+    householdId: householdRef(),
+    validFrom: date("valid_from").notNull(),
+    /** Grille complète, validée par parseContractInput (src/domain/tariff/schema.ts). */
+    config: jsonb("config").$type<Contract>().notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [unique("contract_period_contract_from_uq").on(t.contractId, t.validFrom)],
 );

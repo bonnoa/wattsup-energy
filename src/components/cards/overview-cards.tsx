@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { StackedBars } from "@/components/charts/stacked-bars";
+import { CoverageBadge } from "@/components/coverage-badge";
 import { Badge, button, Card, Notice, StatTile, tiles } from "@/components/ui";
 import { CATEGORY_SWATCH, CategoryTile, categoryColor } from "@/components/ui/category";
 import { monthLabel } from "@/domain/overview";
@@ -76,6 +77,9 @@ export function PeriodSwitcher({ overview }: { overview: Ok }) {
         </span>
         {arrow(nav.next, "Période suivante", "›")}
       </div>
+      {overview.coverage !== null && (
+        <CoverageBadge ratio={overview.coverage} granularity={overview.granularity} />
+      )}
     </div>
   );
 }
@@ -447,35 +451,44 @@ export function SolarCard({ overview }: { overview: Ok }) {
           renseignez votre commune pour mettre la production en regard de l&apos;ensoleillement.
         </Notice>
       )}
-      <div className="flex flex-col gap-1">
-        <span className="text-[11px] text-muted">Production (kWh)</span>
-        <StackedBars
-          height={120}
-          ariaLabel={`Production solaire ${byMonth ? "par mois" : "par jour"}, ${period.label}`}
-          bars={solar.points.map((p, i) => ({
-            key: p.key,
-            label: label(p.key, i),
-            title: `${pointTitle(p.key)} : ${formatKwh(p.kwh, p.kwh < 10 ? 1 : 0)}`,
-            segments: [{ value: p.kwh, color: "bg-solar", label: "Production" }],
-          }))}
-        />
-      </div>
-      {!solar.noLocation && (
-        <div className="flex flex-col gap-1">
-          <span className="text-[11px] text-muted">Ensoleillement (heures)</span>
-          <StackedBars
-            height={64}
-            ariaLabel={`Heures d'ensoleillement ${byMonth ? "par mois" : "par jour"}, ${period.label}`}
-            bars={solar.points.map((p, i) => ({
-              key: p.key,
-              label: label(p.key, i),
-              title: `${pointTitle(p.key)} : ${p.sunshineHours === null ? "inconnu" : fmtHours(p.sunshineHours)}`,
-              segments: [
-                { value: p.sunshineHours ?? 0, color: "bg-[#8A8E86]", label: "Ensoleillement" },
-              ],
-            }))}
-          />
-        </div>
+      {solar.kwh === 0 ? (
+        <p className="text-sm text-muted">
+          Aucune production solaire reçue sur cette période. Vérifiez que le capteur de production
+          est bien renseigné dans l&apos;automatisation Home Assistant.
+        </p>
+      ) : (
+        <>
+          <div className="flex flex-col gap-1">
+            <span className="text-[11px] text-muted">Production (kWh)</span>
+            <StackedBars
+              height={120}
+              ariaLabel={`Production solaire ${byMonth ? "par mois" : "par jour"}, ${period.label}`}
+              bars={solar.points.map((p, i) => ({
+                key: p.key,
+                label: label(p.key, i),
+                title: `${pointTitle(p.key)} : ${formatKwh(p.kwh, p.kwh < 10 ? 1 : 0)}`,
+                segments: [{ value: p.kwh, color: "bg-solar", label: "Production" }],
+              }))}
+            />
+          </div>
+          {!solar.noLocation && (
+            <div className="flex flex-col gap-1">
+              <span className="text-[11px] text-muted">Ensoleillement (heures)</span>
+              <StackedBars
+                height={64}
+                ariaLabel={`Heures d'ensoleillement ${byMonth ? "par mois" : "par jour"}, ${period.label}`}
+                bars={solar.points.map((p, i) => ({
+                  key: p.key,
+                  label: label(p.key, i),
+                  title: `${pointTitle(p.key)} : ${p.sunshineHours === null ? "inconnu" : fmtHours(p.sunshineHours)}`,
+                  segments: [
+                    { value: p.sunshineHours ?? 0, color: "bg-[#8A8E86]", label: "Ensoleillement" },
+                  ],
+                }))}
+              />
+            </div>
+          )}
+        </>
       )}
     </Card>
   );

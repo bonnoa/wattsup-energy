@@ -1,5 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { energyBalance, parsePeriod, periodNav, solarYield, yearMonths } from "@/domain/overview";
+import {
+  coverageWindow,
+  energyBalance,
+  expectedSlots,
+  parsePeriod,
+  periodNav,
+  solarYield,
+  yearMonths,
+} from "@/domain/overview";
 
 const TODAY = "2026-10-03";
 
@@ -106,5 +114,26 @@ describe("solarYield", () => {
     expect(solarYield(300, 150)).toBe(2);
     expect(solarYield(300, 0)).toBeNull();
     expect(solarYield(300, null)).toBeNull();
+  });
+});
+
+describe("couverture", () => {
+  it("fenêtre : jours terminés de la période ; vide le premier jour du mois en cours", () => {
+    expect(coverageWindow(parsePeriod("2026-09", TODAY), TODAY)).toEqual({
+      from: "2026-09-01",
+      to: "2026-10-01",
+    });
+    expect(coverageWindow(parsePeriod("2026-10", TODAY), TODAY)).toEqual({
+      from: "2026-10-01",
+      to: "2026-10-03",
+    });
+    expect(coverageWindow(parsePeriod("2026-10", "2026-10-01"), "2026-10-01")).toBeNull();
+  });
+
+  it("créneaux attendus : heures réelles (changement d'heure compris) ou jours", () => {
+    expect(expectedSlots("2026-09-01", "2026-10-01", "hourly", "Europe/Paris")).toBe(720);
+    // 25 octobre 2026 : passage à l'heure d'hiver, journée de 25 h
+    expect(expectedSlots("2026-10-25", "2026-10-26", "hourly", "Europe/Paris")).toBe(25);
+    expect(expectedSlots("2026-09-01", "2026-10-01", "daily", "Europe/Paris")).toBe(30);
   });
 });

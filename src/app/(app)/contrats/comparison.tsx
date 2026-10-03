@@ -1,4 +1,6 @@
-import { Badge } from "@/components/ui";
+import { CoverageBadge } from "@/components/coverage-badge";
+import { EmptyState } from "@/components/empty-state";
+import { Badge, Notice } from "@/components/ui";
 import type { ContractComparison } from "@/server/queries/contracts";
 import { KIND_LABELS } from "./labels";
 
@@ -13,21 +15,18 @@ const fmtDate = (iso: string) =>
 type Ok = Extract<ContractComparison, { status: "ok" }>;
 
 export function ComparisonEmpty({ comparison }: { comparison: Exclude<ContractComparison, Ok> }) {
+  if (comparison.status === "no-data") {
+    return (
+      <EmptyState title="Comparaison des contrats :">
+        aucune consommation reçue sur les 12 derniers mois.
+      </EmptyState>
+    );
+  }
   return (
-    <section className="flex flex-col gap-2 rounded-card border border-dashed border-[#CFC9BB] bg-surface p-5 text-sm text-muted">
-      <h2 className="text-[15px] font-semibold text-ink">Comparaison des contrats</h2>
-      {comparison.status === "no-data" ? (
-        <p>
-          Aucune consommation reçue sur les 12 derniers mois. Connectez Home Assistant (Réglages ›
-          API d&apos;ingestion) ou importez votre historique.
-        </p>
-      ) : (
-        <p>
-          {comparison.days} jour{comparison.days > 1 ? "s" : ""} de données pour l&apos;instant : la
-          comparaison s&apos;affiche à partir de 7 jours.
-        </p>
-      )}
-    </section>
+    <Notice tone="info" title="Comparaison des contrats :">
+      {comparison.days} jour{comparison.days > 1 ? "s" : ""} de données pour l&apos;instant ; elle
+      s&apos;affiche à partir de 7 jours.
+    </Notice>
   );
 }
 
@@ -76,9 +75,7 @@ export function ComparisonList({ comparison }: { comparison: Ok }) {
     <section className="flex flex-col gap-3 rounded-card border border-border bg-surface p-5">
       <div className="flex items-baseline justify-between gap-2">
         <h2 className="text-[15px] font-semibold">Coût annuel simulé</h2>
-        <span className="text-[11px] text-subtle tabular-nums">
-          couverture {Math.round(comparison.coverage * 100)} %
-        </span>
+        <CoverageBadge ratio={comparison.coverage} granularity={comparison.granularity} />
       </div>
       {comparison.real && (
         <div className="flex items-center justify-between gap-2 rounded-[10px] bg-bg px-3 py-2.5">

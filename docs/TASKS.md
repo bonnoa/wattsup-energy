@@ -225,11 +225,11 @@ Légende des tailles : **S** = 1–2 fichiers · **M** = 3–5 fichiers (hors te
   - Vérifier : test d'intégration sur le seed (total de la vue = somme moteur + combustibles) ; manuel à 1280 et 390 px
   - Fichiers : `src/server/queries/overview.ts`, `src/app/(app)/page.tsx`, `src/components/charts/stacked-bars.tsx`, `src/components/cards/*`
 
-- [ ] **T21 — États vides et couverture** · S · Dépend de : T20
+- [x] **T21 — États vides et couverture** · S · Dépend de : T20
   - Acceptation :
     - Composants `<EmptyState>` (CTA : connecter HA / importer un CSV) et `<CoverageBadge>` (% d'heures ou de jours reçus)
     - Un foyer sans données n'affiche aucun `NaN`, `Infinity` ou graphe vide
-  - Vérifier : test e2e « foyer neuf » ; manuel
+  - Vérifier : test e2e « foyer neuf » ; manuel (Playwright arrive en T33 : en attendant, `tests/integration/empty-states.test.ts` vérifie qu'aucune valeur non finie ne sort des requêtes)
   - Fichiers : `src/components/empty-state.tsx`, `src/components/coverage-badge.tsx`
 
 - [ ] **T22 — Import CSV** · M · Dépend de : T8

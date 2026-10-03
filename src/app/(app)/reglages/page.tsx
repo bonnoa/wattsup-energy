@@ -57,7 +57,9 @@ export default async function SettingsPage() {
               lastDataAt: c.lastDataAt?.toISOString() ?? null,
             }))}
           />
-          <PlaceholderCard task="T22">Import historique CSV.</PlaceholderCard>
+          <div id="import-csv" className="scroll-mt-6">
+            <PlaceholderCard task="T22">Import historique CSV.</PlaceholderCard>
+          </div>
         </div>
       </div>
     </>

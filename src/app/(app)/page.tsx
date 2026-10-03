@@ -1,4 +1,3 @@
-import Link from "next/link";
 import {
   BudgetCard,
   CategoriesOverviewCard,
@@ -9,7 +8,7 @@ import {
   SolarCard,
 } from "@/components/cards/overview-cards";
 import { PageHeader } from "@/components/page-header";
-import { button, Notice } from "@/components/ui";
+import { EmptyState } from "@/components/empty-state";
 import { visibleModules } from "@/domain/profile";
 import { pageContext } from "@/server/page";
 import { getOverview } from "@/server/queries/overview";
@@ -31,18 +30,10 @@ export default async function OverviewPage({
         subtitle="Budget énergie, origine de la consommation et postes"
       />
       {overview.status === "no-data" ? (
-        <Notice
-          tone="info"
-          title="Aucune donnée pour l'instant."
-          action={
-            <Link href="/reglages" className={button.primary}>
-              Connecter Home Assistant
-            </Link>
-          }
-        >
-          Le tableau de bord se remplit dès le premier envoi de Home Assistant (Réglages › API
-          d&apos;ingestion).
-        </Notice>
+        <EmptyState title="Aucune donnée pour l'instant.">
+          Le tableau de bord se remplit dès le premier envoi de Home Assistant, ou avec
+          l&apos;import de votre historique.
+        </EmptyState>
       ) : (
         <>
           <PeriodSwitcher overview={overview} />

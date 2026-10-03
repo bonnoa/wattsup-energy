@@ -1,4 +1,4 @@
-import { addDays } from "@/lib/time";
+import { addDays, eachDay, zonedInstant } from "@/lib/time";
 
 // Vue d'ensemble (SPEC §9, T20) : périodes de navigation et bilan énergétique. Pur.
 
@@ -149,4 +149,24 @@ export function energyBalance(
 /** Rendement solaire : kWh produits par kWh/m² reçu (null sans irradiation). */
 export function solarYield(kwh: number, radiationKwhM2: number | null): number | null {
   return radiationKwhM2 && radiationKwhM2 > 0 ? kwh / radiationKwhM2 : null;
+}
+
+/** Jours terminés de la période (aujourd'hui exclu), null s'il n'y en a aucun. */
+export function coverageWindow(period: Period, today: string): { from: string; to: string } | null {
+  const to = period.to < today ? period.to : today;
+  return to > period.from ? { from: period.from, to } : null;
+}
+
+/** Créneaux attendus sur [from, to) : heures réelles du fuseau (mode horaire) ou jours. */
+export function expectedSlots(
+  from: string,
+  to: string,
+  granularity: "hourly" | "daily",
+  timezone: string,
+): number {
+  if (granularity === "daily") return eachDay(from, to).length;
+  return Math.round(
+    (zonedInstant(to, 0, timezone).getTime() - zonedInstant(from, 0, timezone).getTime()) /
+      3_600_000,
+  );
 }

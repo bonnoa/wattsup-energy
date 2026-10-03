@@ -1,8 +1,10 @@
-import { and, asc, eq, gte, like, lt, min, or, sql, sum } from "drizzle-orm";
+import { and, asc, countDistinct, eq, gte, like, lt, min, or, sql, sum } from "drizzle-orm";
 import { db } from "@/db";
 import { energyInterval, household, weatherDaily } from "@/db/schema";
 import {
+  coverageWindow,
   energyBalance,
+  expectedSlots,
   parsePeriod,
   periodNav,
   solarYield,
@@ -44,6 +46,8 @@ export type Overview =
       period: Period;
       nav: { prev: string | null; next: string | null };
       granularity: "hourly" | "daily";
+      /** Part des heures (horaire) ou des jours (quotidien) reçus sur les jours terminés. */
+      coverage: number | null;
       budget: {
         /** null : aucun contrat pour chiffrer l'électricité. */
         totalCents: number | null;
@@ -121,6 +125,25 @@ async function totalsByMetric(ctx: HouseholdContext, from: string, to: string) {
     )
     .groupBy(energyInterval.metric);
   return Object.fromEntries(rows.map((r) => [r.metric, r.kwh]));
+}
+
+/** Part des créneaux attendus effectivement reçus pour l'import réseau, null sans jour terminé. */
+async function periodCoverage(ctx: HouseholdContext, period: Period, today: string) {
+  const window = coverageWindow(period, today);
+  if (!window) return null;
+  const [row] = await db
+    .select({ received: countDistinct(energyInterval.start) })
+    .from(energyInterval)
+    .where(
+      and(
+        eq(energyInterval.householdId, ctx.householdId),
+        eq(energyInterval.metric, "grid_import"),
+        gte(energyInterval.start, zonedInstant(window.from, 0, ctx.timezone)),
+        lt(energyInterval.start, zonedInstant(window.to, 0, ctx.timezone)),
+      ),
+    );
+  const expected = expectedSlots(window.from, window.to, ctx.granularity, ctx.timezone);
+  return expected > 0 ? Math.min(1, (row?.received ?? 0) / expected) : null;
 }
 
 /** Production solaire et météo par jour (vue mois) ou par mois (vue année). */
@@ -208,17 +231,19 @@ export async function getOverview(
   const yearTo = [`${Number(year) + 1}-01-01`, addDays(today, 1)].sort()[0] as string;
   const previous = { from: shiftYear(period.from, -1), to: shiftYear(period.to, -1) };
 
-  const [contracts, intervals, previousIntervals, totals, categories, home] = await Promise.all([
-    listContracts(ctx),
-    gridIntervals(ctx, yearFrom, yearTo),
-    gridIntervals(ctx, previous.from, previous.to),
-    totalsByMetric(ctx, period.from, period.to),
-    listCategories(ctx, now),
-    db
-      .select({ location: household.location })
-      .from(household)
-      .where(eq(household.id, ctx.householdId)),
-  ]);
+  const [contracts, intervals, previousIntervals, totals, categories, home, coverage] =
+    await Promise.all([
+      listContracts(ctx),
+      gridIntervals(ctx, yearFrom, yearTo),
+      gridIntervals(ctx, previous.from, previous.to),
+      totalsByMetric(ctx, period.from, period.to),
+      listCategories(ctx, now),
+      db
+        .select({ location: household.location })
+        .from(household)
+        .where(eq(household.id, ctx.householdId)),
+      periodCoverage(ctx, period, today),
+    ]);
   const colors = await tempoColorsFor(ctx.householdId, addDays(previous.from, -1), yearTo);
   const pricing = { timezone: tz, tempoColor: (d: string) => colors.get(d) };
   const price = (list: PriceableInterval[], from: string, to: string): TimelineResult =>
@@ -268,6 +293,7 @@ export async function getOverview(
     period,
     nav: periodNav(period, firstDay, today),
     granularity: ctx.granularity,
+    coverage,
     budget: {
       totalCents: priced ? periodCost.totalCents : null,
       energyCents: periodCost.energyCents,

@@ -5,6 +5,8 @@ import {
   currentContract,
   findOverlaps,
   gridAt,
+  lapsedContract,
+  periodAt,
   priceTimeline,
   type DatedContract,
 } from "@/domain/tariff/timeline";
@@ -51,6 +53,23 @@ describe("gridAt", () => {
     expect(gridAt(A, "2025-07-31")).toEqual(base(0.2));
     expect(gridAt(A, "2025-08-01")).toEqual(base(0.25));
     expect(gridAt(A, "2024-06-01")).toEqual(base(0.2));
+  });
+});
+
+describe("periodAt", () => {
+  it("rend la période elle-même (date d'effet comprise)", () => {
+    expect(periodAt(A, "2025-09-15").validFrom).toBe("2025-08-01");
+    expect(periodAt(A, "2024-06-01").validFrom).toBe("2025-01-01");
+  });
+});
+
+describe("lapsedContract", () => {
+  it("dernier contrat souscrit terminé sans successeur, et aucun contrat en cours", () => {
+    expect(lapsedContract([A, S], "2026-10-03")?.id).toBe("A");
+    expect(lapsedContract([A, B, S], "2026-10-03")).toBeNull(); // B en cours
+    expect(lapsedContract([A, { ...B, startDate: "2027-01-01" }], "2026-10-03")).toBeNull(); // B à venir
+    expect(lapsedContract([A], "2025-05-01")).toBeNull(); // A en cours
+    expect(lapsedContract([S], "2026-10-03")).toBeNull();
   });
 });
 

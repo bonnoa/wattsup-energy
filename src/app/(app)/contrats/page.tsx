@@ -20,9 +20,9 @@ export default async function ContractsPage() {
   ]);
 
   // Calendrier Tempo de la saison en cours, jusqu'au lendemain (couleur publiée vers 11 h).
-  const current = currentContract(contracts, localParts(new Date(), ctx.timezone).date);
-  const hasTempo = contracts.some((c) => c.kind === "tempo");
   const today = localParts(new Date(), ctx.timezone).date;
+  const current = currentContract(contracts, today);
+  const hasTempo = contracts.some((c) => c.kind === "tempo");
   const season = tempoSeasonOf(today);
   let calendar: CalendarDay[] = [];
   if (hasTempo) {
@@ -55,6 +55,7 @@ export default async function ContractsPage() {
           {hasTempo && <TempoCalendar season={season} days={calendar} />}
         </div>
         <ContractsManager
+          today={today}
           contracts={contracts.map((c) => ({
             id: c.id,
             name: c.name,

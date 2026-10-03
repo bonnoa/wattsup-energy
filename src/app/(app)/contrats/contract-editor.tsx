@@ -46,7 +46,7 @@ function DecimalField({
             setText(e.target.value);
             onChange(Number(e.target.value.replace(",", ".").trim() || "NaN"));
           }}
-          className={`${inputClass} text-right font-mono`}
+          className={`${inputClass} text-right tabular-nums`}
         />
         <span className="w-14 flex-none text-[11px] text-subtle">{unit}</span>
       </span>
@@ -416,9 +416,9 @@ export function SubscriptionFields({
         ))}
       </div>
       {value && (
-        <div className="grid grid-cols-2 gap-3">
+        <div className="flex flex-col gap-3">
           <label className={labelClass}>
-            Début
+            Début du contrat
             <input
               type="date"
               value={value.startDate}
@@ -426,15 +426,31 @@ export function SubscriptionFields({
               className={inputClass}
             />
           </label>
-          <label className={labelClass}>
-            Fin (vide si en cours)
+          <label className="flex items-center gap-2 text-[13px]">
             <input
-              type="date"
-              value={value.endDate ?? ""}
-              onChange={(e) => onChange({ ...value, endDate: e.target.value || null })}
-              className={inputClass}
+              type="checkbox"
+              checked={value.endDate === null}
+              onChange={(e) => onChange({ ...value, endDate: e.target.checked ? null : today })}
+              className="size-4 accent-[var(--color-grid)]"
             />
+            Toujours en cours
           </label>
+          {value.endDate !== null && (
+            <label className={labelClass}>
+              Résilié le (dernier jour du contrat)
+              <input
+                type="date"
+                value={value.endDate}
+                onChange={(e) => onChange({ ...value, endDate: e.target.value || null })}
+                className={inputClass}
+              />
+            </label>
+          )}
+          <p className="text-[11px] text-subtle text-pretty">
+            Ne saisissez une fin que si vous avez quitté ce contrat. Une hausse de prix se saisit
+            avec « Nouveaux prix », sans clore le contrat ; l&apos;échéance d&apos;engagement
+            n&apos;est pas une fin.
+          </p>
         </div>
       )}
     </div>

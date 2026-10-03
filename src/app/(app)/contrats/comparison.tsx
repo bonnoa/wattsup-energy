@@ -47,18 +47,18 @@ export function ComparisonBanner({ comparison }: { comparison: Ok }) {
         {!current ? (
           <>
             {best.name} :{" "}
-            <span className="font-mono text-[#7FD1B0]">{eur(best.annualCents)}/an</span>
+            <span className="text-[#7FD1B0] tabular-nums">{eur(best.annualCents)}/an</span>
           </>
         ) : saving > 0 ? (
           <>
-            {best.name} : <span className="font-mono text-[#7FD1B0]">−{eur(saving)}/an</span> par
+            {best.name} : <span className="text-[#7FD1B0] tabular-nums">−{eur(saving)}/an</span> par
             rapport à votre contrat actuel
           </>
         ) : (
           <>Votre contrat actuel est déjà le moins cher des offres comparées</>
         )}
       </p>
-      <span className="font-mono text-xs text-[#7D817A]">
+      <span className="text-xs text-[#A9ADA6] tabular-nums">
         {fmtDate(comparison.from)} – {fmtDate(comparison.to)} ·{" "}
         {Math.round(comparison.kwh).toLocaleString("fr-FR")} kWh soutirés
         {comparison.redDays > 0 ? ` · ${comparison.redDays} jours rouges` : ""}
@@ -75,7 +75,7 @@ export function ComparisonList({ comparison }: { comparison: Ok }) {
     <section className="flex flex-col gap-3 rounded-card border border-border bg-surface p-5">
       <div className="flex items-baseline justify-between gap-2">
         <h2 className="text-[15px] font-semibold">Coût annuel simulé</h2>
-        <span className="font-mono text-[11px] text-subtle">
+        <span className="text-[11px] text-subtle tabular-nums">
           couverture {Math.round(comparison.coverage * 100)} %
         </span>
       </div>
@@ -89,7 +89,9 @@ export function ComparisonList({ comparison }: { comparison: Ok }) {
                 ` · ${comparison.real.unknownContractDays} j sans contrat, estimés au tarif actuel`}
             </span>
           </span>
-          <span className="font-mono text-sm">{eur(comparison.real.annualCents)}/an</span>
+          <span className="text-[15px] font-semibold whitespace-nowrap tabular-nums">
+            {eur(comparison.real.annualCents)}/an
+          </span>
         </div>
       )}
       <ul className="flex flex-col gap-3">
@@ -105,14 +107,16 @@ export function ComparisonList({ comparison }: { comparison: Ok }) {
                   </span>
                   {r.isCurrent && (
                     <span className="rounded-[5px] bg-grid px-1.5 py-0.5 text-[11px] text-white">
-                      Actuel
+                      En cours
                     </span>
                   )}
                 </span>
                 <span className="flex flex-none flex-col items-end">
-                  <span className="font-mono text-sm">{eur(r.annualCents)}/an</span>
+                  <span className="text-[15px] font-semibold whitespace-nowrap tabular-nums">
+                    {eur(r.annualCents)}/an
+                  </span>
                   <span
-                    className={`font-mono text-[11px] ${
+                    className={`text-[11px] font-medium tabular-nums ${
                       delta === null || delta === 0
                         ? "text-subtle"
                         : delta < 0

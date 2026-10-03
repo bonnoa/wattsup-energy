@@ -62,7 +62,7 @@ export function TempoCalendar({ season, days }: { season: string; days: Calendar
         <h2 className="text-[15px] font-semibold">
           Calendrier Tempo · saison {season.replace("-", "–")}
         </h2>
-        <span className="font-mono text-[11px] text-subtle">
+        <span className="text-[11px] text-subtle tabular-nums">
           {plural(counts.blanc, "blanc")} · {plural(counts.rouge, "rouge")} (sur 43 et 22)
         </span>
       </div>

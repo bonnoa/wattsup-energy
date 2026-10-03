@@ -30,13 +30,19 @@ export interface DatedContract {
 
 const byDate = (a: PricePeriod, b: PricePeriod) => a.validFrom.localeCompare(b.validFrom);
 
-/** Grille en vigueur à une date : la plus récente déjà effective, sinon la première. */
-export function gridAt(c: DatedContract, date: string): Contract {
+/** Période de prix en vigueur à une date : la plus récente déjà effective, sinon la première. */
+export function periodAt<P extends PricePeriod>(
+  c: { name: string; periods: P[] },
+  date: string,
+): P {
   const sorted = [...c.periods].sort(byDate);
   const effective = sorted.filter((p) => p.validFrom <= date).at(-1) ?? sorted[0];
   if (!effective) throw new Error(`contrat sans grille : ${c.name}`);
-  return effective.contract;
+  return effective;
 }
+
+/** Grille en vigueur à une date. */
+export const gridAt = (c: DatedContract, date: string): Contract => periodAt(c, date).contract;
 
 /** Grille la plus récente (celle qu'on simule pour comparer les offres aujourd'hui). */
 export const latestGrid = (c: DatedContract): Contract => gridAt(c, "9999-12-31");
@@ -50,6 +56,19 @@ const activeOn = (c: DatedContract, date: string) =>
 /** Contrat souscrit en vigueur à une date (au plus un, les périodes ne se chevauchant pas). */
 export function currentContract(contracts: readonly DatedContract[], date: string) {
   return contracts.find((c) => activeOn(c, date)) ?? null;
+}
+
+/**
+ * Aucun contrat en cours alors que le dernier contrat souscrit s'est terminé : souvent une
+ * date de fin saisie par erreur (échéance d'engagement, fin d'une grille de prix…).
+ */
+export function lapsedContract<C extends DatedContract>(contracts: readonly C[], date: string) {
+  if (currentContract(contracts, date)) return null;
+  const last = contracts
+    .filter((c) => c.status === "subscribed" && c.startDate !== null)
+    .sort((a, b) => (a.startDate ?? "").localeCompare(b.startDate ?? ""))
+    .at(-1);
+  return last?.endDate && last.endDate < date ? last : null;
 }
 
 /** Incohérences des contrats souscrits : fin avant début, périodes qui se chevauchent. */

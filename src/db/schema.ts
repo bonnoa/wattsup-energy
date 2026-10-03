@@ -18,6 +18,7 @@ import {
   uuid,
 } from "drizzle-orm/pg-core";
 import type { EnergyProfile } from "../domain/profile";
+import type { Contract } from "../domain/tariff/types";
 import { user } from "./auth-schema";
 
 export * from "./auth-schema";
@@ -221,4 +222,29 @@ export const ingestLog = pgTable(
     error: text("error"),
   },
   (t) => [index("ingest_log_household_received_idx").on(t.householdId, t.receivedAt)],
+);
+
+/** Contrats d'électricité : l'actuel (au plus un par foyer) et les offres simulées. */
+export const contract = pgTable(
+  "contract",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    householdId: householdRef(),
+    name: text("name").notNull(),
+    kind: text("kind", { enum: ["base", "hphc", "tempo", "custom"] }).notNull(),
+    /** Grille complète, validée par parseContractInput (src/domain/tariff/schema.ts). */
+    config: jsonb("config").$type<Contract>().notNull(),
+    isCurrent: boolean("is_current").notNull().default(false),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+  },
+  (t) => [
+    index("contract_household_idx").on(t.householdId),
+    uniqueIndex("contract_one_current_idx")
+      .on(t.householdId)
+      .where(sql`${t.isCurrent}`),
+  ],
 );

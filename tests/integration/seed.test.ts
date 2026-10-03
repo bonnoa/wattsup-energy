@@ -1,7 +1,7 @@
 import { eq } from "drizzle-orm";
 import { describe, expect, it } from "vitest";
 import { db } from "@/db";
-import { category, energyInterval, household } from "@/db/schema";
+import { category, contract, energyInterval, household } from "@/db/schema";
 import { seedDemo } from "../../scripts/seed/seed";
 
 const now = new Date("2026-10-03T08:00:00Z");
@@ -18,6 +18,12 @@ describe("seedDemo", () => {
     expect(home?.profile.solar).toBe(true);
     const cats = await db.select().from(category).where(eq(category.householdId, r.householdId));
     expect(cats.map((c) => c.slug).sort()).toEqual(["chauffage-electrique", "eau-chaude"]);
+    const contracts = await db
+      .select()
+      .from(contract)
+      .where(eq(contract.householdId, r.householdId));
+    expect(contracts).toHaveLength(4);
+    expect(contracts.filter((c) => c.isCurrent).map((c) => c.kind)).toEqual(["hphc"]);
     const imports = await db
       .select()
       .from(energyInterval)

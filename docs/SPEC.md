@@ -153,7 +153,7 @@ Toutes les tables métier portent `household_id` (FK, `ON DELETE CASCADE`). **Au
 | `tempo_calendar` | couleurs Tempo **globales** (partagées entre tous les foyers, donnée publique) | `date` PK, `color` (`bleu`\|`blanc`\|`rouge`), `source` (`rte`\|`community`\|`seed`), `fetched_at` |
 | `tempo_override` | couleur poussée par HA ou corrigée à la main, par foyer | `household_id`, `date`, `color`, `source` (`ha`\|`manual`) |
 | `category` | postes sur mesure | `id`, `household_id`, `name`, `slug` (clé du payload), `icon`, `color`, `is_heating` |
-| `contract` | contrats réels et simulés | `id`, `household_id`, `name`, `kind` (`base`\|`hphc`\|`tempo`\|`custom`), `is_current`, `subscription_eur_year`, `prices` JSONB, `hc_schedule` JSONB, `export_price_eur_kwh`, `valid_from` |
+| `contract` | contrats réels et simulés | `id`, `household_id`, `name`, `kind` (`base`\|`hphc`\|`tempo`\|`custom`), `config` JSONB (grille complète validée par `parseContractInput`), `is_current` (au plus un par foyer, index unique partiel). Le prix de revente est un réglage du foyer, pas du contrat |
 | `fuel_event` | combustibles | `household_id`, `fuel` (`pellet`\|`wood`), `type` (`purchase`\|`stock_snapshot`\|`consumption`), `date`, `qty`, `unit` (`bag`\|`kg`\|`stere`), `price_eur` |
 | `equipment` | ROI | `household_id`, `kind` (`solar`\|`battery`), `label`, `installed_on`, `cost_eur`, `meta` JSONB |
 | `csv_import` | suivi des imports | `id`, `household_id`, `filename`, `status`, `rows_ok`, `rows_rejected`, `errors` JSONB |

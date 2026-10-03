@@ -2,12 +2,14 @@ import { eq } from "drizzle-orm";
 import { db } from "../../src/db";
 import {
   category,
+  contract,
   energyInterval,
   household,
   meterState,
   user,
   weatherDaily,
 } from "../../src/db/schema";
+import { CONTRACT_PRESETS } from "../../src/domain/tariff/schema";
 import { cellOf } from "../../src/domain/weather";
 import { addDays, localParts } from "../../src/lib/time";
 import { auth } from "../../src/server/auth";
@@ -73,6 +75,17 @@ export async function seedDemo({
     await tx.delete(meterState).where(eq(meterState.householdId, householdId));
     await tx.delete(category).where(eq(category.householdId, householdId));
     await tx.insert(category).values(CATEGORIES.map((c) => ({ ...c, householdId })));
+    // Les 4 offres de référence ; le contrat actuel est le HP/HC, comme dans la maquette.
+    await tx.delete(contract).where(eq(contract.householdId, householdId));
+    await tx.insert(contract).values(
+      CONTRACT_PRESETS.map((p) => ({
+        householdId,
+        name: p.name,
+        kind: p.contract.kind,
+        config: p.contract,
+        isCurrent: p.contract.kind === "hphc",
+      })),
+    );
 
     const rows = demo.hours.flatMap((h) => {
       const base = {

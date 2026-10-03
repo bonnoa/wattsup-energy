@@ -43,6 +43,13 @@
       "when": 1791049451798,
       "tag": "0005_tempo_calendar",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1791049918746,
+      "tag": "0006_contracts",
+      "breakpoints": true
     }
   ]
 }

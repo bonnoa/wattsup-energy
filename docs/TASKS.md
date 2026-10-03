@@ -179,10 +179,11 @@ Légende des tailles : **S** = 1–2 fichiers · **M** = 3–5 fichiers (hors te
   - Vérifier : `pnpm test tests/integration/weather-sync tests/unit/domain/weather tests/unit/server/open-meteo` (source et fetch factices, aucun appel réel ; MSW inutile) ; manuel : sur l'instance Coolify, la commune d'Alexandre a 3 ans d'historique et la veille arrive chaque matin
   - Fichiers : `src/server/weather/source.ts`, `src/server/weather/open-meteo.ts`, `src/server/weather/sync.ts`, `scripts/weather-sync.ts`, `src/app/(app)/reglages/location-card.tsx`, `src/domain/weather.ts`
 
-- [ ] **T17 — CRUD des contrats** · M · Dépend de : T12, T13, T14
+- [x] **T17 — CRUD des contrats** · M · Dépend de : T12, T13, T14
   - Acceptation :
     - Éditeur par type (Base / HP-HC avec plages multiples / Tempo à 6 prix / Custom à règles), validé par Zod
     - Actions : créer, modifier, dupliquer, supprimer, « définir comme actuel » (un seul contrat actuel par foyer)
+    - Offres de référence (Base, HP/HC 22 h–6 h, Tempo, Week-end réduit) pour démarrer la saisie, présentées comme indicatives ; le premier contrat créé devient l'actuel ; le seed de démo les reprend (HP/HC actuel)
   - Vérifier : `pnpm test tests/integration/contracts` (+ isolation)
   - Fichiers : `src/server/actions/contracts.ts`, `src/app/(app)/contrats/contract-editor.tsx`, `src/domain/tariff/schema.ts`
 

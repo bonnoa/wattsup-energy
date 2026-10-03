@@ -1,5 +1,4 @@
 import { PageHeader } from "@/components/page-header";
-import { PlaceholderCard } from "@/components/placeholder-card";
 import { headers } from "next/headers";
 import { pushState } from "@/domain/ingest/push-state";
 import { listCategories, unknownCategorySlugs } from "@/server/categories";
@@ -8,6 +7,7 @@ import { getActiveIngestToken } from "@/server/ingest/token";
 import { getLocationStatus } from "@/server/location";
 import { pageContext } from "@/server/page";
 import { CategoriesCard } from "./categories-card";
+import { CsvCard } from "./csv-card";
 import { IngestCard } from "./ingest-card";
 import { LocationCard } from "./location-card";
 import { ProfileForm } from "./profile-form";
@@ -58,7 +58,11 @@ export default async function SettingsPage() {
             }))}
           />
           <div id="import-csv" className="scroll-mt-6">
-            <PlaceholderCard task="T22">Import historique CSV.</PlaceholderCard>
+            <CsvCard
+              granularity={ctx.granularity}
+              timezone={ctx.timezone}
+              slugs={categories.map((c) => c.slug)}
+            />
           </div>
         </div>
       </div>

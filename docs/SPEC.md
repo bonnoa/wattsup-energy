@@ -349,8 +349,10 @@ timestamp,metric,kwh[,tariff_slot]
 - Les valeurs sont des **deltas** (pas des index).
 - Limites : 20 Mo et 500 k lignes par fichier. Traitement par lots de 5 000 lignes dans une transaction.
 - Une ligne invalide est rejetée avec son motif, sans bloquer le reste.
-- Upsert : les doublons sont écrasés, avec `source = csv`.
+- Upsert : un intervalle déjà importé par CSV est remplacé (`source = csv`) ; un intervalle déjà reçu de Home Assistant est **conservé** (compté « gardé de HA » dans le rapport). Dans un même lot, la dernière valeur d'un intervalle l'emporte.
 - Un import HA ultérieur sur la même heure **écrase** la donnée CSV (HA fait foi).
+- Les lignes suivent la granularité du foyer (horaire ou quotidienne), sinon elles sont rejetées : pas de double comptage. Un horodatage sans décalage est lu dans le fuseau du foyer ; une ligne horaire commence à une heure pile. `category:<slug>` exige un poste existant ; `tariff_slot` n'existe que pour `grid_import` quotidien.
+- Envoi par `POST /api/csv-import` (session), corps lu en flux, réponse NDJSON (progression par lot, puis rapport) ; rapport téléchargeable (ligne, contenu, motif ; 1 000 détails au plus, compteurs complets).
 
 ---
 

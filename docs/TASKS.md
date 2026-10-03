@@ -232,7 +232,7 @@ Légende des tailles : **S** = 1–2 fichiers · **M** = 3–5 fichiers (hors te
   - Vérifier : test e2e « foyer neuf » ; manuel (Playwright arrive en T33 : en attendant, `tests/integration/empty-states.test.ts` vérifie qu'aucune valeur non finie ne sort des requêtes)
   - Fichiers : `src/components/empty-state.tsx`, `src/components/coverage-badge.tsx`
 
-- [ ] **T22 — Import CSV** · M · Dépend de : T8
+- [x] **T22 — Import CSV** · M · Dépend de : T8
   - Acceptation :
     - Format de la spec §7.7 ; parsing en flux ; validation ligne à ligne ; upsert par lots de 5 000 avec `source = csv` ; ne jamais écraser une ligne `ha`
     - UI : dépôt de fichier, aperçu des 10 premières lignes, progression, rapport (lignes OK / rejetées + motifs, téléchargeable) ; limites de 20 Mo et 500 k lignes

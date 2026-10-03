@@ -1,17 +1,21 @@
 import type { Metadata, Viewport } from "next";
-import { Instrument_Sans, JetBrains_Mono } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 
-const instrumentSans = Instrument_Sans({
+// Polices auto-hébergées (variables, sous-ensemble latin, licence OFL dans src/fonts) :
+// aucun appel à Google Fonts, ni au build ni chez les visiteurs.
+const instrumentSans = localFont({
+  src: "../fonts/InstrumentSans-Variable-latin.woff2",
   variable: "--font-instrument-sans",
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
+  weight: "400 700",
+  display: "swap",
 });
 
-const jetbrainsMono = JetBrains_Mono({
+const jetbrainsMono = localFont({
+  src: "../fonts/JetBrainsMono-Variable-latin.woff2",
   variable: "--font-jetbrains-mono",
-  subsets: ["latin"],
-  weight: ["400", "500", "600"],
+  weight: "400 600",
+  display: "swap",
 });
 
 export const metadata: Metadata = {
@@ -26,8 +30,9 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="fr">
-      <body className={`${instrumentSans.variable} ${jetbrainsMono.variable}`}>{children}</body>
+    // Variables de police sur <html> : --font-sans (défini sur :root) doit pouvoir les lire.
+    <html lang="fr" className={`${instrumentSans.variable} ${jetbrainsMono.variable}`}>
+      <body>{children}</body>
     </html>
   );
 }

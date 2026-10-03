@@ -341,11 +341,11 @@ Le serveur interroge des API Tempo publiques. **Aucune donnée utilisateur n'est
 | Ordre | Source | Auth | Usage |
 |---|---|---|---|
 | 1 | **api-couleur-tempo.fr** (communautaire) | aucune | **source V1** (instance SaaS et auto-hébergée) |
-| 2 | `data/tempo-seed.json` | — | amorçage de l'historique à la première migration et repli hors-ligne |
+| 2 | `data/tempo-seed.json` | — | amorçage de l'historique (5 saisons complètes depuis septembre 2021, 43 jours blancs et 22 rouges chacune) et repli hors ligne ; ne remplace jamais une couleur récupérée en ligne |
 | — | API officielle RTE (OAuth2) | `RTE_CLIENT_ID` / `RTE_CLIENT_SECRET` | **hors V1** : l'interface `TempoSource` permet de l'ajouter sans toucher au reste |
 
 - **Quand** : le planificateur intégré au serveur (le même que la météo, §7.9) lance la synchronisation tous les jours à 11:30 et 17:00 (la couleur J+1 est publiée vers 11 h). `pnpm tempo:sync` fait la même chose à la main. Au démarrage, une passe de rattrapage complète les trous depuis la dernière date connue.
-- **Robustesse** : timeout de 5 s, 3 essais avec backoff, puis bascule sur la source suivante. Un échec n'est jamais bloquant ; le compteur « N jours supposés » couvre les trous.
+- **Robustesse** : timeout de 10 s, 3 essais avec backoff (client HTTP partagé avec Open-Meteo, `src/server/http.ts`). Une saison en échec n'arrête pas les suivantes et n'est jamais bloquante ; le compteur « N jours supposés » couvre les trous.
 - **Isolation** : tout l'accès réseau passe par `src/server/tempo/` derrière une interface `TempoSource` ; le domaine reste pur.
 - Variable d'env `TEMPO_SYNC=off` pour les instances qui refusent tout appel sortant.
 

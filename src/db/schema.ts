@@ -187,6 +187,14 @@ export const weatherDaily = pgTable(
 
 export const tempoColor = pgEnum("tempo_color", ["bleu", "blanc", "rouge"]);
 
+/** Calendrier Tempo global (donnée publique), partagé par tous les foyers (SPEC §7.8). */
+export const tempoCalendar = pgTable("tempo_calendar", {
+  date: date("date").primaryKey(),
+  color: tempoColor("color").notNull(),
+  source: text("source", { enum: ["community", "seed"] }).notNull(),
+  fetchedAt: timestamp("fetched_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
 /** Couleur Tempo propre au foyer : poussée par HA ou corrigée à la main. */
 export const tempoOverride = pgTable(
   "tempo_override",

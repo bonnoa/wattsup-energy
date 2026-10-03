@@ -160,12 +160,12 @@ Légende des tailles : **S** = 1–2 fichiers · **M** = 3–5 fichiers (hors te
   - Vérifier : `pnpm db:seed && pnpm test tests/integration/seed`
   - Fichiers : `scripts/seed.ts`, `scripts/seed/generate.ts` (pur, testé), `scripts/seed/seed.ts`
 
-- [ ] **T16 — Synchronisation du calendrier Tempo** · M · Dépend de : T2
+- [x] **T16 — Synchronisation du calendrier Tempo** · M · Dépend de : T2
   - Acceptation :
     - Tables `tempo_calendar` (globale) et `tempo_override` (par foyer) ; `resolveTempoColor(householdId, date)` vérifie la surcharge puis le calendrier
     - `CommunityTempoSource` (api-couleur-tempo.fr) avec timeout de 5 s et 3 essais ; repli sur `data/tempo-seed.json` ; `TEMPO_SYNC=off` = aucun appel réseau
-    - `pnpm tempo:sync` (rattrapage depuis la dernière date connue) ; passe de rattrapage au démarrage ; tâche planifiée Coolify à 11:30 et 17:00
-  - Vérifier : `pnpm test tests/integration/tempo-sync` (MSW, aucun appel réel) ; manuel : `tempo_calendar` rempli sur 2 ans sur l'instance Coolify
+    - `pnpm tempo:sync` (rattrapage depuis la dernière date connue, saison par saison) ; planificateur intégré au serveur : passage au démarrage puis à 11:30 et 17:00
+  - Vérifier : `pnpm test tests/integration/tempo-sync tests/unit/domain/tempo-calendar tests/unit/server/tempo-community` (source et fetch factices, aucun appel réel) ; manuel : `tempo_calendar` rempli sur 5 saisons sur l'instance Coolify
   - Fichiers : `src/server/tempo/source.ts`, `src/server/tempo/community.ts`, `src/server/tempo/sync.ts`, `scripts/tempo-sync.ts`, `data/tempo-seed.json`
 
 - [x] **T16b — Météo Open-Meteo** · M · Dépend de : T2, T16

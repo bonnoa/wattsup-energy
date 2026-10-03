@@ -55,7 +55,7 @@ describe("OpenMeteoSource", () => {
 
   it("abandonne après 3 essais", async () => {
     const { source, calls } = scripted([json({}, 500), json({}, 500), json({}, 500)]);
-    await expect(source.forecast(cell, 7)).rejects.toThrow("Open-Meteo HTTP 500");
+    await expect(source.forecast(cell, 7)).rejects.toThrow("HTTP 500");
     expect(calls).toHaveLength(3);
   });
 

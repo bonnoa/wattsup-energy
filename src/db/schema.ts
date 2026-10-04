@@ -208,6 +208,27 @@ export const tempoOverride = pgTable(
   (t) => [primaryKey({ columns: [t.householdId, t.date] })],
 );
 
+/**
+ * Combustibles (T24) : achats, relevés de stock et consommations saisis. Les quantités
+ * sont stockées dans l'unité saisie (une palette est convertie en sacs à l'enregistrement)
+ * et ramenées à l'unité de base à la lecture (src/domain/heating/fuel.ts).
+ */
+export const fuelEvent = pgTable(
+  "fuel_event",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    householdId: householdRef(),
+    fuel: text("fuel", { enum: ["pellet", "wood"] }).notNull(),
+    type: text("type", { enum: ["purchase", "stock_snapshot", "consumption"] }).notNull(),
+    at: timestamp("at", { withTimezone: true }).notNull(),
+    qty: doublePrecision("qty").notNull(),
+    unit: text("unit", { enum: ["bag", "kg", "stere"] }).notNull(),
+    priceEur: numeric("price_eur", { precision: 10, scale: 2, mode: "number" }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("fuel_event_household_at_idx").on(t.householdId, t.at)],
+);
+
 /** Journal des pushes d'ingestion (conservé 30 jours). */
 export const ingestLog = pgTable(
   "ingest_log",

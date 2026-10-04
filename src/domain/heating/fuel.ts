@@ -24,6 +24,14 @@ export interface FuelSettings {
 /** Unité de base d'un combustible : kg pour les granulés, stère pour le bois. */
 export const BASE_UNIT: Record<Fuel, "kg" | "stere"> = { pellet: "kg", wood: "stere" };
 
+/** Unités saisissables pour un combustible. */
+export const UNITS_FOR: Record<Fuel, readonly FuelUnit[]> = {
+  pellet: ["bag", "pallet", "kg"],
+  wood: ["stere"],
+};
+
+export const isUnitFor = (fuel: Fuel, unit: FuelUnit) => UNITS_FOR[fuel].includes(unit);
+
 /** Quantité en unité de base (kg ou stère) ; une unité incohérente est une erreur. */
 export function toBaseQty(e: Pick<FuelEvent, "fuel" | "qty" | "unit">, s: FuelSettings): number {
   if (e.fuel === "wood") {

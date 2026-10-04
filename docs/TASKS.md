@@ -254,7 +254,7 @@ Légende des tailles : **S** = 1–2 fichiers · **M** = 3–5 fichiers (hors te
   - Vérifier : `pnpm test tests/unit/domain/heating/fuel`
   - Fichiers : `src/domain/heating/fuel.ts`
 
-- [ ] **T24 — Saisie rapide des combustibles** · M · Dépend de : T23, T4
+- [x] **T24 — Saisie rapide des combustibles** · M · Dépend de : T23, T4
   - Acceptation :
     - « + Sac versé » : 1 tap = 1 événement `consumption`, toast « Annuler » pendant 10 s ; « + ½ stère » pour le bois
     - Feuilles « Achat » (quantité + unité + prix total + date) et « Corriger le stock » (crée un `stock_snapshot`)

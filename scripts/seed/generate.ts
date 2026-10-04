@@ -196,3 +196,72 @@ export function generateDemo({ from, to, timezone, seed, config = DEFAULT_CONFIG
   if (byDate.size !== days.length) throw new Error("jours en double");
   return { config, days, hours };
 }
+
+export interface DemoFuelEvent {
+  fuel: "pellet" | "wood";
+  type: "purchase" | "stock_snapshot" | "consumption";
+  at: Date;
+  qty: number;
+  unit: "bag" | "stere";
+  priceEur: number | null;
+}
+
+/**
+ * Combustibles de démo (T24) : chaque saison, achat de 4 palettes de granulés et de 6
+ * stères de bois mi-septembre, puis consommation proportionnelle aux degrés-jours
+ * (≈ 0,12 sac et 0,003 stère par DJU), un relevé de départ. Déterministe.
+ */
+export function generateFuelEvents(days: readonly DemoDay[], timezone: string): DemoFuelEvent[] {
+  const first = days[0];
+  if (!first) return [];
+  const events: DemoFuelEvent[] = [];
+  const firstYear = Number(first.date.slice(0, 4)) - (first.date.slice(5) < "09-15" ? 1 : 0);
+  const lastYear = Number((days.at(-1) ?? first).date.slice(0, 4));
+  events.push({
+    fuel: "pellet",
+    type: "stock_snapshot",
+    at: zonedInstant(`${firstYear}-09-01`, 12, timezone),
+    qty: 20,
+    unit: "bag",
+    priceEur: null,
+  });
+  for (let y = firstYear; y <= lastYear; y++) {
+    const at = zonedInstant(`${y}-09-15`, 12, timezone);
+    const bagPrice = 6 + 0.4 * (y - firstYear);
+    events.push(
+      { fuel: "pellet", type: "purchase", at, qty: 264, unit: "bag", priceEur: 264 * bagPrice },
+      { fuel: "wood", type: "purchase", at, qty: 6, unit: "stere", priceEur: 6 * 85 },
+    );
+  }
+  let pellet = 0;
+  let wood = 0;
+  for (const day of days) {
+    const md = day.date.slice(5);
+    if (md > "04-30" && md < "10-01") continue;
+    const dju = Math.max(0, 18 - day.tMean);
+    pellet += dju * 0.12;
+    wood += dju * 0.003;
+    for (let i = 0; pellet >= 1; i++, pellet -= 1) {
+      events.push({
+        fuel: "pellet",
+        type: "consumption",
+        at: zonedInstant(day.date, 7 + 12 * (i % 2), timezone),
+        qty: 1,
+        unit: "bag",
+        priceEur: null,
+      });
+    }
+    if (wood >= 0.5) {
+      wood -= 0.5;
+      events.push({
+        fuel: "wood",
+        type: "consumption",
+        at: zonedInstant(day.date, 20, timezone),
+        qty: 0.5,
+        unit: "stere",
+        priceEur: null,
+      });
+    }
+  }
+  return events.sort((a, b) => a.at.getTime() - b.at.getTime());
+}

@@ -169,7 +169,7 @@ Toutes les tables métier portent `household_id` (FK, `ON DELETE CASCADE`). **Au
 | `category` | postes sur mesure | `id`, `household_id`, `name`, `slug` (clé du payload), `icon`, `color`, `is_heating` |
 | `contract` | contrats du foyer : **souscrits** (datés) et **simulés** (offres à comparer) | `id`, `household_id`, `name`, `kind` (`base`\|`hphc`\|`tempo`\|`custom`, fixe), `status` (`subscribed`\|`simulated`), `start_date` et `end_date` (souscrit seulement ; fin vide = en cours). Deux contrats souscrits d'un même foyer ne se chevauchent jamais |
 | `contract_period` | **historique des grilles de prix** d'un contrat | `id`, `contract_id`, `household_id`, `valid_from` (date), `config` JSONB (grille complète validée par `parseContractInput`, plages HC comprises). Un contrat a au moins une période ; une période s'applique de `valid_from` jusqu'à la suivante |
-| `fuel_event` | combustibles | `household_id`, `fuel` (`pellet`\|`wood`), `type` (`purchase`\|`stock_snapshot`\|`consumption`), `date`, `qty`, `unit` (`bag`\|`kg`\|`stere`), `price_eur` |
+| `fuel_event` | combustibles | `household_id`, `fuel` (`pellet`\|`wood`), `type` (`purchase`\|`stock_snapshot`\|`consumption`), `at` (instant : ordre des événements d'un même jour, annulation), `qty`, `unit` (`bag`\|`kg`\|`stere` ; une palette saisie est enregistrée en sacs), `price_eur` (achats) |
 | `equipment` | ROI | `household_id`, `kind` (`solar`\|`battery`), `label`, `installed_on`, `cost_eur`, `meta` JSONB |
 | `csv_import` | suivi des imports | `id`, `household_id`, `filename`, `status`, `rows_ok`, `rows_rejected`, `errors` JSONB |
 

@@ -5,6 +5,7 @@ import {
   contract,
   contractPeriod,
   energyInterval,
+  fuelEvent,
   household,
   meterState,
   user,
@@ -15,7 +16,7 @@ import { cellOf } from "../../src/domain/weather";
 import { addDays, localParts } from "../../src/lib/time";
 import { auth } from "../../src/server/auth";
 import { householdContextFor } from "../../src/server/context";
-import { generateDemo } from "./generate";
+import { generateDemo, generateFuelEvents } from "./generate";
 
 // Foyer de démo (T15) : idempotent, relancer le seed remplace ses données. Refusé en
 // production sauf option explicite.
@@ -74,6 +75,10 @@ export async function seedDemo({
   await db.transaction(async (tx) => {
     await tx.delete(energyInterval).where(eq(energyInterval.householdId, householdId));
     await tx.delete(meterState).where(eq(meterState.householdId, householdId));
+    await tx.delete(fuelEvent).where(eq(fuelEvent.householdId, householdId));
+    await tx
+      .insert(fuelEvent)
+      .values(generateFuelEvents(demo.days, TZ).map((e) => ({ ...e, householdId })));
     await tx.delete(category).where(eq(category.householdId, householdId));
     await tx.insert(category).values(CATEGORIES.map((c) => ({ ...c, householdId })));
     // Les 4 offres de référence. Le HP/HC est souscrit depuis le début des données, avec une

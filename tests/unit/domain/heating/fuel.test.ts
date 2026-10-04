@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   currentStock,
+  isUnitFor,
   lastPurchasePrice,
   seasonConsumption,
   toBaseQty,
@@ -25,6 +26,11 @@ describe("toBaseQty", () => {
     expect(toBaseQty({ fuel: "pellet", qty: 1, unit: "pallet" }, settings)).toBe(990);
     expect(toBaseQty({ fuel: "pellet", qty: 12.5, unit: "kg" }, settings)).toBe(12.5);
     expect(toBaseQty({ fuel: "wood", qty: 0.5, unit: "stere" }, settings)).toBe(0.5);
+  });
+
+  it("unités saisissables par combustible", () => {
+    expect(isUnitFor("pellet", "pallet")).toBe(true);
+    expect(isUnitFor("wood", "bag")).toBe(false);
   });
 
   it("refuse une unité incohérente avec le combustible", () => {

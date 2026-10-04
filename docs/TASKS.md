@@ -319,11 +319,11 @@ Légende des tailles : **S** = 1–2 fichiers · **M** = 3–5 fichiers (hors te
 
 ## Jalon 6 : Onboarding, finitions, release
 
-- [ ] **T31 — Onboarding** · M · Dépend de : T9, T16b, T17, T22
+- [x] **T31 — Onboarding** · M · Dépend de : T9, T16b, T17, T22
   - Acceptation :
     - 5 étapes, reprenables : profil → commune (météo) → contrat actuel → HA (token, téléchargement du blueprint, attente du 1er push en direct) → CSV facultatif
     - Affiché à la première connexion ; peut être sauté ; relançable depuis Réglages
-  - Vérifier : e2e « compte neuf → dashboard alimenté »
+  - Vérifier : e2e « compte neuf → dashboard alimenté » (avec Playwright en T33) ; `tests/integration/onboarding.test.ts` ; manuel
   - Fichiers : `src/app/(app)/bienvenue/*`, `src/server/actions/onboarding.ts`
 
 - [ ] **T32 — Réglages restants et compte** · M · Dépend de : T9

@@ -66,6 +66,7 @@ export async function seedDemo({
       granularity: "hourly",
       location: DEMO_LOCATION,
       profile: { solar: true, battery: true, pellet: true, wood: true, electricHeating: true },
+      onboardingDone: true,
     })
     .where(eq(household.id, householdId));
 

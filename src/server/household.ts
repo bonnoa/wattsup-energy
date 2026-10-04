@@ -23,3 +23,16 @@ export async function updateGranularity(
     .returning({ granularity: household.granularity });
   return row?.granularity ?? null;
 }
+
+/** Parcours de bienvenue : étape atteinte (0–4), fin, ou relance depuis Réglages. */
+export async function setOnboarding(
+  ctx: { householdId: string },
+  state: { step: number; done: boolean },
+) {
+  const [row] = await db
+    .update(household)
+    .set({ onboardingStep: state.step, onboardingDone: state.done })
+    .where(eq(household.id, ctx.householdId))
+    .returning({ step: household.onboardingStep, done: household.onboardingDone });
+  return row ?? null;
+}

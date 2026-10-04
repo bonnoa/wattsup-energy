@@ -10,6 +10,7 @@ import { CategoriesCard } from "./categories-card";
 import { CsvCard } from "./csv-card";
 import { IngestCard } from "./ingest-card";
 import { LocationCard } from "./location-card";
+import { OnboardingCard } from "./onboarding-card";
 import { ProfileForm } from "./profile-form";
 import { SolarBatteryCard } from "./solar-battery-card";
 
@@ -76,6 +77,7 @@ export default async function SettingsPage() {
               slugs={categories.map((c) => c.slug)}
             />
           </div>
+          <OnboardingCard />
         </div>
       </div>
     </>

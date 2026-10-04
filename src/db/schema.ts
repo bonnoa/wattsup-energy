@@ -77,6 +77,9 @@ export const household = pgTable("household", {
   profile: jsonb("profile").$type<EnergyProfile>().notNull().default(DEFAULT_PROFILE),
   settings: jsonb("settings").$type<HouseholdSettings>().notNull().default(DEFAULT_SETTINGS),
   location: jsonb("location").$type<HouseholdLocation>(),
+  /** Parcours de bienvenue (T31) : étape atteinte (0–4) ; terminé ou passé. */
+  onboardingStep: integer("onboarding_step").notNull().default(0),
+  onboardingDone: boolean("onboarding_done").notNull().default(false),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true })
     .notNull()

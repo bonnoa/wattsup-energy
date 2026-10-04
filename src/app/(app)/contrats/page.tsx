@@ -1,5 +1,4 @@
 import { PageHeader } from "@/components/page-header";
-import { currentContract } from "@/domain/tariff/timeline";
 import { tempoSeasonOf } from "@/domain/tempo-calendar";
 import { addDays, eachDay, localParts } from "@/lib/time";
 import { listContracts } from "@/server/contracts";
@@ -8,6 +7,7 @@ import { getContractComparison } from "@/server/queries/contracts";
 import { tempoCalendarView } from "@/server/tempo/sync";
 import { ComparisonBanner, ComparisonEmpty, ComparisonList } from "./comparison";
 import { ContractsManager } from "./contracts-manager";
+import { toContractItems } from "./items";
 import { TempoCalendar, type CalendarDay } from "./tempo-calendar";
 
 export const metadata = { title: "Contrats · WattsUp Energy" };
@@ -21,7 +21,6 @@ export default async function ContractsPage() {
 
   // Calendrier Tempo de la saison en cours, jusqu'au lendemain (couleur publiée vers 11 h).
   const today = localParts(new Date(), ctx.timezone).date;
-  const current = currentContract(contracts, today);
   const hasTempo = contracts.some((c) => c.kind === "tempo");
   const season = tempoSeasonOf(today);
   let calendar: CalendarDay[] = [];
@@ -54,19 +53,7 @@ export default async function ContractsPage() {
           )}
           {hasTempo && <TempoCalendar season={season} days={calendar} />}
         </div>
-        <ContractsManager
-          today={today}
-          contracts={contracts.map((c) => ({
-            id: c.id,
-            name: c.name,
-            kind: c.kind,
-            status: c.status,
-            startDate: c.startDate,
-            endDate: c.endDate,
-            isCurrent: c.id === current?.id,
-            periods: c.periods,
-          }))}
-        />
+        <ContractsManager today={today} contracts={toContractItems(contracts, today)} />
       </div>
     </>
   );

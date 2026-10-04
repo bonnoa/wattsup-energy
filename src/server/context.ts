@@ -19,6 +19,8 @@ export interface HouseholdContext {
   granularity: "hourly" | "daily";
   profile: EnergyProfile;
   settings: HouseholdSettings;
+  /** Parcours de bienvenue : étape atteinte et fin (terminé ou passé). */
+  onboarding: { step: number; done: boolean };
 }
 
 export class UnauthorizedError extends Error {
@@ -42,6 +44,7 @@ export async function householdContextFor(
     granularity: home.granularity,
     profile: home.profile,
     settings: home.settings,
+    onboarding: { step: home.onboardingStep, done: home.onboardingDone },
   };
 }
 

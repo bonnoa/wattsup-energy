@@ -246,7 +246,7 @@ Légende des tailles : **S** = 1–2 fichiers · **M** = 3–5 fichiers (hors te
 
 ## Jalon 4 : Chauffage et prévision
 
-- [ ] **T23 — Domaine combustibles** · S · Dépend de : T1
+- [x] **T23 — Domaine combustibles** · S · Dépend de : T1
   - Acceptation :
     - `currentStock(events, at)` = dernier snapshot + achats − consommations depuis
     - `seasonConsumption(events, season)` ; `weightedAvgPrice(purchases)`

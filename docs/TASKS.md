@@ -297,13 +297,13 @@ Légende des tailles : **S** = 1–2 fichiers · **M** = 3–5 fichiers (hors te
   - Vérifier : `pnpm test tests/integration/equipment` (+ isolation)
   - Fichiers : `src/server/actions/equipment.ts`, `src/app/(app)/rentabilite/equipment-sheet.tsx`, `src/app/(app)/reglages/solar-battery-card.tsx`
 
-- [ ] **T29 — ROI solaire et batterie (domaine)** · S · Dépend de : T12, T16b, T28
+- [x] **T29 — ROI solaire et batterie (domaine)** · S · Dépend de : T12, T16b, T28
   - Acceptation :
     - Formules de la spec §7.2–7.3 ; prix du kWh évité au créneau via le moteur sur le contrat actuel
     - Rendement solaire normalisé : kWh produits ÷ kWh/m² reçus (irradiation Open-Meteo), par jour et par mois ; écart au rendement de référence (médiane des 12 derniers mois)
     - Tests sur les 4 combinaisons revente × charge réseau ; projection de la date d'amortissement (économie moyenne sur 12 mois)
   - Vérifier : `pnpm test tests/unit/domain/roi`
-  - Fichiers : `src/domain/roi/solar.ts`, `src/domain/roi/battery.ts`
+  - Fichiers : `src/domain/roi/savings.ts` (solaire et batterie), `src/domain/roi/payback.ts`, `src/domain/roi/yield.ts`
 
 - [ ] **T30 — Écran Rentabilité** · M · Dépend de : T29
   - Acceptation :

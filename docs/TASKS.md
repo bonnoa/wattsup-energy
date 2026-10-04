@@ -305,7 +305,7 @@ Légende des tailles : **S** = 1–2 fichiers · **M** = 3–5 fichiers (hors te
   - Vérifier : `pnpm test tests/unit/domain/roi`
   - Fichiers : `src/domain/roi/savings.ts` (solaire et batterie), `src/domain/roi/payback.ts`, `src/domain/roi/yield.ts`
 
-- [ ] **T30 — Écran Rentabilité** · M · Dépend de : T29
+- [x] **T30 — Écran Rentabilité** · M · Dépend de : T29
   - Acceptation :
     - Carte par équipement actif : jauge % amorti, économies cumulées et mensuelles, frise de l'installation à l'amortissement, statut
     - Ligne « dont revente » seulement si la revente est activée ; mention si la charge réseau est active

@@ -39,12 +39,17 @@ const at = (s: EnergySlot, kwh: number): PriceableInterval =>
     ? { granularity: "hour", start: s.interval.start, kwh }
     : { granularity: "day", date: s.interval.date, slot: null, kwh };
 
-const monthOf = (s: EnergySlot, timezone: string) =>
-  s.interval.granularity === "day"
-    ? s.interval.date.slice(0, 7)
-    : new Intl.DateTimeFormat("en-CA", { timeZone: timezone, year: "numeric", month: "2-digit" })
-        .format(s.interval.start)
-        .slice(0, 7);
+// Un formateur par fuseau : en créer un par intervalle coûte cher (17 520 heures par an).
+const monthFormatters = new Map<string, Intl.DateTimeFormat>();
+const monthOf = (s: EnergySlot, timezone: string) => {
+  if (s.interval.granularity === "day") return s.interval.date.slice(0, 7);
+  let f = monthFormatters.get(timezone);
+  if (!f) {
+    f = new Intl.DateTimeFormat("en-CA", { timeZone: timezone, year: "numeric", month: "2-digit" });
+    monthFormatters.set(timezone, f);
+  }
+  return f.format(s.interval.start).slice(0, 7);
+};
 
 const chargeFromGrid = (s: EnergySlot, o: SavingsOptions) =>
   o.batteryGridCharging ? Math.min(s.batteryCharge, s.batteryChargeGrid) : 0;

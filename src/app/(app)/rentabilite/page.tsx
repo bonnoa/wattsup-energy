@@ -1,8 +1,10 @@
 import { PageHeader } from "@/components/page-header";
 import { visibleModules } from "@/domain/profile";
-import { listEquipment, type EquipmentKind } from "@/server/equipment";
+import type { EquipmentKind } from "@/server/equipment";
 import { pageContext } from "@/server/page";
+import { getRoi } from "@/server/queries/roi";
 import { EquipmentCard } from "./equipment-sheet";
+import { RoiDetails } from "./roi-details";
 
 export const metadata = { title: "Rentabilité · WattsUp Energy" };
 
@@ -13,7 +15,7 @@ export default async function RoiPage() {
     ...(modules.solar ? (["solar"] as const) : []),
     ...(modules.battery ? (["battery"] as const) : []),
   ];
-  const equipment = await listEquipment(ctx);
+  const roi = await getRoi(ctx);
   return (
     <>
       <PageHeader
@@ -22,11 +24,9 @@ export default async function RoiPage() {
       />
       <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,340px),1fr))] items-start gap-4">
         {kinds.map((kind) => (
-          <EquipmentCard
-            key={kind}
-            kind={kind}
-            item={equipment.find((e) => e.kind === kind) ?? null}
-          />
+          <EquipmentCard key={kind} kind={kind} item={roi.items[kind]?.equipment ?? null}>
+            {roi.items[kind] && <RoiDetails roi={roi.items[kind]} view={roi} />}
+          </EquipmentCard>
         ))}
       </div>
     </>

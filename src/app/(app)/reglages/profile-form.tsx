@@ -3,7 +3,7 @@
 import { useOptimistic, useState, useTransition } from "react";
 import { PROFILE_KEYS, type EnergyProfile } from "@/domain/profile";
 import { updateProfileAction } from "@/server/actions/profile";
-import { Badge, Card } from "@/components/ui";
+import { Badge, Card, SwitchRow } from "@/components/ui";
 
 const TOGGLES: Record<keyof EnergyProfile, { label: string; desc: string; color: string }> = {
   solar: {
@@ -56,27 +56,14 @@ export function ProfileForm({ initial }: { initial: EnergyProfile }) {
           const t = TOGGLES[key];
           const on = profile[key];
           return (
-            <button
+            <SwitchRow
               key={key}
-              type="button"
-              role="switch"
-              aria-checked={on}
-              onClick={() => toggle(key)}
-              className="flex min-h-11 items-center gap-3 border-t border-track py-3 text-left"
-            >
-              <span className={`size-2.5 flex-none rounded-[3px] ${t.color}`} />
-              <span className="flex flex-1 flex-col gap-0.5">
-                <span className="text-sm font-medium">{t.label}</span>
-                <span className="text-xs text-subtle">{t.desc}</span>
-              </span>
-              <span
-                className={`flex h-6 w-[42px] flex-none rounded-full p-[3px] transition-colors ${
-                  on ? "justify-end bg-ink" : "justify-start bg-[#D6D1C5]"
-                }`}
-              >
-                <span className="size-[18px] rounded-full bg-surface shadow-[0_1px_2px_rgba(0,0,0,0.2)]" />
-              </span>
-            </button>
+              label={t.label}
+              description={t.desc}
+              checked={on}
+              dot={t.color}
+              onChange={() => toggle(key)}
+            />
           );
         })}
       </div>

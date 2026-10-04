@@ -176,3 +176,44 @@ export function GroupTitle({ children }: { children: ReactNode }) {
     <h2 className="px-1 text-xs font-medium tracking-wide text-muted uppercase">{children}</h2>
   );
 }
+
+/** Ligne à interrupteur : libellé, description, pastille de couleur facultative. */
+export function SwitchRow({
+  label,
+  description,
+  checked,
+  onChange,
+  dot,
+  disabled = false,
+}: {
+  label: string;
+  description?: ReactNode;
+  checked: boolean;
+  onChange: () => void;
+  dot?: string;
+  disabled?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      disabled={disabled}
+      onClick={onChange}
+      className="flex min-h-11 items-center gap-3 border-t border-track py-3 text-left first:border-t-0 disabled:opacity-60"
+    >
+      {dot && <span className={`size-2.5 flex-none rounded-[3px] ${dot}`} />}
+      <span className="flex flex-1 flex-col gap-0.5">
+        <span className="text-sm font-medium">{label}</span>
+        {description && <span className="text-xs text-subtle text-pretty">{description}</span>}
+      </span>
+      <span
+        className={`flex h-6 w-[42px] flex-none rounded-full p-[3px] transition-colors ${
+          checked ? "justify-end bg-ink" : "justify-start bg-[#D6D1C5]"
+        }`}
+      >
+        <span className="size-[18px] rounded-full bg-surface shadow-[0_1px_2px_rgba(0,0,0,0.2)]" />
+      </span>
+    </button>
+  );
+}

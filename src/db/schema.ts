@@ -229,6 +229,28 @@ export const fuelEvent = pgTable(
   (t) => [index("fuel_event_household_at_idx").on(t.householdId, t.at)],
 );
 
+/**
+ * Équipements amortis (T28) : un par type et par foyer. Capacité en kWc (solaire) ou en
+ * kWh (batterie) ; coût TTC en euros.
+ */
+export const equipment = pgTable(
+  "equipment",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    householdId: householdRef(),
+    kind: text("kind", { enum: ["solar", "battery"] }).notNull(),
+    label: text("label").notNull(),
+    capacity: doublePrecision("capacity"),
+    installedOn: date("installed_on").notNull(),
+    costEur: numeric("cost_eur", { precision: 10, scale: 2, mode: "number" }).notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+  },
+  (t) => [unique("equipment_household_kind_uq").on(t.householdId, t.kind)],
+);
+
 /** Journal des pushes d'ingestion (conservé 30 jours). */
 export const ingestLog = pgTable(
   "ingest_log",

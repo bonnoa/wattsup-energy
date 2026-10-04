@@ -290,7 +290,7 @@ Légende des tailles : **S** = 1–2 fichiers · **M** = 3–5 fichiers (hors te
 
 ## Jalon 5 : Rentabilité
 
-- [ ] **T28 — Équipements et réglages solaire/batterie** · S · Dépend de : T4
+- [x] **T28 — Équipements et réglages solaire/batterie** · S · Dépend de : T4
   - Acceptation :
     - Feuille « Modifier l'équipement » : libellé libre, capacité, date d'installation, coût
     - Réglages : « Je revends mon surplus » + prix ; « Batterie chargée depuis le réseau » (désactivé par défaut)

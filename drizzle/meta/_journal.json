@@ -71,6 +71,13 @@
       "when": 1791100703783,
       "tag": "0009_fuel_events",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1791142247853,
+      "tag": "0010_equipment",
+      "breakpoints": true
     }
   ]
 }

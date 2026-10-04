@@ -5,6 +5,7 @@ import {
   contract,
   contractPeriod,
   energyInterval,
+  equipment,
   fuelEvent,
   household,
   meterState,
@@ -75,6 +76,25 @@ export async function seedDemo({
   await db.transaction(async (tx) => {
     await tx.delete(energyInterval).where(eq(energyInterval.householdId, householdId));
     await tx.delete(meterState).where(eq(meterState.householdId, householdId));
+    await tx.delete(equipment).where(eq(equipment.householdId, householdId));
+    await tx.insert(equipment).values([
+      {
+        householdId,
+        kind: "solar" as const,
+        label: "Panneaux 3,2 kWc",
+        capacity: 3.2,
+        installedOn: addDays(from, -120),
+        costEur: 6400,
+      },
+      {
+        householdId,
+        kind: "battery" as const,
+        label: "Batterie 5,12 kWh",
+        capacity: 5.12,
+        installedOn: from,
+        costEur: 1800,
+      },
+    ]);
     await tx.delete(fuelEvent).where(eq(fuelEvent.householdId, householdId));
     await tx
       .insert(fuelEvent)

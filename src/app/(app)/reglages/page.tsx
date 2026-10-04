@@ -11,6 +11,7 @@ import { CsvCard } from "./csv-card";
 import { IngestCard } from "./ingest-card";
 import { LocationCard } from "./location-card";
 import { ProfileForm } from "./profile-form";
+import { SolarBatteryCard } from "./solar-battery-card";
 
 export const metadata = { title: "Réglages · WattsUp Energy" };
 
@@ -35,6 +36,17 @@ export default async function SettingsPage() {
         <div className="flex flex-col gap-4">
           <ProfileForm initial={ctx.profile} />
           <LocationCard status={location} />
+          {(ctx.profile.solar || ctx.profile.battery) && (
+            <SolarBatteryCard
+              solar={ctx.profile.solar}
+              battery={ctx.profile.battery}
+              initial={{
+                exportEnabled: ctx.settings.exportEnabled,
+                exportPriceEurKwh: ctx.settings.exportPriceEurKwh,
+                batteryGridCharging: ctx.settings.batteryGridCharging,
+              }}
+            />
+          )}
         </div>
         <div className="flex flex-col gap-4">
           <IngestCard

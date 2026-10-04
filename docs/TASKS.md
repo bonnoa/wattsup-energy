@@ -262,7 +262,7 @@ Légende des tailles : **S** = 1–2 fichiers · **M** = 3–5 fichiers (hors te
   - Vérifier : `pnpm test tests/integration/fuel-events` (+ isolation) ; manuel sur mobile
   - Fichiers : `src/server/actions/fuel.ts`, `src/app/(app)/chauffage/quick-actions.tsx`, `src/app/(app)/chauffage/fuel-log.tsx`
 
-- [ ] **T25 — DJU, équivalences et coût de chauffe (domaine)** · S · Dépend de : T12, T16b, T23
+- [x] **T25 — DJU, équivalences et coût de chauffe (domaine)** · S · Dépend de : T12, T16b, T23
   - Acceptation :
     - DJU de saison (base 18 °C, `t_mean` Open-Meteo, bornes de saison paramétrables)
     - Équivalences kWh (4,8 kWh/kg, sac de 15 kg, 1 800 kWh/stère, modifiables)

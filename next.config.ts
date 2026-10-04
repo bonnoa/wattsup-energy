@@ -2,6 +2,8 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   output: "standalone",
+  // Build séparé pour les tests de bout en bout (ne touche pas au cache du serveur de dev).
+  distDir: process.env.NEXT_DIST_DIR ?? ".next",
   poweredByHeader: false,
   // Le blueprint Home Assistant est servi tel quel (T31) : à embarquer dans le build autonome.
   outputFileTracingIncludes: {

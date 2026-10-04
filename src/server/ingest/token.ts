@@ -68,16 +68,27 @@ export async function getActiveIngestToken(ctx: HouseholdContext) {
 
 const TOKEN_PATTERN = new RegExp(`^Bearer (${PREFIX}[0-9A-Za-z]{${BODY_LENGTH}})$`);
 
+/** Dernier usage réécrit au plus toutes les 10 minutes : un push horaire ne paie pas un commit de plus. */
+const LAST_USED_REFRESH_MS = 10 * 60_000;
+
 /** Authentifie un en-tête Authorization ; null si absent, mal formé, inconnu ou révoqué. */
 export async function verifyIngestToken(
   header: string | null,
+  now = new Date(),
 ): Promise<{ householdId: string; tokenId: string } | null> {
   const token = header ? TOKEN_PATTERN.exec(header)?.[1] : undefined;
   if (!token) return null;
   const [row] = await db
-    .update(ingestToken)
-    .set({ lastUsedAt: new Date() })
-    .where(and(eq(ingestToken.hash, sha256(token)), isNull(ingestToken.revokedAt)))
-    .returning({ householdId: ingestToken.householdId, tokenId: ingestToken.id });
-  return row ?? null;
+    .select({
+      householdId: ingestToken.householdId,
+      tokenId: ingestToken.id,
+      lastUsedAt: ingestToken.lastUsedAt,
+    })
+    .from(ingestToken)
+    .where(and(eq(ingestToken.hash, sha256(token)), isNull(ingestToken.revokedAt)));
+  if (!row) return null;
+  if (!row.lastUsedAt || now.getTime() - row.lastUsedAt.getTime() > LAST_USED_REFRESH_MS) {
+    await db.update(ingestToken).set({ lastUsedAt: now }).where(eq(ingestToken.id, row.tokenId));
+  }
+  return { householdId: row.householdId, tokenId: row.tokenId };
 }

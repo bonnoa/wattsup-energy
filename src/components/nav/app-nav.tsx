@@ -28,7 +28,11 @@ export function AppNav({ items, userName, householdName, ingest }: Props) {
         <div className="flex items-center gap-2.5 px-2 pb-7">
           <Image src="/wattsup.svg" alt="" width={30} height={30} priority />
           <span className="text-[17px] font-bold tracking-tight">
-            WattsUp<span className="text-solar"> Energy</span>
+            {/* Logotype : exempté de contraste (WCAG 1.4.3), lu comme un seul nom. */}
+            <span aria-hidden>
+              WattsUp<span className="text-solar"> Energy</span>
+            </span>
+            <span className="sr-only">WattsUp Energy</span>
           </span>
         </div>
         <nav className="flex flex-col gap-0.5" aria-label="Navigation principale">

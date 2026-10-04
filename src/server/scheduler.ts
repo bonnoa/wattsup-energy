@@ -1,4 +1,5 @@
 import { localParts } from "@/lib/time";
+import { pruneIngestLog } from "./ingest/persist";
 import { CommunityTempoSource } from "./tempo/community";
 import { loadTempoSeed, syncTempo, tempoSyncEnabled } from "./tempo/sync";
 import { OpenMeteoSource } from "./weather/open-meteo";
@@ -18,6 +19,12 @@ interface Job {
 }
 
 const JOBS: Job[] = [
+  {
+    name: "journal",
+    at: ["03:00"],
+    enabled: () => true,
+    run: async () => `${await pruneIngestLog()} envois de plus de 30 jours supprimés`,
+  },
   {
     name: "météo",
     at: ["07:00"],

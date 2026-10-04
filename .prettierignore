@@ -3,3 +3,6 @@ docs/
 .next/
 coverage/
 LICENSE
+.next-e2e/
+test-results/
+playwright-report/

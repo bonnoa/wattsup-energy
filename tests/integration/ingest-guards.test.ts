@@ -4,6 +4,7 @@ import { POST } from "@/app/api/v1/ingest/route";
 import { db } from "@/db";
 import { household, ingestLog } from "@/db/schema";
 import { updateGranularity } from "@/server/household";
+import { pruneIngestLog } from "@/server/ingest/persist";
 import { getLastPushAt } from "@/server/ingest/status";
 import { createIngestToken } from "@/server/ingest/token";
 import { createTestHousehold, describeTenantIsolation } from "../helpers/tenancy";
@@ -77,7 +78,7 @@ describe("journal et dernier push", () => {
     expect((await getLastPushAt(ctx))?.getTime()).toBe(first?.getTime());
   });
 
-  it("purge les entrées de plus de 30 jours", async () => {
+  it("purge quotidienne : les entrées de plus de 30 jours sont supprimées", async () => {
     const { ctx, push } = await setup();
     await db.insert(ingestLog).values({
       householdId: ctx.householdId,
@@ -86,6 +87,7 @@ describe("journal et dernier push", () => {
       receivedAt: new Date(Date.now() - 31 * 86_400_000),
     });
     await push(hourly);
+    expect(await pruneIngestLog()).toBeGreaterThanOrEqual(1);
     const rows = await db
       .select()
       .from(ingestLog)

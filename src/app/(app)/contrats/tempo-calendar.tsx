@@ -66,11 +66,14 @@ export function TempoCalendar({ season, days }: { season: string; days: Calendar
           {plural(counts.blanc, "blanc")} · {plural(counts.rouge, "rouge")} (sur 43 et 22)
         </span>
       </div>
-      <div className="flex flex-col gap-1.5">
+      {/* Pas de 24 px entre les cases : cible tactile suffisante sans agrandir les carrés. */}
+      <div className="flex flex-col gap-2.5">
         {[...months].map(([ym, list]) => (
-          <div key={ym} className="flex items-center gap-2">
-            <span className="w-9 flex-none text-[11px] text-subtle">{monthLabel(ym)}</span>
-            <div className="flex flex-wrap gap-[3px]">
+          <div key={ym} className="flex items-start gap-2">
+            <span className="w-9 flex-none text-[11px] leading-[14px] text-subtle">
+              {monthLabel(ym)}
+            </span>
+            <div className="flex flex-wrap gap-2.5">
               {list.map((d) => (
                 <button
                   key={d.date}

@@ -60,7 +60,9 @@ Application web open source (SaaS + auto-hébergeable) qui reçoit les données 
 --grid:      #3D5A80   --solar:   #E0A21B   --battery: #2A9D74
 --pellet:    #B5652B   --wood:    #6F4A2E   --eheat:   #C8442F
 --positive:  #1F7A59   (deltas favorables)  --negative: #C8442F
+--subtle:    #6F736B   (texte secondaire ; assombri depuis #8A8E86 pour 4,8:1 sur blanc, T33)
 ```
+Accessibilité (T33) : texte de 11 px à 4,5:1 au moins sur blanc ; pastilles d'alerte en `#9A5322` sur fond orangé ; cibles tactiles espacées de 24 px (calendrier Tempo) ; liens dans un texte soulignés ; logotype « WattsUp Energy » exempté de contraste et lu comme un seul nom.
 La maquette est une **référence de principe** : on garde la palette, la typographie, la hiérarchie et le ton. Les écrans évoluent librement selon le §9.
 
 Layout : sidebar sombre de 232 px au-dessus de 1024 px ; header + barre d'onglets en bas en dessous (cibles ≥ 44 px). Contenu limité à 1 120 px de large. Rayons de 14 px pour les cartes, 10 px pour les contrôles.
@@ -216,6 +218,7 @@ Règles :
 - Une valeur **inférieure** à l'index précédent est traitée comme un reset : le delta vaut la nouvelle valeur.
 - Un trou de plus de 24 h ne crée pas de données : le delta est absorbé et un avertissement est consigné dans `ingest_log`.
 - Une clé de `categories` inconnue est ignorée, avec un avertissement dans la réponse.
+- **Coût d'un push** (T33) : vérification du token en lecture (la date de dernier usage n'est réécrite qu'au-delà de 10 minutes) ; foyer et postes lus en une requête ; index précédents lus et verrouillés en une requête, intervalles et index écrits par lots ; données et journal dans **une seule transaction** (un commit). La purge du journal (30 jours) est une tâche quotidienne du planificateur (03:00), plus une opération par push.
 - **Postes de consommation** (T19) : slug proposé à partir du nom (minuscules sans accents, tirets), modifiable, unique par foyer. Changer le slug renomme les données déjà reçues (`energy_interval` et `meter_state`, métrique `category:<slug>`) ; supprimer un poste supprime ses données. Les slugs signalés `unknown_category` par les envois des 7 derniers jours sont proposés à la création dans Réglages (« Créer le poste »). Pictogrammes et couleurs pris dans un jeu fixe (`CATEGORY_ICONS`, tokens de la charte).
 - Le bloc `weather` est **retiré du contrat en T16b** (schéma, persistance, table par foyer). Ce n'est pas une rupture : l'API ignore déjà les clés inconnues. La météo vient d'Open-Meteo (§7.9).
 

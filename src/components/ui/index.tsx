@@ -26,7 +26,8 @@ const BADGE: Record<BadgeTone, string> = {
   neutral: "bg-track text-[#5E625C]",
   soft: "bg-grid/10 text-grid",
   positive: "bg-battery/15 text-positive",
-  warning: "bg-pellet/15 text-pellet",
+  // Texte plus foncé que le token : 4,8:1 sur le fond teinté (texte de 11 px).
+  warning: "bg-pellet/15 text-[#9A5322]",
 };
 
 /** Pastille de type ou de statut (« En cours », « Terminé », « HP/HC »…). */

@@ -1,13 +1,6 @@
-import { and, eq, lt, sql } from "drizzle-orm";
+import { and, eq, inArray, lt, sql } from "drizzle-orm";
 import { db } from "@/db";
-import {
-  category,
-  energyInterval,
-  household,
-  ingestLog,
-  meterState,
-  tempoOverride,
-} from "@/db/schema";
+import { energyInterval, household, ingestLog, meterState, tempoOverride } from "@/db/schema";
 import { indexToIntervals, type MeterReading } from "@/domain/ingest/hourly";
 import { dailyToIntervals, hourlyReadings } from "@/domain/ingest/normalize";
 import {
@@ -19,8 +12,8 @@ import {
 import type { IngestWarning } from "@/domain/ingest/types";
 import { tempoDay, zonedInstant } from "@/lib/time";
 
-// Persistance d'un push HA (SPEC §6). Tout est écrit dans une transaction : un push
-// est appliqué entièrement ou pas du tout.
+// Persistance d'un push HA (SPEC §6). Données et journal sont écrits dans une seule
+// transaction : un push est appliqué entièrement ou pas du tout, en un seul commit.
 
 export type IngestResponse =
   | { status: 200; body: { ok: true; warnings: IngestWarning[] } }
@@ -57,8 +50,17 @@ export async function ingest(householdId: string, rawBody: string): Promise<Inge
   }
 
   const payload = parsed.data;
+  // Fuseau, granularité et postes du foyer en une seule requête.
   const [home] = await db
-    .select({ timezone: household.timezone, granularity: household.granularity })
+    .select({
+      timezone: household.timezone,
+      granularity: household.granularity,
+      // Colonnes qualifiées en clair : dans un fragment sql, Drizzle omet le nom de table et
+      // « id » désignerait celui du poste.
+      slugs: sql<
+        string[]
+      >`coalesce((select json_agg(c.slug) from category c where c.household_id = "household"."id"), '[]'::json)`,
+    })
     .from(household)
     .where(eq(household.id, householdId));
   if (!home) throw new Error(`foyer inconnu : ${householdId}`);
@@ -73,21 +75,22 @@ export async function ingest(householdId: string, rawBody: string): Promise<Inge
       },
     });
   }
-  const slugs = (
-    await db
-      .select({ slug: category.slug })
-      .from(category)
-      .where(eq(category.householdId, householdId))
-  ).map((c) => c.slug);
 
-  const warnings = await db.transaction((tx) =>
-    payload.kind === "hourly"
-      ? persistHourly(tx, householdId, home.timezone, payload, slugs)
-      : persistDaily(tx, householdId, home.timezone, payload, slugs),
-  );
-  if (payload.fuel) warnings.push({ code: "ignored_block", key: "fuel" });
-
-  return log(householdId, rawBody, payload.kind, { status: 200, body: { ok: true, warnings } });
+  // Données et journal dans la même transaction : un seul commit par push.
+  return db.transaction(async (tx) => {
+    const warnings =
+      payload.kind === "hourly"
+        ? await persistHourly(tx, householdId, home.timezone, payload, home.slugs)
+        : await persistDaily(tx, householdId, home.timezone, payload, home.slugs);
+    if (payload.fuel) warnings.push({ code: "ignored_block", key: "fuel" });
+    return log(
+      householdId,
+      rawBody,
+      payload.kind,
+      { status: 200, body: { ok: true, warnings } },
+      tx,
+    );
+  });
 }
 
 async function persistHourly(
@@ -98,56 +101,81 @@ async function persistHourly(
   slugs: string[],
 ): Promise<IngestWarning[]> {
   const { readings, warnings } = hourlyReadings(payload, slugs);
+  if (readings.length === 0) {
+    if (payload.tempo_color) {
+      await upsertTempo(tx, householdId, tempoDay(payload.ts, timezone), payload.tempo_color);
+    }
+    return warnings;
+  }
 
+  // Index précédents de toutes les métriques en une lecture (verrouillés jusqu'au commit).
+  const previous = new Map(
+    (
+      await tx
+        .select()
+        .from(meterState)
+        .where(
+          and(
+            eq(meterState.householdId, householdId),
+            inArray(
+              meterState.metric,
+              readings.map((r) => r.metric),
+            ),
+          ),
+        )
+        .for("update")
+    ).map((p) => [p.metric, p]),
+  );
+
+  const intervals: (typeof energyInterval.$inferInsert)[] = [];
+  const states: (typeof meterState.$inferInsert)[] = [];
   for (const reading of readings) {
-    const [prev] = await tx
-      .select()
-      .from(meterState)
-      .where(and(eq(meterState.householdId, householdId), eq(meterState.metric, reading.metric)))
-      .for("update");
-    const previous: MeterReading | undefined = prev
+    const prev = previous.get(reading.metric);
+    const before: MeterReading | undefined = prev
       ? { metric: reading.metric, ts: prev.ts, value: prev.value }
       : undefined;
-
-    const result = indexToIntervals(previous, reading);
+    const result = indexToIntervals(before, reading);
     warnings.push(...result.warnings);
-
-    if (result.intervals.length > 0) {
-      await tx
-        .insert(energyInterval)
-        .values(
-          result.intervals.map((i) => ({
-            householdId,
-            metric: i.metric,
-            start: i.start,
-            granularity: "hour" as const,
-            kwh: i.kwh,
-            source: "ha" as const,
-          })),
-        )
-        .onConflictDoUpdate({
-          target: intervalKey,
-          // Une heure peut recevoir plusieurs parts (pushes décalés) : on cumule.
-          // Une heure importée par CSV est remplacée : HA fait foi.
-          set: {
-            kwh: sql`case when ${energyInterval.source} = 'csv' then excluded.kwh else ${energyInterval.kwh} + excluded.kwh end`,
-            source: sql`'ha'`,
-          },
-        });
+    for (const i of result.intervals) {
+      intervals.push({
+        householdId,
+        metric: i.metric,
+        start: i.start,
+        granularity: "hour",
+        kwh: i.kwh,
+        source: "ha",
+      });
     }
-
     const rejected = result.warnings.some(
       (w) => w.code === "invalid_value" || w.code === "out_of_order",
     );
     if (!rejected) {
-      await tx
-        .insert(meterState)
-        .values({ householdId, metric: reading.metric, ts: reading.ts, value: reading.value })
-        .onConflictDoUpdate({
-          target: [meterState.householdId, meterState.metric],
-          set: { ts: reading.ts, value: reading.value },
-        });
+      states.push({ householdId, metric: reading.metric, ts: reading.ts, value: reading.value });
     }
+  }
+
+  if (intervals.length > 0) {
+    await tx
+      .insert(energyInterval)
+      .values(intervals)
+      .onConflictDoUpdate({
+        target: intervalKey,
+        // Une heure peut recevoir plusieurs parts (pushes décalés) : on cumule.
+        // Une heure importée par CSV est remplacée : HA fait foi.
+        set: {
+          kwh: sql`case when ${energyInterval.source} = 'csv' then excluded.kwh else ${energyInterval.kwh} + excluded.kwh end`,
+          source: sql`'ha'`,
+        },
+      });
+  }
+  if (states.length > 0) {
+    await tx
+      .insert(meterState)
+      .values(states)
+      .onConflictDoUpdate({
+        target: [meterState.householdId, meterState.metric],
+        set: { ts: sql`excluded.ts`, value: sql`excluded.value` },
+      });
   }
 
   if (payload.tempo_color) {
@@ -219,8 +247,9 @@ async function log<R extends IngestResponse>(
   rawBody: string,
   mode: "hourly" | "daily" | null,
   response: R,
+  tx: Tx | typeof db = db,
 ): Promise<R> {
-  await db.insert(ingestLog).values({
+  await tx.insert(ingestLog).values({
     householdId,
     httpStatus: response.status,
     mode,
@@ -233,13 +262,14 @@ async function log<R extends IngestResponse>(
           : response.body.error
         ).slice(0, 2000),
   });
-  await db
-    .delete(ingestLog)
-    .where(
-      and(
-        eq(ingestLog.householdId, householdId),
-        lt(ingestLog.receivedAt, sql`now() - make_interval(days => ${LOG_RETENTION_DAYS})`),
-      ),
-    );
   return response;
+}
+
+/** Journal des pushes conservé 30 jours (tâche quotidienne du planificateur). */
+export async function pruneIngestLog(): Promise<number> {
+  const rows = await db
+    .delete(ingestLog)
+    .where(lt(ingestLog.receivedAt, sql`now() - make_interval(days => ${LOG_RETENTION_DAYS})`))
+    .returning({ id: ingestLog.id });
+  return rows.length;
 }

@@ -7,7 +7,11 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
         <div className="flex items-center gap-3">
           <Image src="/wattsup.svg" alt="" width={36} height={36} priority />
           <span className="text-xl font-bold tracking-tight">
-            WattsUp<span className="text-solar"> Energy</span>
+            {/* Logotype : exempté de contraste (WCAG 1.4.3), lu comme un seul nom. */}
+            <span aria-hidden>
+              WattsUp<span className="text-solar"> Energy</span>
+            </span>
+            <span className="sr-only">WattsUp Energy</span>
           </span>
         </div>
         {children}

@@ -18,7 +18,10 @@ export default function InscriptionPage() {
           l&apos;administre.
         </p>
         <p className="text-sm text-muted">
-          Déjà inscrit ? <Link href="/connexion">Se connecter</Link>
+          Déjà inscrit ?{" "}
+          <Link href="/connexion" className="underline underline-offset-2">
+            Se connecter
+          </Link>
         </p>
       </section>
     );

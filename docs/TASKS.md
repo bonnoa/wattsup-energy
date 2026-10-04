@@ -334,12 +334,13 @@ Légende des tailles : **S** = 1–2 fichiers · **M** = 3–5 fichiers (hors te
   - Vérifier : `pnpm test tests/integration/account` (aucune ligne restante après suppression)
   - Fichiers : `src/app/(app)/reglages/*`, `src/server/actions/account.ts`, `src/server/auth.ts`
 
-- [ ] **T33 — E2E, charge, Lighthouse** · M · Dépend de : T31
+- [x] **T33 — E2E, charge, Lighthouse** · M · Dépend de : T31
   - Acceptation :
     - Playwright : parcours PRD 1–3, onboarding, copie du token ; 5 profils × 2 viewports (1280, 390) sans aucun élément d'un module désactivé
     - Charge : 10 000 pushes → 0 erreur 5xx, p95 < 150 ms, 429 au-delà de 120 req/min (`scripts/load-ingest.ts`)
     - Lighthouse mobile : Performance ≥ 85, Accessibilité ≥ 95, pas de scroll horizontal
   - Vérifier : `pnpm test:e2e && pnpm tsx scripts/load-ingest.ts`
+  - Résultats (2026-10-04, Mac + Postgres Docker) : 19 scénarios Playwright verts ; charge 10 000 envois, 0 erreur 5xx, p50 96 ms, p95 131 ms (avant optimisation : p95 262 ms), 10 réponses 429 sur une rafale de 130 ; Lighthouse mobile performance 88–99 et accessibilité 96 sur les 6 pages principales (connecté)
   - Fichiers : `e2e/*.spec.ts`, `playwright.config.ts`, `scripts/load-ingest.ts`
 
 - [ ] **T34 — Documentation et release** · S · Dépend de : T33

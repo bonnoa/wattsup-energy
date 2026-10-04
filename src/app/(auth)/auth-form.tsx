@@ -134,7 +134,10 @@ export function AuthForm({
       </button>
       {(mode === "inscription" || signupOpen) && (
         <p className="text-sm text-muted">
-          {copy.switchText} <Link href={copy.switchHref}>{copy.switchLabel}</Link>
+          {copy.switchText}{" "}
+          <Link href={copy.switchHref} className="underline underline-offset-2">
+            {copy.switchLabel}
+          </Link>
         </p>
       )}
     </form>

@@ -44,3 +44,5 @@ next-env.d.ts
 # tests
 /test-results/
 /playwright-report/
+/.next-e2e/
+/e2e/.auth/

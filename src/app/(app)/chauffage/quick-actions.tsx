@@ -130,9 +130,15 @@ function PurchaseForm({ fuel, onDone }: { fuel: Fuel; onDone: () => void }) {
 function StockForm({ fuel, initial, onDone }: { fuel: Fuel; initial: number; onDone: () => void }) {
   const unit: FuelUnit = fuel === "pellet" ? "bag" : "stere";
   const step = fuel === "pellet" ? 1 : 0.5;
-  const [value, setValue] = useState(Math.max(0, initial));
+  const digits = step < 1 ? 1 : 0;
+  // Saisie libre (« 12 », « 3,5 ») ; − et + ajustent d'un sac ou d'un demi-stère.
+  const [text, setText] = useState(formatNumber(Math.max(0, initial), digits).replace(/\s/g, ""));
+  const value = toNumber(text);
+  const valid = Number.isFinite(value) && value >= 0;
   const [errors, setErrors] = useState<string[]>([]);
   const [pending, startTransition] = useTransition();
+  const bump = (delta: number) =>
+    setText(formatNumber(Math.max(0, (valid ? value : 0) + delta), digits).replace(/\s/g, ""));
   const save = () =>
     startTransition(async () => {
       const res = await setStockAction({ fuel, qty: value, unit });
@@ -151,22 +157,26 @@ function StockForm({ fuel, initial, onDone }: { fuel: Fuel; initial: number; onD
         <button
           type="button"
           aria-label={`Retirer ${formatFuelQty(step, unit)}`}
-          disabled={value <= 0}
-          onClick={() => setValue((v) => Math.max(0, v - step))}
+          disabled={!valid || value <= 0}
+          onClick={() => bump(-step)}
           className={stepper}
         >
           −
         </button>
-        <span className="flex min-w-0 flex-1 flex-col items-center">
-          <span className="text-2xl font-semibold tabular-nums">
-            {formatNumber(value, step < 1 ? 1 : 0)}
-          </span>
+        <label className="flex min-w-0 flex-1 flex-col items-center">
+          <input
+            inputMode="decimal"
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            aria-label={`${UNIT_NAMES[unit]} restants`}
+            className="w-full bg-transparent text-center text-2xl font-semibold outline-none tabular-nums"
+          />
           <span className="text-[11px] text-subtle">{UNIT_NAMES[unit]} restants</span>
-        </span>
+        </label>
         <button
           type="button"
           aria-label={`Ajouter ${formatFuelQty(step, unit)}`}
-          onClick={() => setValue((v) => v + step)}
+          onClick={() => bump(step)}
           className={stepper}
         >
           +
@@ -174,7 +184,12 @@ function StockForm({ fuel, initial, onDone }: { fuel: Fuel; initial: number; onD
       </div>
       <Errors errors={errors} />
       <div className="flex gap-2">
-        <button type="button" disabled={pending} onClick={save} className={button.primary}>
+        <button
+          type="button"
+          disabled={pending || !valid}
+          onClick={save}
+          className={button.primary}
+        >
           Enregistrer le relevé
         </button>
         <button type="button" onClick={onDone} className={button.secondary}>

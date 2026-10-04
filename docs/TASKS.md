@@ -270,7 +270,7 @@ Légende des tailles : **S** = 1–2 fichiers · **M** = 3–5 fichiers (hors te
   - Vérifier : `pnpm test tests/unit/domain/heating`
   - Fichiers : `src/domain/heating/dju.ts`, `src/domain/heating/cost.ts`
 
-- [ ] **T26 — Vue Chauffage** · M · Dépend de : T24, T25
+- [x] **T26 — Vue Chauffage** · M · Dépend de : T24, T25
   - Acceptation :
     - KPI (coût de la saison, granulés et bois consommés avec N-1, température moyenne) ; graphe coût empilé + courbe de température ; ligne d'équivalence kWh et DJU
     - Tout est conditionné à `visibleModules` (aucune trace de bois si le bois est désactivé)

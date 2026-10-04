@@ -110,6 +110,7 @@ export function StatTile({
   unit,
   sub,
   dot,
+  standalone = false,
 }: {
   label: string;
   value: string;
@@ -117,9 +118,15 @@ export function StatTile({
   sub?: string;
   /** Classe de couleur d'une pastille devant le libellé (ex. `bg-grid`). */
   dot?: string;
+  /** Tuile posée sur le fond de page (et non dans une carte) : fond blanc bordé. */
+  standalone?: boolean;
 }) {
   return (
-    <div className="flex min-w-0 flex-col gap-0.5 rounded-control bg-bg px-2.5 py-2.5">
+    <div
+      className={`flex min-w-0 flex-col gap-0.5 rounded-control px-2.5 py-2.5 ${
+        standalone ? "border border-border bg-surface px-3.5 py-3" : "bg-bg"
+      }`}
+    >
       <span className="flex items-center gap-1.5 text-[11px] text-muted">
         {dot && <span className={`size-2 rounded-full ${dot}`} />}
         {label}

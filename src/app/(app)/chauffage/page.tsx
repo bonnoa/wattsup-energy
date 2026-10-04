@@ -4,13 +4,21 @@ import { currentStock, weightedAvgPrice, type Fuel } from "@/domain/heating/fuel
 import { visibleModules } from "@/domain/profile";
 import { listFuelEvents } from "@/server/fuel";
 import { pageContext } from "@/server/page";
+import { getHeating } from "@/server/queries/heating";
 import { FuelLog } from "./fuel-log";
+import { HeatingCostCard, HeatingKpis, SeasonSwitcher } from "./heating-cards";
 import { FuelCard } from "./quick-actions";
 
 export const metadata = { title: "Chauffage · WattsUp Energy" };
 
-export default async function HeatingPage() {
+export default async function HeatingPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ s?: string | string[] }>;
+}) {
   const ctx = await pageContext("/chauffage");
+  const { s } = await searchParams;
+  const view = await getHeating(ctx, typeof s === "string" ? s : undefined);
   const modules = visibleModules(ctx.profile);
   const fuels: Fuel[] = [
     ...(modules.pellet ? (["pellet"] as const) : []),
@@ -45,12 +53,15 @@ export default async function HeatingPage() {
           ))}
         </div>
       )}
+      <SeasonSwitcher view={view} />
+      <HeatingKpis view={view} />
+      <HeatingCostCard view={view} />
       {fuels.length > 0 && (
         <FuelLog items={log} timezone={ctx.timezone} showFuel={fuels.length > 1} />
       )}
-      <PlaceholderCard task="T26 · T27">
-        Coût de chauffe de la saison face à la température, et prévision de réapprovisionnement.
-      </PlaceholderCard>
+      {modules.refillForecast && (
+        <PlaceholderCard task="T27">Prévision de réapprovisionnement.</PlaceholderCard>
+      )}
     </>
   );
 }

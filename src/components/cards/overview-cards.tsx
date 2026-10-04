@@ -169,8 +169,14 @@ export function KpiTiles({
   const b = overview.balance;
   return (
     <div className="grid grid-cols-2 gap-2 sm:auto-rows-fr">
-      <StatTile label="Consommation du foyer" value={formatNumber(b.consumption)} unit="kWh" />
       <StatTile
+        standalone
+        label="Consommation du foyer"
+        value={formatNumber(b.consumption)}
+        unit="kWh"
+      />
+      <StatTile
+        standalone
         label="Soutiré au réseau"
         value={formatNumber(b.gridImport)}
         unit="kWh"
@@ -183,6 +189,7 @@ export function KpiTiles({
       />
       {solar && (
         <StatTile
+          standalone
           label="Production solaire"
           value={formatNumber(b.solar)}
           unit="kWh"
@@ -196,6 +203,7 @@ export function KpiTiles({
       )}
       {battery && (
         <StatTile
+          standalone
           label="Restitué par la batterie"
           value={formatNumber(b.batteryDischarge)}
           unit="kWh"

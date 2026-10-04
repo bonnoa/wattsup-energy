@@ -2,13 +2,16 @@ import { PageHeader } from "@/components/page-header";
 import { headers } from "next/headers";
 import { pushState } from "@/domain/ingest/push-state";
 import { listCategories, unknownCategorySlugs } from "@/server/categories";
-import { getLastPushAt } from "@/server/ingest/status";
+import { getLastPushAt, listIngestLog } from "@/server/ingest/status";
 import { getActiveIngestToken } from "@/server/ingest/token";
 import { getLocationStatus } from "@/server/location";
 import { pageContext } from "@/server/page";
+import { AccountCard } from "./account-card";
 import { CategoriesCard } from "./categories-card";
 import { CsvCard } from "./csv-card";
+import { FuelSettingsCard } from "./fuel-settings-card";
 import { IngestCard } from "./ingest-card";
+import { IngestLogCard } from "./ingest-log-card";
 import { LocationCard } from "./location-card";
 import { OnboardingCard } from "./onboarding-card";
 import { ProfileForm } from "./profile-form";
@@ -18,12 +21,13 @@ export const metadata = { title: "Réglages · WattsUp Energy" };
 
 export default async function SettingsPage() {
   const ctx = await pageContext("/reglages");
-  const [active, location, lastPushAt, categories, unknown] = await Promise.all([
+  const [active, location, lastPushAt, categories, unknown, log] = await Promise.all([
     getActiveIngestToken(ctx),
     getLocationStatus(ctx),
     getLastPushAt(ctx),
     listCategories(ctx),
     unknownCategorySlugs(ctx),
+    listIngestLog(ctx),
   ]);
   const h = await headers();
   const origin = `${h.get("x-forwarded-proto") ?? "http"}://${h.get("host") ?? "localhost:3000"}`;
@@ -31,7 +35,7 @@ export default async function SettingsPage() {
     <>
       <PageHeader
         title="Réglages"
-        subtitle="Profil énergétique, localisation, ingestion et catégories"
+        subtitle="Profil, localisation, Home Assistant, postes, historique et compte"
       />
       <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,360px),1fr))] items-start gap-4">
         <div className="flex flex-col gap-4">
@@ -48,6 +52,20 @@ export default async function SettingsPage() {
               }}
             />
           )}
+          {(ctx.profile.pellet || ctx.profile.wood) && (
+            <FuelSettingsCard
+              pellet={ctx.profile.pellet}
+              wood={ctx.profile.wood}
+              initial={{
+                pelletBagKg: ctx.settings.pelletBagKg,
+                pelletBagsPerPallet: ctx.settings.pelletBagsPerPallet,
+                heatingSeason: ctx.settings.heatingSeason,
+                kwhFactors: ctx.settings.kwhFactors,
+              }}
+            />
+          )}
+          <OnboardingCard />
+          <AccountCard email={ctx.userEmail} />
         </div>
         <div className="flex flex-col gap-4">
           <IngestCard
@@ -61,6 +79,10 @@ export default async function SettingsPage() {
                 createdAt: active.createdAt.toISOString(),
               }
             }
+          />
+          <IngestLogCard
+            timezone={ctx.timezone}
+            entries={log.map((l) => ({ ...l, receivedAt: l.receivedAt.toISOString() }))}
           />
           <CategoriesCard
             timezone={ctx.timezone}
@@ -77,7 +99,6 @@ export default async function SettingsPage() {
               slugs={categories.map((c) => c.slug)}
             />
           </div>
-          <OnboardingCard />
         </div>
       </div>
     </>

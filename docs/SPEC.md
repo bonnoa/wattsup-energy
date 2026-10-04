@@ -528,7 +528,7 @@ Pull HA, API des fournisseurs, appli native, foyers multi-membres, alertes de st
 | Maquette | Référence de **principe** (identité visuelle, ton, structure). Les écrans sont adaptés aux fonctionnalités et décisions de cette spec (§9). |
 | Granulés et bois | Saisie manuelle prioritaire (« + Sac versé », « Achat », « Corriger le stock ») ; compteur HA optionnel ; poids du sac paramétrable (15 kg par défaut). |
 | Hébergement | Projet Coolify « WattsUp Energy » sur le VPS, application Dockerfile, domaine **`wattsup-energy.kraftpunk.app`** ; base `wattsup` sur la ressource partagée `postgres-partage` (une base par appli), sauvegardée chaque nuit et vérifiée par `check-backups`. Sert d'instance de recette dès le jalon 1, puis de prod. |
-| Inscription SaaS | Variable d'env `SIGNUP_MODE=open\|invite\|closed` (défaut `open` en auto-hébergé). |
+| Inscription SaaS | Variable d'env `SIGNUP_MODE=open\|invite\|closed` (défaut `open` en auto-hébergé ; valeur inconnue = fermé). En `invite`, un code d'`INVITE_CODES` (liste séparée par des virgules) est exigé, envoyé dans l'en-tête `x-invite-code` et vérifié par un crochet Better Auth sur `/sign-up/email`, y compris pour un appel direct à l'API. `/inscription` affiche « Inscriptions fermées » en `closed`, et le lien « Créer un compte » disparaît de la connexion. |
 | Météo (2026-10-03) | Récupérée côté serveur auprès d'**Open-Meteo** (température min/max/moyenne, durée d'ensoleillement, irradiation) pour la commune du foyer, données de la veille ; HA ne fournit plus la météo. Exception assumée au « pas d'API météo » du PRD, au même titre que Tempo. |
 | Fiche équipement | Feuille « Modifier l'équipement » ouverte depuis chaque carte ROI (libellé, capacité, date d'installation, coût). |
 

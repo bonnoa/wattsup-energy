@@ -13,6 +13,8 @@ export interface HouseholdContext {
   userId: string;
   /** Prénom affiché ; vide hors requête web (tests, scripts). */
   userName: string;
+  /** Email du compte ; vide hors requête web. */
+  userEmail: string;
   householdName: string;
   householdId: string;
   timezone: string;
@@ -33,11 +35,13 @@ export class UnauthorizedError extends Error {
 export async function householdContextFor(
   userId: string,
   userName = "",
+  userEmail = "",
 ): Promise<HouseholdContext> {
   const home = await ensureHousehold(userId);
   return {
     userId,
     userName,
+    userEmail,
     householdName: home.name,
     householdId: home.id,
     timezone: home.timezone,
@@ -55,5 +59,5 @@ export async function householdContextFor(
 export const getHouseholdContext = cache(async (): Promise<HouseholdContext> => {
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session) throw new UnauthorizedError();
-  return householdContextFor(session.user.id, session.user.name);
+  return householdContextFor(session.user.id, session.user.name, session.user.email);
 });

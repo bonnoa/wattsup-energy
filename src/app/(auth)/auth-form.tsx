@@ -39,7 +39,17 @@ const ERRORS: Record<string, string> = {
 const inputClass =
   "h-11 w-full rounded-[8px] border border-border-strong bg-surface px-3 text-sm outline-none focus:border-ink";
 
-export function AuthForm({ mode }: { mode: Mode }) {
+export function AuthForm({
+  mode,
+  inviteRequired = false,
+  signupOpen = true,
+}: {
+  mode: Mode;
+  /** Inscription sur invitation (SIGNUP_MODE=invite) : un code est demandé. */
+  inviteRequired?: boolean;
+  /** Lien « Créer un compte » masqué si les inscriptions sont fermées. */
+  signupOpen?: boolean;
+}) {
   const copy = COPY[mode];
   const router = useRouter();
   const next = useSearchParams().get("suite") ?? "/";
@@ -55,11 +65,22 @@ export function AuthForm({ mode }: { mode: Mode }) {
     const password = String(form.get("password"));
     const { error } =
       mode === "inscription"
-        ? await authClient.signUp.email({ email, password, name: String(form.get("name")) })
+        ? await authClient.signUp.email(
+            { email, password, name: String(form.get("name")) },
+            inviteRequired
+              ? { headers: { "x-invite-code": String(form.get("invite") ?? "") } }
+              : undefined,
+          )
         : await authClient.signIn.email({ email, password });
     setPending(false);
     if (error) {
-      setError(ERRORS[error.code ?? ""] ?? "Une erreur est survenue. Réessayez.");
+      // Refus de SIGNUP_MODE : le message du serveur est déjà en français.
+      setError(
+        ERRORS[error.code ?? ""] ??
+          (error.status === 403 && error.message
+            ? error.message
+            : "Une erreur est survenue. Réessayez."),
+      );
       return;
     }
     router.replace(next.startsWith("/") ? next : "/");
@@ -76,6 +97,12 @@ export function AuthForm({ mode }: { mode: Mode }) {
         <label className="flex flex-col gap-1.5 text-sm">
           <span className="text-muted">Prénom</span>
           <input name="name" required autoComplete="given-name" className={inputClass} />
+        </label>
+      )}
+      {mode === "inscription" && inviteRequired && (
+        <label className="flex flex-col gap-1.5 text-sm">
+          <span className="text-muted">Code d&apos;invitation</span>
+          <input name="invite" required autoComplete="off" className={inputClass} />
         </label>
       )}
       <label className="flex flex-col gap-1.5 text-sm">
@@ -105,9 +132,11 @@ export function AuthForm({ mode }: { mode: Mode }) {
       >
         {pending ? "…" : copy.submit}
       </button>
-      <p className="text-sm text-muted">
-        {copy.switchText} <Link href={copy.switchHref}>{copy.switchLabel}</Link>
-      </p>
+      {(mode === "inscription" || signupOpen) && (
+        <p className="text-sm text-muted">
+          {copy.switchText} <Link href={copy.switchHref}>{copy.switchLabel}</Link>
+        </p>
+      )}
     </form>
   );
 }

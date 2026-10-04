@@ -326,7 +326,7 @@ Légende des tailles : **S** = 1–2 fichiers · **M** = 3–5 fichiers (hors te
   - Vérifier : e2e « compte neuf → dashboard alimenté » (avec Playwright en T33) ; `tests/integration/onboarding.test.ts` ; manuel
   - Fichiers : `src/app/(app)/bienvenue/*`, `src/server/actions/onboarding.ts`
 
-- [ ] **T32 — Réglages restants et compte** · M · Dépend de : T9
+- [x] **T32 — Réglages restants et compte** · M · Dépend de : T9
   - Acceptation :
     - Section Combustibles (poids du sac, sacs par palette, saison, facteurs kWh) ; journal des 20 derniers pushes
     - Compte : changement de mot de passe ; suppression du compte qui efface toutes les données du foyer (cascade testée)

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { button, Notice } from "@/components/ui";
+import { settingsHref } from "@/lib/settings-tabs";
 
 /**
  * Aucune donnée reçue : dire pourquoi l'écran est vide et proposer les deux façons de le
@@ -12,10 +13,10 @@ export function EmptyState({ title, children }: { title: string; children: React
       title={title}
       action={
         <>
-          <Link href="/reglages" className={button.primary}>
+          <Link href={settingsHref("home-assistant")} className={button.primary}>
             Connecter Home Assistant
           </Link>
-          <Link href="/reglages#import-csv" className={button.secondary}>
+          <Link href={settingsHref("historique")} className={button.secondary}>
             Importer un historique CSV
           </Link>
         </>

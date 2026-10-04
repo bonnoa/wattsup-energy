@@ -3,7 +3,7 @@
 import { useState, useTransition, type FormEvent } from "react";
 import type { CommuneResult } from "@/domain/weather";
 import { searchCommunesAction, setLocationAction } from "@/server/actions/location";
-import { Badge, button, Card, Icon, Notice, StatTile, tiles } from "@/components/ui";
+import { Badge, button, Card, Icon, Notice } from "@/components/ui";
 
 interface Status {
   location: { label: string; lat: number; lon: number };
@@ -12,7 +12,7 @@ interface Status {
 }
 
 const fmtDate = (iso: string) =>
-  new Date(`${iso}T12:00:00Z`).toLocaleDateString("fr-FR", { day: "numeric", month: "short" });
+  new Date(`${iso}T12:00:00Z`).toLocaleDateString("fr-FR", { day: "numeric", month: "long" });
 const fmtCoord = (n: number) => n.toLocaleString("fr-FR", { minimumFractionDigits: 2 });
 
 const inputClass =
@@ -96,15 +96,12 @@ export function LocationCard({ status }: { status: Status | null }) {
               {fmtCoord(status.location.lat)} · {fmtCoord(status.location.lon)}
             </span>
           </div>
+          {/* Information de contrôle : une ligne discrète, pas des tuiles. */}
           {status.lastDate && (
-            <div className={tiles}>
-              <StatTile
-                label="Historique météo"
-                value={status.days.toLocaleString("fr-FR")}
-                unit="jours"
-              />
-              <StatTile label="Dernière journée" value={fmtDate(status.lastDate)} />
-            </div>
+            <p className="text-xs text-muted tabular-nums">
+              Météo disponible sur {status.days.toLocaleString("fr-FR")} jours, jusqu&apos;au{" "}
+              {fmtDate(status.lastDate)}.
+            </p>
           )}
         </div>
       )}

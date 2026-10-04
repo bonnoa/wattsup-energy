@@ -7,6 +7,7 @@ import { monthLabel } from "@/domain/overview";
 import { addDays } from "@/lib/time";
 import { formatEurFromCents, formatKwh, formatNumber, formatPercent } from "@/lib/format";
 import type { Overview } from "@/server/queries/overview";
+import { settingsHref } from "@/lib/settings-tabs";
 
 // Cartes de la Vue d'ensemble (T20), sur les briques partagées (SPEC §2).
 
@@ -342,7 +343,7 @@ export function CategoriesOverviewCard({ overview }: { overview: Ok }) {
       title="Postes de consommation"
       description={period.label}
       actions={
-        <Link href="/reglages" className={`${button.link} pt-0.5`}>
+        <Link href={settingsHref("postes")} className={`${button.link} pt-0.5`}>
           Gérer
         </Link>
       }
@@ -352,7 +353,7 @@ export function CategoriesOverviewCard({ overview }: { overview: Ok }) {
           tone="info"
           title="Aucun poste suivi."
           action={
-            <Link href="/reglages" className={button.secondary}>
+            <Link href={settingsHref("postes")} className={button.secondary}>
               Créer un poste
             </Link>
           }
@@ -451,7 +452,7 @@ export function SolarCard({ overview }: { overview: Ok }) {
           tone="info"
           title="Pas de météo :"
           action={
-            <Link href="/reglages" className={button.secondary}>
+            <Link href={settingsHref("localisation")} className={button.secondary}>
               Renseigner ma commune
             </Link>
           }

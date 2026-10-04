@@ -1,12 +1,21 @@
-import { PageHeader } from "@/components/page-header";
+import Link from "next/link";
 import { headers } from "next/headers";
+import { PageHeader } from "@/components/page-header";
 import { pushState } from "@/domain/ingest/push-state";
+import {
+  parseSettingsTab,
+  SETTINGS_TABS,
+  settingsHref,
+  type SettingsTab,
+} from "@/lib/settings-tabs";
 import { listCategories, unknownCategorySlugs } from "@/server/categories";
+import type { HouseholdContext } from "@/server/context";
 import { getLastPushAt, listIngestLog } from "@/server/ingest/status";
 import { getActiveIngestToken } from "@/server/ingest/token";
 import { getLocationStatus } from "@/server/location";
 import { pageContext } from "@/server/page";
 import { AccountCard } from "./account-card";
+import { ScrollToActive } from "./active-tab";
 import { CategoriesCard } from "./categories-card";
 import { CsvCard } from "./csv-card";
 import { FuelSettingsCard } from "./fuel-settings-card";
@@ -19,88 +28,162 @@ import { SolarBatteryCard } from "./solar-battery-card";
 
 export const metadata = { title: "Réglages · WattsUp Energy" };
 
-export default async function SettingsPage() {
-  const ctx = await pageContext("/reglages");
-  const [active, location, lastPushAt, categories, unknown, log] = await Promise.all([
+// Un ou deux encarts par onglet, en colonne de lecture confortable.
+const panel = "flex max-w-2xl flex-col gap-4";
+
+/** Sous-onglets : liens (l'onglet est dans l'URL) ; la barre défile seule sur mobile. */
+function Tabs({ tabs, active }: { tabs: readonly SettingsTab[]; active: SettingsTab }) {
+  return (
+    <nav aria-label="Sections des réglages" className="flex flex-col gap-2">
+      <ScrollToActive>
+        <div className="flex w-max gap-1 rounded-[10px] bg-chip p-[3px]">
+          {SETTINGS_TABS.filter((t) => tabs.includes(t.id)).map((t) => (
+            <Link
+              key={t.id}
+              href={settingsHref(t.id)}
+              aria-current={t.id === active ? "page" : undefined}
+              scroll={false}
+              className={`rounded-[8px] px-3.5 py-2 text-[13px] font-medium whitespace-nowrap ${
+                t.id === active
+                  ? "bg-surface shadow-[0_1px_2px_rgba(0,0,0,0.08)]"
+                  : "text-[#5E625C] hover:text-ink"
+              }`}
+            >
+              {t.label}
+            </Link>
+          ))}
+        </div>
+      </ScrollToActive>
+      <p className="px-1 text-xs text-muted">
+        {SETTINGS_TABS.find((t) => t.id === active)?.description}
+      </p>
+    </nav>
+  );
+}
+
+function EquipmentTab({ ctx }: { ctx: HouseholdContext }) {
+  return (
+    <div className={panel}>
+      {(ctx.profile.solar || ctx.profile.battery) && (
+        <SolarBatteryCard
+          solar={ctx.profile.solar}
+          battery={ctx.profile.battery}
+          initial={{
+            exportEnabled: ctx.settings.exportEnabled,
+            exportPriceEurKwh: ctx.settings.exportPriceEurKwh,
+            batteryGridCharging: ctx.settings.batteryGridCharging,
+          }}
+        />
+      )}
+      {(ctx.profile.pellet || ctx.profile.wood) && (
+        <FuelSettingsCard
+          pellet={ctx.profile.pellet}
+          wood={ctx.profile.wood}
+          initial={{
+            pelletBagKg: ctx.settings.pelletBagKg,
+            pelletBagsPerPallet: ctx.settings.pelletBagsPerPallet,
+            heatingSeason: ctx.settings.heatingSeason,
+            kwhFactors: ctx.settings.kwhFactors,
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+async function HomeAssistantTab({ ctx }: { ctx: HouseholdContext }) {
+  const [active, lastPushAt, log] = await Promise.all([
     getActiveIngestToken(ctx),
-    getLocationStatus(ctx),
     getLastPushAt(ctx),
-    listCategories(ctx),
-    unknownCategorySlugs(ctx),
     listIngestLog(ctx),
   ]);
   const h = await headers();
   const origin = `${h.get("x-forwarded-proto") ?? "http"}://${h.get("host") ?? "localhost:3000"}`;
   return (
+    <div className={panel}>
+      <IngestCard
+        endpoint={`${origin}/api/v1/ingest`}
+        granularity={ctx.granularity}
+        lastPushAt={lastPushAt?.toISOString() ?? null}
+        link={pushState(lastPushAt?.getTime() ?? null, Date.now(), ctx.granularity)}
+        active={active && { prefix: active.prefix, createdAt: active.createdAt.toISOString() }}
+      />
+      <IngestLogCard
+        timezone={ctx.timezone}
+        entries={log.map((l) => ({ ...l, receivedAt: l.receivedAt.toISOString() }))}
+      />
+    </div>
+  );
+}
+
+async function CategoriesTab({ ctx }: { ctx: HouseholdContext }) {
+  const [categories, unknown] = await Promise.all([listCategories(ctx), unknownCategorySlugs(ctx)]);
+  return (
+    <div className={panel}>
+      <CategoriesCard
+        timezone={ctx.timezone}
+        unknown={unknown}
+        categories={categories.map((c) => ({
+          ...c,
+          lastDataAt: c.lastDataAt?.toISOString() ?? null,
+        }))}
+      />
+    </div>
+  );
+}
+
+async function HistoryTab({ ctx }: { ctx: HouseholdContext }) {
+  const categories = await listCategories(ctx);
+  return (
+    <div className={panel}>
+      <CsvCard
+        granularity={ctx.granularity}
+        timezone={ctx.timezone}
+        slugs={categories.map((c) => c.slug)}
+      />
+    </div>
+  );
+}
+
+export default async function SettingsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ onglet?: string | string[] }>;
+}) {
+  const ctx = await pageContext("/reglages");
+  const p = ctx.profile;
+  // « Équipements » n'existe que si le profil a du solaire, une batterie ou un combustible.
+  const tabs = SETTINGS_TABS.map((t) => t.id).filter(
+    (id) => id !== "equipements" || p.solar || p.battery || p.pellet || p.wood,
+  );
+  const tab = parseSettingsTab((await searchParams).onglet, tabs);
+  return (
     <>
       <PageHeader
         title="Réglages"
-        subtitle="Profil, localisation, Home Assistant, postes, historique et compte"
+        subtitle="Votre foyer, la liaison Home Assistant et votre compte"
       />
-      <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,360px),1fr))] items-start gap-4">
-        <div className="flex flex-col gap-4">
+      <Tabs tabs={tabs} active={tab} />
+      {tab === "profil" && (
+        <div className={panel}>
           <ProfileForm initial={ctx.profile} />
-          <LocationCard status={location} />
-          {(ctx.profile.solar || ctx.profile.battery) && (
-            <SolarBatteryCard
-              solar={ctx.profile.solar}
-              battery={ctx.profile.battery}
-              initial={{
-                exportEnabled: ctx.settings.exportEnabled,
-                exportPriceEurKwh: ctx.settings.exportPriceEurKwh,
-                batteryGridCharging: ctx.settings.batteryGridCharging,
-              }}
-            />
-          )}
-          {(ctx.profile.pellet || ctx.profile.wood) && (
-            <FuelSettingsCard
-              pellet={ctx.profile.pellet}
-              wood={ctx.profile.wood}
-              initial={{
-                pelletBagKg: ctx.settings.pelletBagKg,
-                pelletBagsPerPallet: ctx.settings.pelletBagsPerPallet,
-                heatingSeason: ctx.settings.heatingSeason,
-                kwhFactors: ctx.settings.kwhFactors,
-              }}
-            />
-          )}
-          <OnboardingCard />
+        </div>
+      )}
+      {tab === "localisation" && (
+        <div className={panel}>
+          <LocationCard status={await getLocationStatus(ctx)} />
+        </div>
+      )}
+      {tab === "equipements" && <EquipmentTab ctx={ctx} />}
+      {tab === "home-assistant" && <HomeAssistantTab ctx={ctx} />}
+      {tab === "postes" && <CategoriesTab ctx={ctx} />}
+      {tab === "historique" && <HistoryTab ctx={ctx} />}
+      {tab === "compte" && (
+        <div className={panel}>
           <AccountCard email={ctx.userEmail} />
+          <OnboardingCard />
         </div>
-        <div className="flex flex-col gap-4">
-          <IngestCard
-            endpoint={`${origin}/api/v1/ingest`}
-            granularity={ctx.granularity}
-            lastPushAt={lastPushAt?.toISOString() ?? null}
-            link={pushState(lastPushAt?.getTime() ?? null, Date.now(), ctx.granularity)}
-            active={
-              active && {
-                prefix: active.prefix,
-                createdAt: active.createdAt.toISOString(),
-              }
-            }
-          />
-          <IngestLogCard
-            timezone={ctx.timezone}
-            entries={log.map((l) => ({ ...l, receivedAt: l.receivedAt.toISOString() }))}
-          />
-          <CategoriesCard
-            timezone={ctx.timezone}
-            unknown={unknown}
-            categories={categories.map((c) => ({
-              ...c,
-              lastDataAt: c.lastDataAt?.toISOString() ?? null,
-            }))}
-          />
-          <div id="import-csv" className="scroll-mt-6">
-            <CsvCard
-              granularity={ctx.granularity}
-              timezone={ctx.timezone}
-              slugs={categories.map((c) => c.slug)}
-            />
-          </div>
-        </div>
-      </div>
+      )}
     </>
   );
 }

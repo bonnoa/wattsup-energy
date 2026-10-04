@@ -8,6 +8,7 @@ import type { Fuel } from "@/domain/heating/fuel";
 import { formatNumber } from "@/lib/format";
 import type { FuelForecast, RefillForecastView } from "@/server/queries/heating";
 import { FUEL_LABELS } from "./labels";
+import { settingsHref } from "@/lib/settings-tabs";
 
 // Prévision de réapprovisionnement (T27) : tous les cas sont calculés côté serveur ; les
 // onglets ne font que choisir le combustible, l'échéance et le scénario.
@@ -148,7 +149,7 @@ export function ForecastCard({ view }: { view: RefillForecastView }) {
           tone="info"
           title="Données insuffisantes :"
           action={
-            <Link href="/reglages#import-csv" className={button.secondary}>
+            <Link href={settingsHref("historique")} className={button.secondary}>
               Importer un historique
             </Link>
           }

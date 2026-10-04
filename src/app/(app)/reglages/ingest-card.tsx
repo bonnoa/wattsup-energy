@@ -7,7 +7,7 @@ import {
   setGranularityAction,
 } from "@/server/actions/ingest-token";
 import type { PushState } from "@/domain/ingest/push-state";
-import { Badge, button, Card, CardFooter, Icon, Notice, StatTile } from "@/components/ui";
+import { Badge, button, Card, CardFooter, Icon, Notice } from "@/components/ui";
 
 interface ActiveToken {
   prefix: string;
@@ -118,9 +118,11 @@ export function IngestCard({ endpoint, active, granularity, link, lastPushAt }: 
       description="Home Assistant pousse les données. Aucun port entrant à ouvrir."
     >
       {active && !fresh && (
-        <div className="grid grid-cols-2 gap-2">
-          <StatTile label="Dernier envoi" value={lastPushAt ? fmt(lastPushAt) : "jamais"} />
-        </div>
+        <p className="text-xs text-muted tabular-nums">
+          {lastPushAt
+            ? `Dernier envoi reçu le ${fmt(lastPushAt)}.`
+            : "Aucun envoi reçu pour l'instant."}
+        </p>
       )}
 
       {!active && !fresh && (

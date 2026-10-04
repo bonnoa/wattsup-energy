@@ -5,6 +5,7 @@ import { monthLabel } from "@/domain/overview";
 import { formatEurFromCents, formatNumber, formatPercent } from "@/lib/format";
 import type { HeatingView } from "@/server/queries/heating";
 import { FUEL_LABELS } from "./labels";
+import { settingsHref } from "@/lib/settings-tabs";
 
 // Vue Chauffage (T26) : saison, chiffres clés comparés à N-1, coût mensuel par source et
 // degrés-jours alignés (deux graphiques sur le même axe du temps, pas de double échelle).
@@ -215,7 +216,7 @@ export function HeatingCostCard({ view }: { view: HeatingView }) {
           tone="info"
           title="Pas de météo :"
           action={
-            <Link href="/reglages" className={button.secondary}>
+            <Link href={settingsHref("localisation")} className={button.secondary}>
               Renseigner ma commune
             </Link>
           }

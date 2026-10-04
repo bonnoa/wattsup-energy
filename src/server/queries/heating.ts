@@ -3,7 +3,15 @@ import { db } from "@/db";
 import { energyInterval, household, weatherDaily } from "@/db/schema";
 import { heatingCost, type HeatingCost } from "@/domain/heating/cost";
 import { heatingSeason, seasonDju, seasonStarting, type HeatingSeason } from "@/domain/heating/dju";
-import { seasonConsumption, toBaseQty, weightedAvgPrice, type Fuel } from "@/domain/heating/fuel";
+import { forecastRefill, SCENARIOS, type Forecast, type Scenario } from "@/domain/heating/forecast";
+import {
+  currentStock,
+  lastPurchasePrice,
+  seasonConsumption,
+  toBaseQty,
+  weightedAvgPrice,
+  type Fuel,
+} from "@/domain/heating/fuel";
 import { visibleModules } from "@/domain/profile";
 import { buildTimeline, priceTimeline } from "@/domain/tariff/timeline";
 import type { PriceableInterval } from "@/domain/tariff/types";
@@ -245,5 +253,124 @@ export async function getHeating(
     noLocation: cell === null,
     bagKg: ctx.settings.pelletBagKg,
     modules,
+  };
+}
+
+export interface FuelForecast {
+  fuel: Fuel;
+  /** Fin de la saison en cours (null hors saison), par scénario. */
+  current: Record<Scenario, Forecast> | null;
+  /** Saison suivante, par scénario (le stock réservé à la fin de saison est déduit). */
+  next: Record<Scenario, Forecast>;
+  currentLabel: string | null;
+  nextLabel: string;
+  /** Stock courant en unité de base. */
+  stock: number;
+}
+
+export interface RefillForecastView {
+  fuels: FuelForecast[];
+  bagKg: number;
+}
+
+/**
+ * Prévision de réapprovisionnement (T27) pour chaque combustible actif : consommation par
+ * DJU des deux dernières saisons terminées, DJU de référence, trois scénarios.
+ */
+export async function getRefillForecast(
+  ctx: HouseholdContext,
+  now = new Date(),
+): Promise<RefillForecastView> {
+  const tz = ctx.timezone;
+  const today = localParts(now, tz).date;
+  const bounds = ctx.settings.heatingSeason;
+  const latest = heatingSeason(today, bounds);
+  const inSeason = today < latest.to;
+  const lastCompleted = inSeason ? latest.startYear - 1 : latest.startYear;
+  const past = [lastCompleted, lastCompleted - 1].map((y) => seasonStarting(y, bounds));
+  const nextSeason = seasonStarting(latest.startYear + 1, bounds);
+
+  const vis = visibleModules(ctx.profile);
+  const fuels: Fuel[] = [
+    ...(vis.pellet ? (["pellet"] as const) : []),
+    ...(vis.wood ? (["wood"] as const) : []),
+  ];
+  const [events, home] = await Promise.all([
+    listFuelEvents(ctx),
+    db
+      .select({ location: household.location })
+      .from(household)
+      .where(eq(household.id, ctx.householdId)),
+  ]);
+  const location = home[0]?.location ?? null;
+  const cell = location ? cellOf(location) : null;
+  const pastDju = await Promise.all(
+    past.map(async (s) => {
+      const days = await weatherDays(cell, s.from, s.to);
+      const r = seasonDju(days, s);
+      // Une saison à moins de 90 % couverte par la météo n'est pas corrigée.
+      return days.length > 0 && r.missingDays <= (r.days + r.missingDays) * 0.1 ? r.dju : null;
+    }),
+  );
+  // DJU de la saison en cours jusqu'à aujourd'hui : sa consommation par DJU compte pour
+  // prévoir l'hiver suivant (fin avril, l'hiver qui s'achève est le plus représentatif).
+  const currentDju = inSeason
+    ? await weatherDays(cell, latest.from, today).then((days) =>
+        days.length > 0 ? seasonDju(days, { ...latest, to: today }).dju : null,
+      )
+    : null;
+  const window = (s: HeatingSeason, until = s.to) => ({
+    from: zonedInstant(s.from, 0, tz),
+    to: zonedInstant(until, 0, tz),
+  });
+
+  return {
+    bagKg: ctx.settings.pelletBagKg,
+    fuels: fuels.map((fuel) => {
+      const history = past.map((s, i) => ({
+        label: s.label,
+        consumed: seasonConsumption(events, fuel, window(s), ctx.settings).qty,
+        dju: pastDju[i] ?? null,
+      }));
+      const stock = Math.max(0, currentStock(events, fuel, now, ctx.settings));
+      const lastPricePerUnit = lastPurchasePrice(events, fuel, ctx.settings);
+      const consumedNow = inSeason
+        ? seasonConsumption(events, fuel, window(latest, addDays(today, 1)), ctx.settings).qty
+        : 0;
+      const byScenario = (target: "current" | "next") =>
+        Object.fromEntries(
+          (Object.keys(SCENARIOS) as Scenario[]).map((scenario) => {
+            const base = { fuel, history, scenario, lastPricePerUnit, settings: ctx.settings };
+            const current = forecastRefill({ ...base, stock, alreadyConsumed: consumedNow });
+            if (target === "current") return [scenario, current];
+            // Saison prochaine : le stock encore nécessaire pour finir l'hiver est réservé, et
+            // l'hiver en cours rejoint l'historique.
+            const reserved = inSeason && current.status === "ok" ? current.remaining : 0;
+            const withCurrent = inSeason
+              ? [
+                  { label: latest.label, consumed: consumedNow, dju: currentDju, partial: true },
+                  ...history,
+                ]
+              : history;
+            return [
+              scenario,
+              forecastRefill({
+                ...base,
+                history: withCurrent,
+                stock: Math.max(0, stock - reserved),
+                alreadyConsumed: 0,
+              }),
+            ];
+          }),
+        ) as Record<Scenario, Forecast>;
+      return {
+        fuel,
+        current: inSeason ? byScenario("current") : null,
+        next: byScenario("next"),
+        currentLabel: inSeason ? latest.label : null,
+        nextLabel: nextSeason.label,
+        stock,
+      };
+    }),
   };
 }

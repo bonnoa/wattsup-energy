@@ -1,10 +1,10 @@
 import { PageHeader } from "@/components/page-header";
-import { PlaceholderCard } from "@/components/placeholder-card";
 import { currentStock, weightedAvgPrice, type Fuel } from "@/domain/heating/fuel";
 import { visibleModules } from "@/domain/profile";
 import { listFuelEvents } from "@/server/fuel";
 import { pageContext } from "@/server/page";
-import { getHeating } from "@/server/queries/heating";
+import { getHeating, getRefillForecast } from "@/server/queries/heating";
+import { ForecastCard } from "./forecast-card";
 import { FuelLog } from "./fuel-log";
 import { HeatingCostCard, HeatingKpis, SeasonSwitcher } from "./heating-cards";
 import { FuelCard } from "./quick-actions";
@@ -18,7 +18,10 @@ export default async function HeatingPage({
 }) {
   const ctx = await pageContext("/chauffage");
   const { s } = await searchParams;
-  const view = await getHeating(ctx, typeof s === "string" ? s : undefined);
+  const [view, forecast] = await Promise.all([
+    getHeating(ctx, typeof s === "string" ? s : undefined),
+    visibleModules(ctx.profile).refillForecast ? getRefillForecast(ctx) : null,
+  ]);
   const modules = visibleModules(ctx.profile);
   const fuels: Fuel[] = [
     ...(modules.pellet ? (["pellet"] as const) : []),
@@ -59,9 +62,7 @@ export default async function HeatingPage({
       {fuels.length > 0 && (
         <FuelLog items={log} timezone={ctx.timezone} showFuel={fuels.length > 1} />
       )}
-      {modules.refillForecast && (
-        <PlaceholderCard task="T27">Prévision de réapprovisionnement.</PlaceholderCard>
-      )}
+      {forecast && <ForecastCard view={forecast} />}
     </>
   );
 }

@@ -325,6 +325,12 @@ coût     = à_acheter × dernier prix d'achat connu
 ```
 Sans aucune saison complète, l'encart affiche « Données insuffisantes, il faut au moins une saison de chauffe » et propose l'import CSV.
 
+Échéances (T27) :
+- **Fin de cette saison** (en saison seulement) : `reste = max(0, besoin − déjà consommé)`, `à_acheter = max(0, reste − stock)`.
+- **Saison prochaine** : le stock encore nécessaire pour finir l'hiver en cours est réservé (`stock_dispo = max(0, stock − reste)`). L'hiver en cours entre dans l'historique pour sa **consommation par DJU** dès que la moitié du froid d'un hiver moyen est passée (fin avril, c'est l'hiver le plus représentatif) ; jamais pour son total, ni sans météo.
+- Une saison passée n'est corrigée du froid que si la météo couvre au moins 90 % de ses jours ; sinon, moyenne simple des saisons terminées.
+- Les trois scénarios et les deux échéances sont calculés côté serveur ; l'encart affiche une phrase de synthèse, le besoin, le stock retenu, la quantité à acheter et la base de calcul.
+
 ### 7.6 Visibilité des modules (`src/domain/profile.ts`)
 Une **fonction pure unique** `visibleModules(profile)` est utilisée par la nav, les pages et les composants (aucun `if` dispersé dans le code).
 

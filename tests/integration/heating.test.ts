@@ -31,7 +31,13 @@ describe("vue Chauffage sur le foyer de démo", () => {
     );
     const monthly = h.months.reduce((a, m) => a + m.electricCents + m.pelletCents + m.woodCents, 0);
     expect(Math.abs(monthly - c.totalCents)).toBeLessThanOrEqual(h.months.length * 2);
-    expect(h.months.map((m) => m.key)).toEqual(["2025-10", "2025-11", "2025-12", "2026-01", "2026-02"]);
+    expect(h.months.map((m) => m.key)).toEqual([
+      "2025-10",
+      "2025-11",
+      "2025-12",
+      "2026-01",
+      "2026-02",
+    ]);
     expect(h.previous?.fuels.pellet?.qty).toBeGreaterThan(0);
     expect(h.nav).toEqual({ prev: 2024, next: null });
   });

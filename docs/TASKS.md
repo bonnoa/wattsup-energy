@@ -277,7 +277,7 @@ Légende des tailles : **S** = 1–2 fichiers · **M** = 3–5 fichiers (hors te
   - Vérifier : e2e profil « granulés seuls » ; manuel
   - Fichiers : `src/app/(app)/chauffage/page.tsx`, `src/server/queries/heating.ts`, `src/components/charts/bars-with-line.tsx`
 
-- [ ] **T27 — Prévision de réapprovisionnement** · M · Dépend de : T25, T26
+- [x] **T27 — Prévision de réapprovisionnement** · M · Dépend de : T25, T26
   - Acceptation :
     - `forecastRefill()` (spec §7.5) : consommation par DJU sur N-1 et N-2, scénarios 0,90 / 1,00 / 1,15, arrondi à la palette (66 sacs par défaut) ou au demi-stère, coût au dernier prix d'achat
     - Encart UI : onglets Granulés / Bois si les deux sont actifs, scénario, base de calcul, phrase de synthèse ; état « données insuffisantes »

@@ -56,14 +56,24 @@ export function AppNav({ items, userName, householdName, ingest }: Props) {
         <div className="mt-auto">
           <HaStatus {...ingest} />
         </div>
-        <div className="flex items-center gap-2.5 px-2 pt-4">
-          <div className="flex size-8 items-center justify-center rounded-full bg-grid text-[13px] font-semibold">
-            {userName.slice(0, 1).toUpperCase()}
-          </div>
-          <div className="flex min-w-0 flex-1 flex-col">
-            <span className="truncate text-[13px] font-semibold">{userName}</span>
-            <span className="truncate text-xs text-[#7D817A]">{householdName}</span>
-          </div>
+        <div className="flex items-center gap-1 pt-4">
+          {/* Le bloc nom ouvre la page Compte ; la déconnexion reste à côté. */}
+          <Link
+            href="/compte"
+            aria-current={isActive(pathname, "/compte") ? "page" : undefined}
+            title="Mon compte"
+            className={`flex min-w-0 flex-1 items-center gap-2.5 rounded-[9px] px-2 py-1.5 text-bg no-underline hover:bg-bg/[0.08] ${
+              isActive(pathname, "/compte") ? "bg-bg/[0.12]" : ""
+            }`}
+          >
+            <span className="flex size-8 flex-none items-center justify-center rounded-full bg-grid text-[13px] font-semibold">
+              {userName.slice(0, 1).toUpperCase()}
+            </span>
+            <span className="flex min-w-0 flex-1 flex-col">
+              <span className="truncate text-[13px] font-semibold">{userName}</span>
+              <span className="truncate text-xs text-[#A9ADA6]">{householdName}</span>
+            </span>
+          </Link>
           <SignOutButton />
         </div>
       </aside>
@@ -74,7 +84,19 @@ export function AppNav({ items, userName, householdName, ingest }: Props) {
           <Image src="/wattsup.svg" alt="" width={28} height={28} priority />
           <span className="text-base font-bold">WattsUp</span>
         </div>
-        <HaStatus {...ingest} compact />
+        <div className="flex items-center gap-2">
+          <HaStatus {...ingest} compact />
+          <Link
+            href="/compte"
+            aria-label={`Mon compte (${userName})`}
+            aria-current={isActive(pathname, "/compte") ? "page" : undefined}
+            className={`flex size-9 items-center justify-center rounded-full bg-grid text-[13px] font-semibold text-white no-underline ${
+              isActive(pathname, "/compte") ? "ring-2 ring-ink ring-offset-2 ring-offset-bg" : ""
+            }`}
+          >
+            {userName.slice(0, 1).toUpperCase()}
+          </Link>
+        </div>
       </header>
 
       {/* Mobile : barre d'onglets */}

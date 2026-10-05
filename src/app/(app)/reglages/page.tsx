@@ -14,7 +14,6 @@ import { getLastPushAt, listIngestLog } from "@/server/ingest/status";
 import { getActiveIngestToken } from "@/server/ingest/token";
 import { getLocationStatus } from "@/server/location";
 import { pageContext } from "@/server/page";
-import { AccountCard } from "./account-card";
 import { ScrollToActive } from "./active-tab";
 import { CategoriesCard } from "./categories-card";
 import { CsvCard } from "./csv-card";
@@ -22,7 +21,6 @@ import { FuelSettingsCard } from "./fuel-settings-card";
 import { IngestCard } from "./ingest-card";
 import { IngestLogCard } from "./ingest-log-card";
 import { LocationCard } from "./location-card";
-import { OnboardingCard } from "./onboarding-card";
 import { ProfileForm } from "./profile-form";
 import { SolarBatteryCard } from "./solar-battery-card";
 
@@ -159,10 +157,7 @@ export default async function SettingsPage({
   const tab = parseSettingsTab((await searchParams).onglet, tabs);
   return (
     <>
-      <PageHeader
-        title="Réglages"
-        subtitle="Votre foyer, la liaison Home Assistant et votre compte"
-      />
+      <PageHeader title="Réglages" subtitle="Votre foyer et la liaison avec Home Assistant" />
       <Tabs tabs={tabs} active={tab} />
       {tab === "profil" && (
         <div className={panel}>
@@ -178,12 +173,6 @@ export default async function SettingsPage({
       {tab === "home-assistant" && <HomeAssistantTab ctx={ctx} />}
       {tab === "postes" && <CategoriesTab ctx={ctx} />}
       {tab === "historique" && <HistoryTab ctx={ctx} />}
-      {tab === "compte" && (
-        <div className={panel}>
-          <AccountCard email={ctx.userEmail} />
-          <OnboardingCard />
-        </div>
-      )}
     </>
   );
 }

@@ -24,7 +24,7 @@ export async function finishOnboardingAction(): Promise<void> {
   redirect("/");
 }
 
-/** Relancer le parcours depuis Réglages. */
+/** Relancer le parcours depuis la page Compte. */
 export async function restartOnboardingAction(): Promise<void> {
   const ctx = await getHouseholdContext();
   await setOnboarding(ctx, { step: 0, done: false });

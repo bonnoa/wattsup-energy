@@ -24,7 +24,7 @@ export async function updateGranularity(
   return row?.granularity ?? null;
 }
 
-/** Parcours de bienvenue : étape atteinte (0–4), fin, ou relance depuis Réglages. */
+/** Parcours de bienvenue : étape atteinte (0–4), fin, ou relance depuis la page Compte. */
 export async function setOnboarding(
   ctx: { householdId: string },
   state: { step: number; done: boolean },

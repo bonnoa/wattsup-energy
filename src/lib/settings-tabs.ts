@@ -20,11 +20,6 @@ export const SETTINGS_TABS = [
   },
   { id: "postes", label: "Postes", description: "Les appareils ou circuits suivis séparément." },
   { id: "historique", label: "Historique", description: "Import de votre historique en CSV." },
-  {
-    id: "compte",
-    label: "Compte",
-    description: "Mot de passe, parcours de bienvenue, suppression.",
-  },
 ] as const;
 
 export type SettingsTab = (typeof SETTINGS_TABS)[number]["id"];

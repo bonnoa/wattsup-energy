@@ -16,7 +16,7 @@ export const auth = betterAuth({
     enabled: true,
     minPasswordLength: 10,
   },
-  // Suppression du compte depuis Réglages (mot de passe exigé) : le foyer et toutes ses
+  // Suppression du compte depuis la page Compte (mot de passe exigé) : le foyer et toutes ses
   // données partent en cascade.
   user: { deleteUser: { enabled: true } },
   hooks: {

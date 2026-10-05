@@ -1,0 +1,112 @@
+import { formatNumber } from "@/lib/format";
+
+// Avertissements et erreurs du journal des envois (SPEC §6.1), en phrases pour l'interface.
+// Le journal garde les codes bruts ; une entrée inconnue (version future) est ignorée.
+
+export interface WarningLine {
+  /** info : comportement normal ; warning : à vérifier côté Home Assistant. */
+  tone: "info" | "warning";
+  text: string;
+}
+
+const CORE_LABELS: Record<string, string> = {
+  grid_import: "import réseau",
+  grid_export: "export réseau",
+  solar_production: "production solaire",
+  battery_charge: "charge batterie",
+  battery_charge_grid: "charge batterie depuis le réseau",
+  battery_discharge: "décharge batterie",
+};
+
+const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+
+const list = (labels: string[]) =>
+  labels.length < 2 ? (labels[0] ?? "") : `${labels.slice(0, -1).join(", ")} et ${labels.at(-1)}`;
+
+const duration = (hours: number) => (hours < 48 ? `${hours} h` : `${Math.round(hours / 24)} jours`);
+
+/** Phrases par compteur, regroupées quand plusieurs compteurs partagent le même message. */
+const PER_METRIC: Record<string, { tone: WarningLine["tone"]; text: (w: Raw) => string }> = {
+  baseline: { tone: "info", text: () => "premier relevé, comptage à partir du prochain envoi" },
+  gap_too_long: {
+    tone: "info",
+    text: (w) => `${duration(Number(w.hours))} sans relevé, période non comptée`,
+  },
+  reset: { tone: "warning", text: () => "compteur remis à zéro, nouveau point de départ" },
+  out_of_order: { tone: "warning", text: () => "relevé plus ancien que le précédent, ignoré" },
+  invalid_value: { tone: "warning", text: () => "valeur invalide, ignorée" },
+  implausible: {
+    tone: "warning",
+    text: (w) =>
+      `${formatNumber(Number(w.kwhPerHour), 1)} kWh en une heure, valeur inhabituelle à vérifier`,
+  },
+};
+
+type Raw = Record<string, unknown>;
+
+/**
+ * @param categoryNames nom affiché de chaque poste, par slug (un poste supprimé depuis garde
+ *   son slug).
+ */
+export function describeWarnings(
+  warnings: readonly unknown[],
+  categoryNames: Record<string, string>,
+): WarningLine[] {
+  const label = (metric: string) =>
+    metric.startsWith("category:")
+      ? (categoryNames[metric.slice(9)] ?? `« ${metric.slice(9)} »`)
+      : (CORE_LABELS[metric] ?? metric);
+
+  const groups = new Map<string, { tone: WarningLine["tone"]; text: string; labels: string[] }>();
+  const lines: (WarningLine | string)[] = [];
+  for (const w of warnings) {
+    if (typeof w !== "object" || w === null || !("code" in w)) continue;
+    const raw = w as Raw;
+    const rule = PER_METRIC[String(raw.code)];
+    if (rule && typeof raw.metric === "string") {
+      const text = rule.text(raw);
+      const key = `${rule.tone}|${text}`;
+      const group = groups.get(key);
+      if (group) group.labels.push(label(raw.metric));
+      else {
+        groups.set(key, { tone: rule.tone, text, labels: [label(raw.metric)] });
+        lines.push(key);
+      }
+    } else if (raw.code === "unknown_category") {
+      lines.push({
+        tone: "warning",
+        text: `Poste « ${String(raw.key)} » inconnu : créez-le dans Postes ou corrigez son slug dans Home Assistant.`,
+      });
+    } else if (raw.code === "ignored_block") {
+      lines.push({
+        tone: "info",
+        text: `Bloc « ${String(raw.key)} » non exploité par cette version.`,
+      });
+    } else if (raw.code === "no_energy_data") {
+      lines.push({
+        tone: "warning",
+        text: "Aucune valeur d'énergie exploitable : vérifiez les capteurs choisis dans Home Assistant.",
+      });
+    }
+  }
+  return lines.map((l) => {
+    if (typeof l !== "string") return l;
+    const g = groups.get(l) as { tone: WarningLine["tone"]; text: string; labels: string[] };
+    return { tone: g.tone, text: `${capitalize(list(g.labels))} : ${g.text}.` };
+  });
+}
+
+/** Erreur d'un envoi refusé : la liste des champs invalides est stockée en JSON. */
+export function describeLogError(error: string): string[] {
+  try {
+    const parsed: unknown = JSON.parse(error);
+    if (Array.isArray(parsed)) {
+      return parsed.map((e: { path?: string; message?: string }) =>
+        e.path ? `${e.path} : ${e.message}` : String(e.message),
+      );
+    }
+  } catch {
+    // message simple
+  }
+  return [error];
+}

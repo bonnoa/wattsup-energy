@@ -1,4 +1,5 @@
 import { Badge, Card } from "@/components/ui";
+import { describeLogError, describeWarnings } from "@/domain/ingest/describe";
 
 export interface LogEntry {
   id: string;
@@ -20,19 +21,17 @@ const STATUS: Record<number, string> = {
   429: "Trop d'envois",
 };
 
-const warningCodes = (w: unknown[]) =>
-  [
-    ...new Set(
-      w.flatMap((x) =>
-        typeof x === "object" && x !== null && "code" in x && typeof x.code === "string"
-          ? [x.code]
-          : [],
-      ),
-    ),
-  ].join(", ");
-
 /** Journal des 20 derniers envois de Home Assistant, pour diagnostiquer une liaison. */
-export function IngestLogCard({ entries, timezone }: { entries: LogEntry[]; timezone: string }) {
+export function IngestLogCard({
+  entries,
+  timezone,
+  categoryNames,
+}: {
+  entries: LogEntry[];
+  timezone: string;
+  /** Nom de chaque poste par slug, pour les avertissements. */
+  categoryNames: Record<string, string>;
+}) {
   const when = (iso: string) =>
     new Date(iso).toLocaleString("fr-FR", {
       day: "numeric",
@@ -52,11 +51,13 @@ export function IngestLogCard({ entries, timezone }: { entries: LogEntry[]; time
       ) : (
         <ul className="flex flex-col">
           {entries.map((e) => {
-            const warnings = warningCodes(e.warnings);
+            const lines = e.error
+              ? describeLogError(e.error).map((text) => ({ tone: "warning" as const, text }))
+              : describeWarnings(e.warnings, categoryNames);
             return (
               <li
                 key={e.id}
-                className="flex flex-col gap-0.5 border-t border-track py-2 first:border-t-0"
+                className="flex flex-col gap-1 border-t border-track py-2 first:border-t-0"
               >
                 <span className="flex flex-wrap items-center gap-2 text-[13px]">
                   <Badge tone={e.httpStatus === 200 ? "positive" : "warning"}>
@@ -69,10 +70,17 @@ export function IngestLogCard({ entries, timezone }: { entries: LogEntry[]; time
                     </span>
                   )}
                 </span>
-                {(e.error || warnings) && (
-                  <span className="text-[11px] text-muted text-pretty">
-                    {e.error ?? `avertissements : ${warnings}`}
-                  </span>
+                {lines.length > 0 && (
+                  <ul className="flex flex-col gap-0.5 text-xs text-pretty">
+                    {lines.map((l) => (
+                      <li
+                        key={l.text}
+                        className={l.tone === "warning" ? "text-[#9A5322]" : "text-muted"}
+                      >
+                        {l.text}
+                      </li>
+                    ))}
+                  </ul>
                 )}
               </li>
             );

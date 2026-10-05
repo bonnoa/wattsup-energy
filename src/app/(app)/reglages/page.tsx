@@ -91,10 +91,11 @@ function EquipmentTab({ ctx }: { ctx: HouseholdContext }) {
 }
 
 async function HomeAssistantTab({ ctx }: { ctx: HouseholdContext }) {
-  const [active, lastPushAt, log] = await Promise.all([
+  const [active, lastPushAt, log, categories] = await Promise.all([
     getActiveIngestToken(ctx),
     getLastPushAt(ctx),
     listIngestLog(ctx),
+    listCategories(ctx),
   ]);
   const h = await headers();
   const origin = `${h.get("x-forwarded-proto") ?? "http"}://${h.get("host") ?? "localhost:3000"}`;
@@ -109,6 +110,7 @@ async function HomeAssistantTab({ ctx }: { ctx: HouseholdContext }) {
       />
       <IngestLogCard
         timezone={ctx.timezone}
+        categoryNames={Object.fromEntries(categories.map((c) => [c.slug, c.name]))}
         entries={log.map((l) => ({ ...l, receivedAt: l.receivedAt.toISOString() }))}
       />
     </div>

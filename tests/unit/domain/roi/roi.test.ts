@@ -114,6 +114,7 @@ describe("payback", () => {
     });
     expect(r.cumulativeCents).toBe(15_900);
     expect(r.monthlyCents).toBe(5_000);
+    expect(r.averagedMonths).toBe(3);
     expect(r.ratio).toBeCloseTo(0.159, 9);
     expect(r.status).toBe("in-progress");
     // (100 000 − 15 900) / 5 000 = 16,82 mois ≈ 512 jours

@@ -21,6 +21,8 @@ export interface Bar {
   title: string;
   href?: string;
   selected?: boolean;
+  /** Valeur de comparaison (année précédente), en barre claire à gauche ; null : aucune. */
+  previous?: number | null;
 }
 
 /** Courbe superposée : une valeur par barre (null : pas de point, la courbe s'interrompt). */
@@ -60,8 +62,18 @@ export function StackedBars({
   ariaLabel: string;
   line?: BarLine;
 }) {
-  const max = Math.max(...bars.map((b) => b.segments.reduce((a, s) => a + s.value, 0)), 0);
+  const max = Math.max(
+    ...bars.map((b) =>
+      Math.max(
+        b.segments.reduce((a, s) => a + s.value, 0),
+        b.previous ?? 0,
+      ),
+    ),
+    0,
+  );
   const anySelected = bars.some((b) => b.selected);
+  const paired = bars.some((b) => b.previous !== undefined);
+  const toHeight = (value: number) => (max > 0 ? `${(value / max) * 100}%` : 0);
   return (
     <div className="flex flex-col gap-1.5" role="img" aria-label={ariaLabel}>
       {/* Colonnes de largeur égale (marge de 1,5 px de chaque côté plutôt qu'un gap) : le
@@ -70,19 +82,30 @@ export function StackedBars({
         {bars.map((b) => {
           const total = b.segments.reduce((a, s) => a + s.value, 0);
           const visible = b.segments.filter((s) => s.value > 0);
-          const body = (
-            <div
-              className="flex h-full flex-col-reverse gap-[2px]"
-              style={{ opacity: anySelected && !b.selected ? 0.45 : 1 }}
-            >
+          const stack = (
+            <div className="flex h-full min-w-0 flex-1 flex-col-reverse gap-[2px]">
               {visible.map((s, i) => (
                 <div
                   key={s.label}
                   className={`${s.color} ${i === visible.length - 1 ? "rounded-t-[4px]" : ""}`}
-                  style={{ height: max > 0 ? `${(s.value / max) * 100}%` : 0 }}
+                  style={{ height: toHeight(s.value) }}
                 />
               ))}
               {total === 0 && <div className="h-px" />}
+            </div>
+          );
+          const body = (
+            <div
+              className="flex h-full items-end gap-[2px]"
+              style={{ opacity: anySelected && !b.selected ? 0.45 : 1 }}
+            >
+              {paired && (
+                <div
+                  className="min-w-0 flex-1 rounded-t-[4px] bg-grid/25"
+                  style={{ height: b.previous ? toHeight(b.previous) : 0 }}
+                />
+              )}
+              {stack}
             </div>
           );
           return b.href ? (

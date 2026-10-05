@@ -52,7 +52,8 @@ const MONTHS_SHORT = [
 /** Mois abrégé d'une clé « AAAA-MM » (libellés sous les barres). */
 export const shortMonth = (key: string) => MONTHS_SHORT[Number(key.slice(5, 7)) - 1] ?? key;
 
-const nextMonth = (key: string) => {
+/** Mois suivant d'une clé « AAAA-MM ». */
+export const nextMonth = (key: string) => {
   const [y = 0, m = 1] = key.split("-").map(Number);
   return m === 12 ? `${y + 1}-01` : `${y}-${String(m + 1).padStart(2, "0")}`;
 };

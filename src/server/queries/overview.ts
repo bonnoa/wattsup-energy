@@ -1,4 +1,17 @@
-import { and, asc, countDistinct, eq, gte, like, lt, min, or, sql, sum } from "drizzle-orm";
+import {
+  and,
+  asc,
+  countDistinct,
+  eq,
+  gte,
+  inArray,
+  like,
+  lt,
+  min,
+  or,
+  sql,
+  sum,
+} from "drizzle-orm";
 import { db } from "@/db";
 import { energyInterval, household, weatherDaily } from "@/db/schema";
 import {
@@ -12,6 +25,7 @@ import {
   type EnergyBalance,
   type Period,
 } from "@/domain/overview";
+import { batteryGaps, type BatteryGap, type BatteryMonth } from "@/domain/battery-data";
 import { visibleModules } from "@/domain/profile";
 import { buildTimeline, priceTimeline, type TimelineResult } from "@/domain/tariff/timeline";
 import type { PriceableInterval } from "@/domain/tariff/types";
@@ -32,6 +46,8 @@ export interface MonthCost {
   subscriptionCents: number;
   /** kWh soutirés au réseau. */
   kwh: number;
+  /** Même mois de l'année précédente (mois entier), null sans donnée. */
+  previous: { energyCents: number; subscriptionCents: number; kwh: number } | null;
 }
 
 export interface SolarPoint {
@@ -62,6 +78,8 @@ export type Overview =
       /** Coût et kWh soutirés par mois de l'année de la période. */
       months: MonthCost[];
       balance: EnergyBalance;
+      /** Mois de la période où la batterie a une charge sans décharge, ou l'inverse. */
+      batteryGaps: BatteryGap[];
       categories: {
         id: string;
         name: string;
@@ -127,6 +145,35 @@ async function totalsByMetric(ctx: HouseholdContext, from: string, to: string) {
     )
     .groupBy(energyInterval.metric);
   return Object.fromEntries(rows.map((r) => [r.metric, r.kwh]));
+}
+
+/** Charge et décharge de la batterie par mois local. */
+async function batteryMonths(ctx: HouseholdContext, from: string, to: string) {
+  const local = sql`(${energyInterval.start} at time zone ${ctx.timezone})`;
+  const rows = await db
+    .select({
+      month: sql<string>`to_char(${local}, 'YYYY-MM')`,
+      metric: energyInterval.metric,
+      kwh: sum(energyInterval.kwh).mapWith(Number),
+    })
+    .from(energyInterval)
+    .where(
+      and(
+        eq(energyInterval.householdId, ctx.householdId),
+        inArray(energyInterval.metric, ["battery_charge", "battery_discharge"]),
+        gte(energyInterval.start, zonedInstant(from, 0, ctx.timezone)),
+        lt(energyInterval.start, zonedInstant(to, 0, ctx.timezone)),
+      ),
+    )
+    .groupBy(sql`1`, energyInterval.metric);
+  const months = new Map<string, BatteryMonth>();
+  for (const r of rows) {
+    const m = months.get(r.month) ?? { month: r.month, charge: 0, discharge: 0 };
+    if (r.metric === "battery_charge") m.charge = r.kwh;
+    else m.discharge = r.kwh;
+    months.set(r.month, m);
+  }
+  return [...months.values()];
 }
 
 /** Part des créneaux attendus effectivement reçus pour l'import réseau, null sans jour terminé. */
@@ -233,11 +280,14 @@ export async function getOverview(
   const yearTo = [`${Number(year) + 1}-01-01`, addDays(today, 1)].sort()[0] as string;
   const previous = { from: shiftYear(period.from, -1), to: shiftYear(period.to, -1) };
 
-  const [contracts, intervals, previousIntervals, totals, categories, home, coverage] =
+  // Année précédente entière : comparaison mois par mois (N-1) et même période (budget).
+  const previousYearFrom = `${Number(year) - 1}-01-01`;
+  const modules = visibleModules(ctx.profile);
+  const [contracts, intervals, previousYearIntervals, totals, categories, home, coverage, battery] =
     await Promise.all([
       listContracts(ctx),
       gridIntervals(ctx, yearFrom, yearTo),
-      gridIntervals(ctx, previous.from, previous.to),
+      gridIntervals(ctx, previousYearFrom, yearFrom),
       totalsByMetric(ctx, period.from, period.to),
       listCategories(ctx, now),
       db
@@ -245,8 +295,9 @@ export async function getOverview(
         .from(household)
         .where(eq(household.id, ctx.householdId)),
       periodCoverage(ctx, period, today),
+      modules.battery ? batteryMonths(ctx, period.from, period.to) : [],
     ]);
-  const colors = await tempoColorsFor(ctx.householdId, addDays(previous.from, -1), yearTo);
+  const colors = await tempoColorsFor(ctx.householdId, addDays(previousYearFrom, -1), yearTo);
   const pricing = { timezone: tz, tempoColor: (d: string) => colors.get(d) };
   const price = (list: PriceableInterval[], from: string, to: string): TimelineResult =>
     priceTimeline(list, buildTimeline(contracts, from, to, today), pricing);
@@ -261,14 +312,28 @@ export async function getOverview(
   const periodCost = period.kind === "year" ? yearCost : price(inPeriod, period.from, period.to);
   // kWh soutirés par mois, chiffrés ou non (sans contrat, le coût reste vide, pas l'énergie).
   const kwhByMonth = new Map<string, number>();
-  for (const i of intervals) {
+  for (const i of [...intervals, ...previousYearIntervals]) {
     const month = dayOf(i).slice(0, 7);
     kwhByMonth.set(month, (kwhByMonth.get(month) ?? 0) + i.kwh);
   }
+  const previousIntervals = previousYearIntervals.filter(
+    (i) => dayOf(i) >= previous.from && dayOf(i) < previous.to,
+  );
   const previousCost =
     previousIntervals.length > 0 ? price(previousIntervals, previous.from, previous.to) : null;
+  const previousYearCost = price(previousYearIntervals, previousYearFrom, yearFrom);
 
-  const modules = visibleModules(ctx.profile);
+  const previousMonth = (key: string): MonthCost["previous"] => {
+    const k = `${Number(key.slice(0, 4)) - 1}${key.slice(4)}`;
+    const kwh = kwhByMonth.get(k);
+    if (kwh === undefined) return null;
+    const cost = previousYearCost.byMonth[k];
+    return {
+      energyCents: cost?.energyCents ?? 0,
+      subscriptionCents: cost?.subscriptionCents ?? 0,
+      kwh,
+    };
+  };
   const balance = energyBalance(totals, { batteryGridCharging: ctx.settings.batteryGridCharging });
 
   let solar: Extract<Overview, { status: "ok" }>["solar"] = null;
@@ -314,7 +379,9 @@ export async function getOverview(
       energyCents: yearCost.byMonth[key]?.energyCents ?? 0,
       subscriptionCents: yearCost.byMonth[key]?.subscriptionCents ?? 0,
       kwh: kwhByMonth.get(key) ?? 0,
+      previous: previousMonth(key),
     })),
+    batteryGaps: batteryGaps(battery),
     balance,
     categories: categories
       .filter((c) => modules.heatingCategories || !c.isHeating)

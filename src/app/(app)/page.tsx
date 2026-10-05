@@ -6,6 +6,7 @@ import {
   PeriodSwitcher,
   SolarCard,
 } from "@/components/cards/overview-cards";
+import { BatteryGapNotices } from "@/components/battery-gap-notice";
 import { MonthlyCostCard } from "@/components/cards/monthly-cost-card";
 import { PageHeader } from "@/components/page-header";
 import { EmptyState } from "@/components/empty-state";
@@ -37,6 +38,7 @@ export default async function OverviewPage({
       ) : (
         <>
           <PeriodSwitcher overview={overview} />
+          <BatteryGapNotices gaps={overview.batteryGaps} context="overview" />
           <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,320px),1fr))] gap-4">
             <BudgetCard overview={overview} />
             <KpiTiles overview={overview} solar={modules.solar} battery={modules.battery} />

@@ -1,4 +1,6 @@
 import { beforeAll, describe, expect, it } from "vitest";
+import { db } from "@/db";
+import { energyInterval } from "@/db/schema";
 import { householdContextFor, type HouseholdContext } from "@/server/context";
 import { saveEquipment } from "@/server/equipment";
 import { getRoi } from "@/server/queries/roi";
@@ -56,6 +58,30 @@ describe("rentabilité sur le foyer de démo", () => {
 });
 
 describe("foyer sans contrat ni données", () => {
+  it("batterie : mois avec décharge sans charge signalés ; données de démo cohérentes", async () => {
+    expect((await getRoi(ctx, now)).items.battery?.gaps).toEqual([]);
+    const fresh = await createTestHousehold();
+    await saveEquipment(fresh, "battery", {
+      label: "Batterie",
+      capacity: 5,
+      installedOn: "2026-01-01",
+      costEur: 2000,
+    });
+    await db.insert(energyInterval).values(
+      ["2026-02-10T19:00:00Z", "2026-03-10T19:00:00Z"].map((start) => ({
+        householdId: fresh.householdId,
+        metric: "battery_discharge",
+        start: new Date(start),
+        granularity: "hour" as const,
+        kwh: 3,
+        source: "csv" as const,
+      })),
+    );
+    expect((await getRoi(fresh, now)).items.battery?.gaps).toEqual([
+      { missing: "charge", months: ["2026-02", "2026-03"] },
+    ]);
+  }, 30_000);
+
   it("équipement renseigné : économies nulles, pas de date d'amortissement", async () => {
     const fresh = await createTestHousehold();
     await saveEquipment(fresh, "solar", {

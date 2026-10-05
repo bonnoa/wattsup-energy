@@ -9,6 +9,8 @@ export interface Payback {
   cumulativeCents: number;
   /** Moyenne des 12 derniers mois (ou des mois disponibles). */
   monthlyCents: number;
+  /** Nombre de mois complets dans cette moyenne (au plus 12). */
+  averagedMonths: number;
   /** null : déjà amorti, ou aucune économie mensuelle positive. */
   paybackDate: string | null;
   status: "amortized" | "in-progress" | "no-savings";
@@ -35,17 +37,16 @@ export function payback(input: {
       : 0;
   const costCents = input.costEur * 100;
   const ratio = costCents > 0 ? Math.min(1, Math.max(0, cumulativeCents / costCents)) : 1;
+  const base = { ratio, cumulativeCents, monthlyCents, averagedMonths: complete.length };
   if (cumulativeCents >= costCents) {
-    return { ratio, cumulativeCents, monthlyCents, paybackDate: null, status: "amortized" };
+    return { ...base, paybackDate: null, status: "amortized" };
   }
   if (monthlyCents <= 0) {
-    return { ratio, cumulativeCents, monthlyCents, paybackDate: null, status: "no-savings" };
+    return { ...base, paybackDate: null, status: "no-savings" };
   }
   const monthsLeft = (costCents - cumulativeCents) / monthlyCents;
   return {
-    ratio,
-    cumulativeCents,
-    monthlyCents,
+    ...base,
     paybackDate: addDays(input.today, Math.ceil(monthsLeft * DAYS_PER_MONTH)),
     status: "in-progress",
   };

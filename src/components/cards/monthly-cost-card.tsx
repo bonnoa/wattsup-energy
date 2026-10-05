@@ -4,14 +4,16 @@ import { useEffect, useState } from "react";
 import { StackedBars } from "@/components/charts/stacked-bars";
 import { Card } from "@/components/ui";
 import { monthLabel, shortMonth, type Period } from "@/domain/overview";
-import { formatEurFromCents, formatKwh } from "@/lib/format";
+import { formatEurFromCents, formatKwh, formatPercent } from "@/lib/format";
 import type { MonthCost } from "@/server/queries/overview";
 
 // Électricité mois par mois, en euros (abonnement en bas de chaque barre) ou en kWh
-// soutirés ; chaque barre ouvre le mois. Le choix de l'unité est mémorisé sur l'appareil.
+// soutirés, avec le même mois de l'année précédente en option ; chaque barre ouvre le
+// mois. L'unité et la comparaison sont mémorisées sur l'appareil.
 
 type Unit = "eur" | "kwh";
 const STORAGE_KEY = "wattsup:monthly-unit";
+const COMPARE_KEY = "wattsup:monthly-compare";
 const SUBSCRIPTION = "bg-[#C9C2B4]";
 
 const eur = (cents: number) => formatEurFromCents(cents, 0);
@@ -61,20 +63,29 @@ function Row({ color, label, value }: { color: string; label: string; value: str
 
 export function MonthlyCostCard({ months, period }: { months: MonthCost[]; period: Period }) {
   const [unit, setUnit] = useState<Unit>("eur");
+  const [compare, setCompare] = useState(false);
   useEffect(() => {
     try {
       if (localStorage.getItem(STORAGE_KEY) === "kwh") setUnit("kwh");
+      if (localStorage.getItem(COMPARE_KEY) === "1") setCompare(true);
     } catch {
-      // stockage indisponible : euros par défaut
+      // stockage indisponible : euros, sans comparaison
     }
   }, []);
-  const choose = (u: Unit) => {
-    setUnit(u);
+  const remember = (key: string, value: string) => {
     try {
-      localStorage.setItem(STORAGE_KEY, u);
+      localStorage.setItem(key, value);
     } catch {
       // choix non mémorisé
     }
+  };
+  const choose = (u: Unit) => {
+    setUnit(u);
+    remember(STORAGE_KEY, u);
+  };
+  const toggleCompare = () => {
+    setCompare(!compare);
+    remember(COMPARE_KEY, compare ? "0" : "1");
   };
 
   const year = period.key.slice(0, 4);
@@ -87,6 +98,37 @@ export function MonthlyCostCard({ months, period }: { months: MonthCost[]; perio
     kwh: sum((m) => m.kwh),
   };
   const isEur = unit === "eur";
+  const previousYear = String(Number(year) - 1);
+  const hasPrevious = months.some((m) => m.previous);
+  const comparing = compare && hasPrevious;
+  const valueOf = (m: { energyCents: number; subscriptionCents: number; kwh: number }) =>
+    isEur ? m.energyCents + m.subscriptionCents : m.kwh;
+  const fmt = (v: number) => (isEur ? eur(v) : kwh(v));
+  const scope = selected ? [selected] : months;
+  const previousTotal = scope.every((m) => m.previous)
+    ? scope.reduce((a, m) => a + (m.previous ? valueOf(m.previous) : 0), 0)
+    : null;
+  const currentTotal = isEur ? totals.energy + totals.subscription : totals.kwh;
+
+  const prevLabel = selected
+    ? monthLabel(`${previousYear}${selected.key.slice(4)}`)
+    : `mêmes mois ${previousYear}`;
+  const comparison = comparing && previousTotal !== null && (
+    <div className="flex items-center justify-between gap-2 text-[#5E625C]">
+      <span>{prevLabel.charAt(0).toUpperCase() + prevLabel.slice(1)}</span>
+      <span className="whitespace-nowrap tabular-nums">
+        {fmt(previousTotal)}
+        {/* Période en cours : comparer un mois entamé à un mois entier tromperait. */}
+        {period.complete && previousTotal > 0 && (
+          <span className={currentTotal <= previousTotal ? "text-positive" : "text-negative"}>
+            {" "}
+            ({currentTotal <= previousTotal ? "−" : "+"}
+            {formatPercent(Math.abs(currentTotal / previousTotal - 1))})
+          </span>
+        )}
+      </span>
+    </div>
+  );
 
   return (
     <Card
@@ -103,7 +145,32 @@ export function MonthlyCostCard({ months, period }: { months: MonthCost[]; perio
       actions={<UnitSwitch unit={unit} onChange={choose} />}
     >
       <div className="flex flex-wrap items-stretch gap-5">
-        <div className="min-w-0 flex-[1_1_320px]">
+        <div className="flex min-w-0 flex-[1_1_320px] flex-col gap-2">
+          {hasPrevious && (
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-muted">
+              <label className="flex items-center gap-2 text-[13px] text-ink">
+                <input
+                  type="checkbox"
+                  checked={compare}
+                  onChange={toggleCompare}
+                  className="size-4 accent-[var(--color-grid)]"
+                />
+                Comparer à {previousYear}
+              </label>
+              {comparing && (
+                <>
+                  <span className="flex items-center gap-1.5">
+                    <span className="size-2 rounded-[2px] bg-grid" />
+                    {year}
+                  </span>
+                  <span className="flex items-center gap-1.5">
+                    <span className="size-2 rounded-[2px] bg-grid/25" />
+                    {previousYear}
+                  </span>
+                </>
+              )}
+            </div>
+          )}
           <StackedBars
             ariaLabel={
               isEur
@@ -115,7 +182,12 @@ export function MonthlyCostCard({ months, period }: { months: MonthCost[]; perio
               label: shortMonth(m.key),
               href: `/?p=${m.key}`,
               selected: period.kind === "month" && m.key === period.key,
-              title: `${monthLabel(m.key)} : ${isEur ? eur(m.energyCents + m.subscriptionCents) : kwh(m.kwh)}`,
+              title: `${monthLabel(m.key)} : ${fmt(valueOf(m))}${
+                comparing && m.previous
+                  ? ` · ${monthLabel(`${previousYear}${m.key.slice(4)}`)} : ${fmt(valueOf(m.previous))}`
+                  : ""
+              }`,
+              previous: comparing ? (m.previous ? valueOf(m.previous) : null) : undefined,
               segments: isEur
                 ? [
                     { value: m.subscriptionCents, color: SUBSCRIPTION, label: "Abonnement" },
@@ -135,10 +207,12 @@ export function MonthlyCostCard({ months, period }: { months: MonthCost[]; perio
                 <span>Total</span>
                 <span className="tabular-nums">{eur(totals.energy + totals.subscription)}</span>
               </div>
+              {comparison}
             </>
           ) : (
             <>
               <Row color="bg-grid" label="Soutiré au réseau" value={kwh(totals.kwh)} />
+              {comparison}
               {totals.kwh > 0 && totals.energy > 0 && (
                 <div className="mt-auto flex justify-between gap-3 border-t border-border-strong pt-2.5">
                   <span className="text-[#5E625C]">Prix moyen du kWh, hors abonnement</span>

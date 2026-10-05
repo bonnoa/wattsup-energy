@@ -59,6 +59,14 @@ describe("vue d'ensemble sur le foyer de démo", () => {
 
     const grid = await kwhOf(householdId, "grid_import", "2026-09-01", "2026-10-01");
     expect(sept?.kwh).toBeCloseTo(grid, 3);
+    // N-1 : septembre 2025 entier, chiffré avec le contrat de l'époque.
+    const gridSept2025 = await kwhOf(householdId, "grid_import", "2025-09-01", "2025-10-01");
+    expect(sept?.previous?.kwh).toBeCloseTo(gridSept2025, 3);
+    expect(sept?.previous?.energyCents).toBeGreaterThan(0);
+    expect(o.budget.previousCents).toBe(
+      (sept?.previous?.energyCents ?? 0) + (sept?.previous?.subscriptionCents ?? 0),
+    );
+    expect(o.batteryGaps).toEqual([]);
     expect(o.balance.gridImport).toBeCloseTo(grid, 3);
     expect(o.balance.consumption).toBeCloseTo(
       o.balance.origin.grid + o.balance.origin.solar + o.balance.origin.battery,
@@ -97,6 +105,30 @@ describe("vue d'ensemble sur le foyer de démo", () => {
     if (o.status !== "ok") throw new Error(o.status);
     expect(o.budget.totalCents).toBeNull();
     expect(o.balance.gridImport).toBe(1);
+  });
+
+  it("batterie : signale les mois où la décharge arrive sans la charge", async () => {
+    const base = await createTestHousehold();
+    const ctx = { ...base, profile: { ...base.profile, battery: true } };
+    const row = (metric: string, start: string, kwh: number) => ({
+      householdId: ctx.householdId,
+      metric,
+      start: new Date(start),
+      granularity: "hour" as const,
+      kwh,
+      source: "ha" as const,
+    });
+    await db
+      .insert(energyInterval)
+      .values([
+        row("grid_import", "2026-02-10T10:00:00Z", 1),
+        row("battery_discharge", "2026-02-10T19:00:00Z", 3),
+        row("battery_charge", "2026-03-10T12:00:00Z", 4),
+        row("battery_discharge", "2026-03-10T19:00:00Z", 3),
+      ]);
+    const o = await getOverview(ctx, "2026", now);
+    if (o.status !== "ok") throw new Error(o.status);
+    expect(o.batteryGaps).toEqual([{ missing: "charge", months: ["2026-02"] }]);
   });
 
   it("aucune donnée : no-data", async () => {

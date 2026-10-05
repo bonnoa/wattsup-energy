@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { RingGauge } from "@/components/charts/ring-gauge";
+import { BatteryGapNotices } from "@/components/battery-gap-notice";
 import { Badge, button, Notice, StatTile, tiles } from "@/components/ui";
 import { monthLabel } from "@/domain/overview";
 import { formatEurFromCents, formatNumber, formatPercent } from "@/lib/format";
@@ -75,6 +76,7 @@ export function RoiDetails({ roi, view }: { roi: EquipmentRoi; view: RoiView }) 
 
   return (
     <div className="flex flex-col gap-4">
+      <BatteryGapNotices gaps={roi.gaps} context="roi" />
       <div className="flex items-center gap-4">
         <RingGauge ratio={payback.ratio} label={formatPercent(payback.ratio)} />
         <div className="flex min-w-0 flex-col items-start gap-1.5">
@@ -97,7 +99,15 @@ export function RoiDetails({ roi, view }: { roi: EquipmentRoi; view: RoiView }) 
           label="Économie mensuelle"
           value={formatNumber(payback.monthlyCents / 100)}
           unit="€/mois"
-          sub="moyenne des 12 derniers mois"
+          sub={
+            payback.averagedMonths >= 12
+              ? "moyenne des 12 derniers mois"
+              : payback.averagedMonths > 1
+                ? `moyenne des ${payback.averagedMonths} mois complets`
+                : payback.averagedMonths === 1
+                  ? "sur le seul mois complet"
+                  : "aucun mois complet"
+          }
         />
         <StatTile
           label="Amortissement prévu"

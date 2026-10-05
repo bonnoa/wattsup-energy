@@ -1,6 +1,7 @@
 import { and, asc, eq, gte, inArray, lt } from "drizzle-orm";
 import { db } from "@/db";
 import { energyInterval, household, weatherDaily } from "@/db/schema";
+import { batteryGaps, type BatteryGap, type BatteryMonth } from "@/domain/battery-data";
 import { payback, type Payback } from "@/domain/roi/payback";
 import { batterySavings, solarSavings, type EnergySlot, type Savings } from "@/domain/roi/savings";
 import { monthlyYields, yieldDeviation } from "@/domain/roi/yield";
@@ -29,6 +30,8 @@ export interface EquipmentRoi {
   payback: Payback;
   /** Première donnée prise en compte (après l'installation), null sans donnée. */
   dataFrom: string | null;
+  /** Batterie : mois avec charge sans décharge, ou l'inverse (vide pour le solaire). */
+  gaps: BatteryGap[];
 }
 
 export interface RoiView {
@@ -96,6 +99,19 @@ async function energySlots(ctx: HouseholdContext, from: string, to: string) {
 const slotDay = (s: EnergySlot, tz: string) =>
   s.interval.granularity === "day" ? s.interval.date : localParts(s.interval.start, tz).date;
 
+/** Charge et décharge de la batterie par mois local. */
+function byMonth(slots: readonly EnergySlot[], tz: string): BatteryMonth[] {
+  const months = new Map<string, BatteryMonth>();
+  for (const x of slots) {
+    const month = slotDay(x, tz).slice(0, 7);
+    const m = months.get(month) ?? { month, charge: 0, discharge: 0 };
+    m.charge += x.batteryCharge;
+    m.discharge += x.batteryDischarge;
+    months.set(month, m);
+  }
+  return [...months.values()];
+}
+
 export async function getRoi(ctx: HouseholdContext, now = new Date()): Promise<RoiView> {
   const tz = ctx.timezone;
   const today = localParts(now, tz).date;
@@ -142,6 +158,7 @@ export async function getRoi(ctx: HouseholdContext, now = new Date()): Promise<R
         today,
       }),
       dataFrom: first ? slotDay(first, tz) : null,
+      gaps: e.kind === "battery" ? batteryGaps(byMonth(own, tz)) : [],
     };
   }
 

@@ -84,16 +84,32 @@ describe("currentContract", () => {
 
 describe("findOverlaps", () => {
   it("refuse deux contrats souscrits qui se chevauchent, accepte des périodes accolées", () => {
-    expect(findOverlaps([A, B, S])).toEqual([]);
-    expect(findOverlaps([A, { ...B, startDate: "2025-12-31" }])).toEqual([
-      "« Ancien » et « Nouveau » se chevauchent le 2025-12-31",
+    expect(findOverlaps([A, B, S], "B")).toEqual([]);
+    expect(findOverlaps([A, { ...B, startDate: "2025-12-31" }], "B")).toEqual([
+      "Ce contrat (depuis le 31/12/2025) recouvre « Ancien » (du 01/01/2025 au 31/12/2025)",
     ]);
-    expect(findOverlaps([A, { ...B, startDate: "2025-06-01" }])).toHaveLength(1);
+    expect(findOverlaps([A, { ...B, startDate: "2025-06-01" }], "A")).toEqual([
+      "Ce contrat (du 01/01/2025 au 31/12/2025) recouvre « Nouveau » (depuis le 01/06/2025)",
+    ]);
+  });
+
+  it("détecte un chevauchement entre contrats non voisins dans l'ordre des dates", () => {
+    // Saisi 2014 au lieu de 2024 : englobe un contrat de 2023 et touche celui de 2025.
+    const typo = { ...A, id: "T", name: "Typo", startDate: "2014-01-01", endDate: "2025-03-31" };
+    const y2023 = { ...A, id: "Y", name: "2023", startDate: "2023-01-01", endDate: "2023-12-31" };
+    expect(findOverlaps([typo, y2023, A, B], "T")).toEqual([
+      "Ce contrat (du 01/01/2014 au 31/03/2025) recouvre « 2023 » (du 01/01/2023 au 31/12/2023)",
+      "Ce contrat (du 01/01/2014 au 31/03/2025) recouvre « Ancien » (du 01/01/2025 au 31/12/2025)",
+    ]);
+  });
+
+  it("ignore les chevauchements qui ne concernent pas le contrat enregistré", () => {
+    expect(findOverlaps([A, { ...B, startDate: "2025-06-01" }, S], "S")).toEqual([]);
   });
 
   it("refuse une fin avant le début", () => {
-    expect(findOverlaps([{ ...A, endDate: "2024-12-31" }])).toEqual([
-      "« Ancien » : la fin précède le début",
+    expect(findOverlaps([{ ...A, endDate: "2024-12-31" }], "A")).toEqual([
+      "« Ancien » : la fin (31/12/2024) précède le début (01/01/2025)",
     ]);
   });
 });

@@ -1,4 +1,5 @@
 // Formatage fr-FR : seul endroit où l'on arrondit pour l'affichage (SPEC §10).
+import { addDays, eachDay } from "./time";
 
 // fr-FR utilise des espaces fines insécables (U+202F) comme séparateur de milliers.
 function number(value: number, digits: number): string {
@@ -26,4 +27,25 @@ export function formatKwh(value: number, digits = 0): string {
 
 export function formatPercent(ratio: number, digits = 0): string {
   return `${number(ratio * 100, digits)} %`;
+}
+
+/** Jour AAAA-MM-JJ → JJ/MM/AAAA. */
+export function formatDay(date: string): string {
+  const [y, m, d] = date.split("-");
+  return `${d}/${m}/${y}`;
+}
+
+const plural = (n: number, one: string, many: string) => `${n} ${n > 1 ? many : one}`;
+
+/** Durée de la période [from, to] (fin incluse) : « 1 an et 3 mois », « 8 mois », « 15 jours ». */
+export function formatDuration(from: string, to: string): string {
+  const [y1, m1, d1] = from.split("-").map(Number) as [number, number, number];
+  const [y2, m2, d2] = addDays(to, 1).split("-").map(Number) as [number, number, number];
+  const months = (y2 - y1) * 12 + (m2 - m1) - (d2 < d1 ? 1 : 0);
+  if (months < 1) return plural(eachDay(from, addDays(to, 1)).length, "jour", "jours");
+  const years = Math.floor(months / 12);
+  const rest = months % 12;
+  return [years > 0 && plural(years, "an", "ans"), rest > 0 && `${rest} mois`]
+    .filter(Boolean)
+    .join(" et ");
 }

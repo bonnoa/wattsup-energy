@@ -1,3 +1,4 @@
+import { formatDay } from "@/lib/format";
 import { addDays, eachDay, localParts } from "@/lib/time";
 import { priceIntervals } from "./engine";
 import type {
@@ -71,26 +72,36 @@ export function lapsedContract<C extends DatedContract>(contracts: readonly C[],
   return last?.endDate && last.endDate < date ? last : null;
 }
 
-/** Incohérences des contrats souscrits : fin avant début, périodes qui se chevauchent. */
-export function findOverlaps(contracts: readonly DatedContract[]): string[] {
+const period = (c: DatedContract) =>
+  c.endDate === null
+    ? `depuis le ${formatDay(c.startDate ?? "")}`
+    : `du ${formatDay(c.startDate ?? "")} au ${formatDay(c.endDate)}`;
+
+const overlap = (a: DatedContract, b: DatedContract) =>
+  (a.startDate ?? "") <= (b.endDate ?? "9999-12-31") &&
+  (b.startDate ?? "") <= (a.endDate ?? "9999-12-31");
+
+/**
+ * Incohérences après l'enregistrement du contrat `focusId` : une fin avant le début, ou une
+ * période qui en recouvre une autre. Seuls les chevauchements de ce contrat sont signalés :
+ * une incohérence ancienne ne bloque pas une saisie sans rapport.
+ */
+export function findOverlaps(contracts: readonly DatedContract[], focusId: string): string[] {
   const subscribed = contracts
     .filter((c) => c.status === "subscribed" && c.startDate !== null)
     .sort((a, b) => (a.startDate ?? "").localeCompare(b.startDate ?? ""));
-  const errors: string[] = [];
-  for (const c of subscribed) {
-    if (c.endDate !== null && c.endDate < (c.startDate ?? "")) {
-      errors.push(`« ${c.name} » : la fin précède le début`);
-    }
-  }
-  if (errors.length > 0) return errors;
-  for (let i = 1; i < subscribed.length; i++) {
-    const prev = subscribed[i - 1] as DatedContract;
-    const next = subscribed[i] as DatedContract;
-    if (prev.endDate === null || (next.startDate ?? "") <= prev.endDate) {
-      errors.push(`« ${prev.name} » et « ${next.name} » se chevauchent le ${next.startDate}`);
-    }
-  }
-  return errors;
+  const reversed = subscribed
+    .filter((c) => c.endDate !== null && c.endDate < (c.startDate ?? ""))
+    .map(
+      (c) =>
+        `« ${c.name} » : la fin (${formatDay(c.endDate ?? "")}) précède le début (${formatDay(c.startDate ?? "")})`,
+    );
+  if (reversed.length > 0) return reversed;
+  const focus = subscribed.find((c) => c.id === focusId);
+  if (!focus) return [];
+  return subscribed
+    .filter((c) => c.id !== focusId && overlap(focus, c))
+    .map((c) => `Ce contrat (${period(focus)}) recouvre « ${c.name} » (${period(c)})`);
 }
 
 export interface Segment {

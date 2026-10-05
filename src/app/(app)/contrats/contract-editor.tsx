@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { CONTRACT_PRESETS, type ContractInput } from "@/domain/tariff/schema";
 import type { Contract, CustomRule, TempoColor, TimeRange } from "@/domain/tariff/types";
+import { formatDuration } from "@/lib/format";
 import { KIND_LABELS } from "./labels";
 
 const DAYS = ["L", "M", "M", "J", "V", "S", "D"];
@@ -385,6 +386,18 @@ export interface SubscriptionValue {
   endDate: string | null;
 }
 
+/** Durée saisie, pour repérer d'un coup d'œil une année mal tapée (2014 pour 2024). */
+function Duration({ value, today }: { value: SubscriptionValue; today: string }) {
+  const end = value.endDate ?? today;
+  if (!value.startDate || !end || end < value.startDate) return null;
+  return (
+    <p className="text-[13px] text-muted tabular-nums">
+      {value.endDate === null ? "En cours depuis " : "Durée : "}
+      <span className="font-medium text-ink">{formatDuration(value.startDate, end)}</span>
+    </p>
+  );
+}
+
 /** Contrat souscrit (avec dates) ou simple offre à comparer. */
 export function SubscriptionFields({
   value,
@@ -446,6 +459,7 @@ export function SubscriptionFields({
               />
             </label>
           )}
+          <Duration value={value} today={today} />
           <p className="text-[11px] text-subtle text-pretty">
             Ne saisissez une fin que si vous avez quitté ce contrat. Une hausse de prix se saisit
             avec « Nouveaux prix », sans clore le contrat ; l&apos;échéance d&apos;engagement

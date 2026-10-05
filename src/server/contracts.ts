@@ -60,8 +60,9 @@ async function load(tx: Tx | typeof db, ctx: HouseholdContext): Promise<Contract
   }));
 }
 
-async function assertNoOverlap(tx: Tx, ctx: HouseholdContext) {
-  const errors = findOverlaps(await load(tx, ctx));
+/** Vérifie le contrat `id` après écriture (même transaction). */
+async function assertNoOverlap(tx: Tx, ctx: HouseholdContext, id: string) {
+  const errors = findOverlaps(await load(tx, ctx), id);
   if (errors.length > 0) throw new ContractError(errors);
 }
 
@@ -107,7 +108,7 @@ export async function createContract(ctx: HouseholdContext, input: NewContract) 
       validFrom: input.subscription?.startDate ?? today(ctx),
       config: input.contract,
     });
-    await assertNoOverlap(tx, ctx);
+    await assertNoOverlap(tx, ctx, row.id);
     return row;
   });
 }
@@ -129,7 +130,7 @@ export async function updateContract(
       })
       .where(and(eq(contract.id, id), eq(contract.householdId, ctx.householdId)))
       .returning();
-    if (row) await assertNoOverlap(tx, ctx);
+    if (row) await assertNoOverlap(tx, ctx, id);
     return row ?? null;
   });
 }
@@ -253,7 +254,7 @@ export async function switchContract(ctx: HouseholdContext, targetId: string, da
       .update(contract)
       .set({ status: "subscribed", startDate: date, endDate: null })
       .where(eq(contract.id, targetId));
-    await assertNoOverlap(tx, ctx);
+    await assertNoOverlap(tx, ctx, targetId);
     return true;
   });
 }

@@ -6,7 +6,6 @@ import { CONTRACT_PRESETS } from "@/domain/tariff/schema";
 import type { Contract } from "@/domain/tariff/types";
 import {
   addPricePeriod,
-  ContractError,
   createContract,
   deleteContract,
   deletePricePeriod,
@@ -52,7 +51,9 @@ describe("contrats souscrits et simulés", () => {
     await subscribed(ctx, "2024-10-01");
     await expect(
       createContract(ctx, { ...base, subscription: { startDate: "2025-06-01", endDate: null } }),
-    ).rejects.toThrow(ContractError);
+    ).rejects.toThrow(
+      /^Ce contrat \(depuis le 01\/06\/2025\) recouvre « .+ » \(depuis le 01\/10\/2024\)$/,
+    );
     expect(await listContracts(ctx)).toHaveLength(1);
   });
 

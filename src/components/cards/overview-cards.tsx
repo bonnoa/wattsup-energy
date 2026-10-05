@@ -336,7 +336,8 @@ const SUNSHINE = "#5E625C";
 
 /**
  * Production et ensoleillement : barres de production et courbe d'ensoleillement superposée
- * (chacune sur sa propre échelle, valeurs dans l'info-bulle), et le rendement kWh produits
+ * (chacune sur sa propre échelle, dont la valeur du haut est indiquée de chaque côté ;
+ * valeurs dans l'info-bulle), et le rendement kWh produits
  * par kWh/m² reçu, comparé à N-1.
  */
 export function SolarCard({ overview }: { overview: Ok }) {
@@ -350,6 +351,8 @@ export function SolarCard({ overview }: { overview: Ok }) {
       ? monthLabel(key)
       : new Date(`${key}T12:00:00Z`).toLocaleDateString("fr-FR", { day: "numeric", month: "long" });
   const sunshine = solar.points.reduce((a, p) => a + (p.sunshineHours ?? 0), 0);
+  const maxKwh = Math.max(...solar.points.map((p) => p.kwh), 0);
+  const maxSunshine = Math.max(...solar.points.map((p) => p.sunshineHours ?? 0), 0);
   const delta =
     solar.yield !== null && solar.previousYield ? solar.yield / solar.previousYield - 1 : null;
   return (
@@ -405,9 +408,14 @@ export function SolarCard({ overview }: { overview: Ok }) {
             {!solar.noLocation && (
               <span className="flex items-center gap-1.5">
                 <span className="h-0.5 w-3 rounded-full" style={{ background: SUNSHINE }} />
-                Ensoleillement (heures, échelle propre)
+                Ensoleillement (h)
               </span>
             )}
+          </div>
+          {/* Valeur du haut de chaque échelle : barres à gauche, courbe à droite. */}
+          <div className="-mb-1 flex justify-between text-[10px] text-subtle tabular-nums">
+            <span>{formatKwh(maxKwh, maxKwh < 10 ? 1 : 0)}</span>
+            {!solar.noLocation && maxSunshine > 0 && <span>{fmtHours(maxSunshine)}</span>}
           </div>
           <StackedBars
             height={140}

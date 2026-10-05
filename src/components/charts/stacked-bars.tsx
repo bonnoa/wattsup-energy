@@ -42,8 +42,8 @@ function linePaths(values: (number | null)[]): string[] {
       current = [];
       return;
     }
-    // Sommet à 90 % de la hauteur : la courbe ne colle pas au bord.
-    current.push(`${((i + 0.5) / values.length) * 100},${100 - (v / max) * 90}`);
+    // Comme les barres : le maximum touche le haut du graphique (repère de l'échelle).
+    current.push(`${((i + 0.5) / values.length) * 100},${100 - (v / max) * 100}`);
   });
   if (current.length > 1) paths.push(current.join(" "));
   return paths;

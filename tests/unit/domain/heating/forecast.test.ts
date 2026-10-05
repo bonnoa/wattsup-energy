@@ -9,7 +9,7 @@ const history = [
 ];
 
 describe("forecastRefill", () => {
-  it("parcours PRD 2 : 12 sacs en réserve → 4 palettes (264 sacs) au dernier prix", () => {
+  it("parcours PRD 2 : 12 sacs en réserve → 216 sacs (4 palettes) au dernier prix", () => {
     const r = forecastRefill({
       fuel: "pellet",
       history,
@@ -27,8 +27,9 @@ describe("forecastRefill", () => {
     expect(r.need).toBeCloseTo(3420, 6);
     expect(r.stock).toBe(180);
     expect(r.toBuy).toBeCloseTo(3420 - 180, 6);
-    expect(r.order).toEqual({ pallets: 4, bags: 264, steres: null });
-    expect(r.costEur).toBeCloseTo(264 * 6.5, 6);
+    // 228 − 12 = 216 sacs à acheter (couverts par 4 palettes de 66)
+    expect(r.order).toEqual({ pallets: 4, bags: 216, steres: null });
+    expect(r.costEur).toBeCloseTo(216 * 6.5, 6);
     expect(r.basis).toEqual({ seasons: ["2025–2026", "2024–2025"], weatherCorrected: true });
   });
 

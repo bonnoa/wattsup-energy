@@ -22,7 +22,7 @@ describe("prévision de réapprovisionnement sur le foyer de démo", () => {
     await setStock(ctx, { fuel: "pellet", qty: 12, unit: "bag" }, endOfWinter);
   }, 120_000);
 
-  it("hiver prochain : palettes entières, coût au dernier prix, deux saisons de référence", async () => {
+  it("hiver prochain : sacs à acheter (et palettes), coût au dernier prix, deux saisons de référence", async () => {
     const view = await getRefillForecast(ctx, endOfWinter);
     const pellet = view.fuels.find((f) => f.fuel === "pellet");
     expect(pellet?.nextLabel).toBe("2026–2027");
@@ -30,8 +30,9 @@ describe("prévision de réapprovisionnement sur le foyer de démo", () => {
     const next = pellet?.next.moyen;
     if (next?.status !== "ok") throw new Error("prévision attendue");
     expect(next.basis).toEqual({ seasons: ["2025–2026", "2024–2025"], weatherCorrected: true });
-    expect(next.order.pallets).toBeGreaterThanOrEqual(3);
-    expect(next.order.bags).toBe((next.order.pallets ?? 0) * 66);
+    // Au sac près, avec les palettes entières qui les couvrent.
+    expect(next.order.bags).toBe(Math.ceil(next.toBuy / 15 - 1e-9));
+    expect(next.order.pallets).toBe(Math.ceil((next.order.bags ?? 0) / 66));
     expect(next.costEur).toBeGreaterThan(0);
     const hard = pellet?.next.rigoureux;
     if (hard?.status !== "ok") throw new Error("prévision attendue");

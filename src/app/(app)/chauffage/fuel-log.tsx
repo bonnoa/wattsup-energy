@@ -161,17 +161,42 @@ export function FuelLog({
     window.addEventListener("hashchange", open);
     return () => window.removeEventListener("hashchange", open);
   }, []);
-  const when = (iso: string) =>
-    new Date(iso).toLocaleString("fr-FR", {
+  // Achats et consommations passées sont datés au jour (midi local) : pas d'heure à
+  // afficher ; une consommation passée (le 15 à midi) est le total de son mois.
+  const parts = (iso: string) =>
+    Object.fromEntries(
+      new Intl.DateTimeFormat("en-CA", {
+        timeZone: timezone,
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hourCycle: "h23",
+      })
+        .formatToParts(new Date(iso))
+        .map((p) => [p.type, p.value]),
+    );
+  const atNoon = (iso: string) => {
+    const p = parts(iso);
+    return p.hour === "12" && p.minute === "00" && p.second === "00";
+  };
+  const when = (item: LogItem) => {
+    const date = new Date(item.at);
+    const otherYear = item.at.slice(0, 4) !== currentMonth.slice(0, 4);
+    if (item.type === "consumption" && atNoon(item.at) && parts(item.at).day === "15") {
+      return `total de ${date.toLocaleDateString("fr-FR", { month: "long", year: "numeric", timeZone: timezone })}`;
+    }
+    const dayOnly = item.type === "purchase" || atNoon(item.at);
+    return date.toLocaleString("fr-FR", {
       weekday: "short",
       day: "numeric",
       month: "short",
-      // L'année seulement quand elle diffère : une consommation passée reste lisible.
-      year: iso.slice(0, 4) === currentMonth.slice(0, 4) ? undefined : "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
+      // L'année seulement quand elle diffère de l'année en cours.
+      year: otherYear ? "numeric" : undefined,
+      ...(dayOnly ? {} : { hour: "2-digit", minute: "2-digit" }),
       timeZone: timezone,
     });
+  };
 
   return (
     <Card
@@ -234,12 +259,12 @@ export function FuelLog({
                     )}
                     {showFuel && <Badge>{FUEL_LABELS[item.fuel]}</Badge>}
                   </span>
-                  <span className="text-[11px] text-subtle">{when(item.at)}</span>
+                  <span className="text-[11px] text-subtle">{when(item)}</span>
                 </div>
                 <button
                   type="button"
                   className={button.icon}
-                  aria-label={`Modifier : ${EVENT_LABELS[item.type]} du ${when(item.at)}`}
+                  aria-label={`Modifier : ${EVENT_LABELS[item.type]}, ${when(item)}`}
                   title="Modifier"
                   onClick={() => setEditing(item.id)}
                 >
@@ -249,7 +274,7 @@ export function FuelLog({
                   type="button"
                   disabled={pending}
                   className={button.iconDanger}
-                  aria-label={`Supprimer : ${EVENT_LABELS[item.type]} du ${when(item.at)}`}
+                  aria-label={`Supprimer : ${EVENT_LABELS[item.type]}, ${when(item)}`}
                   title="Supprimer"
                   onClick={() => {
                     if (!confirm("Supprimer cet événement ? Le stock sera recalculé.")) return;

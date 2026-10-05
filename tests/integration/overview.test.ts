@@ -67,6 +67,13 @@ describe("vue d'ensemble sur le foyer de démo", () => {
       (sept?.previous?.energyCents ?? 0) + (sept?.previous?.subscriptionCents ?? 0),
     );
     expect(o.batteryGaps).toEqual([]);
+    // Contrat de démo en heures creuses : la part HP / HC couvre tout le soutirage.
+    expect(o.peak?.hp.kwh).toBeGreaterThan(0);
+    expect(o.peak?.hc.kwh).toBeGreaterThan(0);
+    expect((o.peak?.hp.kwh ?? 0) + (o.peak?.hc.kwh ?? 0) + (o.peak?.otherKwh ?? 0)).toBeCloseTo(
+      grid,
+      3,
+    );
     expect(o.balance.gridImport).toBeCloseTo(grid, 3);
     expect(o.balance.consumption).toBeCloseTo(
       o.balance.origin.grid + o.balance.origin.solar + o.balance.origin.battery,

@@ -49,7 +49,9 @@ export default async function HeatingPage({
   // Dernières saisies d'abord : une consommation passée y apparaît tout de suite.
   const log = events
     .filter((e) => fuels.includes(e.fuel))
-    .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+    .sort(
+      (a, b) => b.createdAt.getTime() - a.createdAt.getTime() || b.at.getTime() - a.at.getTime(),
+    )
     .slice(0, 20)
     .map((e) => ({
       id: e.id,

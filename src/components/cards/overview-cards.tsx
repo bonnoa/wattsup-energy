@@ -1,7 +1,8 @@
 import Link from "next/link";
+import type { ReactNode } from "react";
 import { StackedBars } from "@/components/charts/stacked-bars";
 import { CoverageBadge } from "@/components/coverage-badge";
-import { Badge, button, Card, Notice, StatTile, tiles } from "@/components/ui";
+import { Badge, button, Card, Icon, Notice, StatTile, tiles } from "@/components/ui";
 import { CATEGORY_SWATCH, CategoryTile, categoryColor } from "@/components/ui/category";
 import { monthLabel, shortMonth } from "@/domain/overview";
 import { addDays } from "@/lib/time";
@@ -204,6 +205,68 @@ export function KpiTiles({
   );
 }
 
+const HC_COLOR = "bg-[#7E9CC4]";
+
+/** Part de l'électricité soutirée en heures creuses et en heures pleines (contrat HP/HC ou Tempo). */
+export function PeakCard({ overview }: { overview: Ok }) {
+  const { peak, period } = overview;
+  if (!peak) return null;
+  const total = peak.hp.kwh + peak.hc.kwh;
+  const parts = [
+    { label: "Heures creuses", ...peak.hc, color: HC_COLOR },
+    { label: "Heures pleines", ...peak.hp, color: "bg-grid" },
+  ];
+  return (
+    <Card
+      title="Heures pleines et heures creuses"
+      badges={<Badge tone="soft">{formatPercent(peak.hc.kwh / total)} en HC</Badge>}
+      description={<span className="capitalize">{period.label}</span>}
+    >
+      <div className="flex h-9 gap-[2px] overflow-hidden rounded-[8px]" aria-hidden>
+        {parts
+          .filter((p) => p.kwh > 0)
+          .map((p) => (
+            <div
+              key={p.label}
+              className={p.color}
+              style={{ width: `${(p.kwh / total) * 100}%` }}
+              title={`${p.label} : ${formatPercent(p.kwh / total)}`}
+            />
+          ))}
+      </div>
+      <ul className="flex flex-col gap-2.5 text-[13px]">
+        {parts.map((p) => (
+          <li
+            key={p.label}
+            className="flex flex-wrap items-center justify-between gap-x-3 gap-y-0.5"
+          >
+            <span className="flex items-center gap-2 text-[#5E625C]">
+              <span className={`size-2 rounded-[2px] ${p.color}`} />
+              {p.label}
+            </span>
+            <span className="tabular-nums">
+              <span className="font-semibold">{formatPercent(p.kwh / total)}</span>
+              <span className="text-subtle">
+                {" "}
+                · {formatKwh(p.kwh)} · {eur(p.energyCents)}
+                {p.kwh > 0 && <> · {formatEurFromCents(p.energyCents / p.kwh, 3)}/kWh</>}
+              </span>
+            </span>
+          </li>
+        ))}
+      </ul>
+      {(peak.otherKwh > 0 || peak.approximated) && (
+        <p className="text-[11px] text-subtle text-pretty">
+          {peak.otherKwh > 0 &&
+            `${formatKwh(peak.otherKwh)} soutirés sous un contrat sans heures creuses ne sont pas comptés. `}
+          {peak.approximated &&
+            "Une partie des kWh, reçus en totaux quotidiens, est répartie selon vos plages creuses."}
+        </p>
+      )}
+    </Card>
+  );
+}
+
 /** D'où vient l'énergie consommée : réseau, solaire direct, batterie. */
 export function OriginCard({
   overview,
@@ -263,10 +326,68 @@ export function OriginCard({
   );
 }
 
-/** Postes de consommation : kWh de la période et part de la consommation du foyer. */
+type CategoryItem = Ok["categories"][number];
+
+/** Une ligne de poste : pastille, nom, kWh et part de la conso, barre relative au plus gros. */
+function CategoryLine({
+  icon,
+  color,
+  name,
+  kwh,
+  max,
+  consumption,
+  extra,
+}: {
+  icon: string | null;
+  color: string | null;
+  name: string;
+  kwh: number;
+  max: number;
+  consumption: number;
+  extra?: ReactNode;
+}) {
+  return (
+    <div className="flex items-center gap-3">
+      <CategoryTile icon={icon} color={color} size="sm" />
+      <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+        <div className="flex items-baseline justify-between gap-2 text-[13px]">
+          <span className="flex min-w-0 items-center gap-2">
+            <span className="truncate">{name}</span>
+            {extra}
+          </span>
+          <span className="flex-none tabular-nums">
+            <span className="font-semibold">{formatKwh(kwh)}</span>
+            {consumption > 0 && (
+              <span className="text-subtle"> · {formatPercent(kwh / consumption)}</span>
+            )}
+          </span>
+        </div>
+        <div className="h-1 rounded-full bg-track">
+          <div
+            className={`h-1 rounded-full ${CATEGORY_SWATCH[categoryColor(color)].bg}`}
+            style={{ width: max > 0 ? `${(kwh / max) * 100}%` : 0 }}
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Postes de consommation : kWh de la période et part de la consommation du foyer. Les
+ * postes de chauffage (au moins deux) sont additionnés sur une ligne repliée, à déplier.
+ */
 export function CategoriesOverviewCard({ overview }: { overview: Ok }) {
   const { categories, balance, period } = overview;
-  const max = Math.max(...categories.map((c) => c.kwh), 0);
+  const heating = categories.filter((c) => c.isHeating);
+  const grouped = heating.length >= 2;
+  const heatingKwh = heating.reduce((a, c) => a + c.kwh, 0);
+  const rows: ({ kind: "one"; c: CategoryItem } | { kind: "heating"; kwh: number })[] = [
+    ...categories.filter((c) => !grouped || !c.isHeating).map((c) => ({ kind: "one" as const, c })),
+    ...(grouped ? [{ kind: "heating" as const, kwh: heatingKwh }] : []),
+  ].sort((a, b) => (b.kind === "one" ? b.c.kwh : b.kwh) - (a.kind === "one" ? a.c.kwh : a.kwh));
+  const max = Math.max(...rows.map((r) => (r.kind === "one" ? r.c.kwh : r.kwh)), 0);
+  const consumption = balance.consumption;
   return (
     <Card
       title="Postes de consommation"
@@ -292,38 +413,51 @@ export function CategoriesOverviewCard({ overview }: { overview: Ok }) {
         </Notice>
       ) : (
         <ul className="flex flex-col gap-3">
-          {[...categories]
-            .sort((a, b) => b.kwh - a.kwh)
-            .map((c) => {
-              return (
-                <li key={c.id} className="flex items-center gap-3">
-                  <CategoryTile icon={c.icon} color={c.color} size="sm" />
-                  <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-                    <div className="flex items-baseline justify-between gap-2 text-[13px]">
-                      <span className="flex min-w-0 items-center gap-2">
-                        <span className="truncate">{c.name}</span>
-                        {c.isHeating && <Badge tone="warning">Chauffage</Badge>}
-                      </span>
-                      <span className="flex-none tabular-nums">
-                        <span className="font-semibold">{formatKwh(c.kwh)}</span>
-                        {balance.consumption > 0 && (
-                          <span className="text-subtle">
-                            {" "}
-                            · {formatPercent(c.kwh / balance.consumption)}
+          {rows.map((r) =>
+            r.kind === "one" ? (
+              <li key={r.c.id}>
+                <CategoryLine
+                  {...r.c}
+                  max={max}
+                  consumption={consumption}
+                  extra={r.c.isHeating && <Badge tone="warning">Chauffage</Badge>}
+                />
+              </li>
+            ) : (
+              <li key="heating">
+                {/* Repliée par défaut (balise native : aucun script nécessaire). */}
+                <details className="group">
+                  <summary className="cursor-pointer list-none rounded-[8px] [&::-webkit-details-marker]:hidden">
+                    <CategoryLine
+                      icon="flame"
+                      color="eheat"
+                      name="Chauffage"
+                      kwh={r.kwh}
+                      max={max}
+                      consumption={consumption}
+                      extra={
+                        <span className="flex items-center gap-1 text-xs text-subtle">
+                          {heating.length} postes
+                          <span className="transition-transform group-open:rotate-90">
+                            <Icon name="chevron" size={14} />
                           </span>
-                        )}
-                      </span>
-                    </div>
-                    <div className="h-1 rounded-full bg-track">
-                      <div
-                        className={`h-1 rounded-full ${CATEGORY_SWATCH[categoryColor(c.color)].bg}`}
-                        style={{ width: max > 0 ? `${(c.kwh / max) * 100}%` : 0 }}
-                      />
-                    </div>
-                  </div>
-                </li>
-              );
-            })}
+                        </span>
+                      }
+                    />
+                  </summary>
+                  <ul className="mt-3 ml-4 flex flex-col gap-3 border-l border-track pl-3">
+                    {[...heating]
+                      .sort((a, b) => b.kwh - a.kwh)
+                      .map((c) => (
+                        <li key={c.id}>
+                          <CategoryLine {...c} max={max} consumption={consumption} />
+                        </li>
+                      ))}
+                  </ul>
+                </details>
+              </li>
+            ),
+          )}
         </ul>
       )}
     </Card>

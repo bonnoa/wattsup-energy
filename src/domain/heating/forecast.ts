@@ -48,9 +48,12 @@ export type Forecast =
       stock: number;
       /** À acheter avant arrondi : reste − stock. */
       toBuy: number;
-      /** Commande arrondie : palettes (et sacs) pour les granulés, demi-stères pour le bois. */
+      /**
+       * Commande arrondie : sacs pour les granulés (avec le nombre de palettes entières qui
+       * les couvrent, pour qui achète à la palette), demi-stères pour le bois.
+       */
       order: { pallets: number | null; bags: number | null; steres: number | null };
-      /** Coût de la commande au dernier prix connu ; null sans prix. */
+      /** Coût de la commande (au sac près pour les granulés) au dernier prix connu ; null sans prix. */
       costEur: number | null;
       basis: { seasons: string[]; weatherCorrected: boolean };
     };
@@ -83,10 +86,10 @@ export function forecastRefill(input: ForecastInput): Forecast {
   let orderedQty: number;
   if (input.fuel === "pellet") {
     const { pelletBagKg: kg, pelletBagsPerPallet: perPallet } = input.settings;
-    // Tolérance : 228,0000001 sacs ne doit pas devenir une palette de plus (ni −0).
-    const pallets = Math.max(0, Math.ceil(Math.ceil(toBuy / kg - 1e-9) / perPallet - 1e-9));
-    order = { pallets, bags: pallets * perPallet, steres: null };
-    orderedQty = pallets * perPallet * kg;
+    // Tolérance : 228,0000001 sacs ne doit pas devenir un sac de plus (ni −0).
+    const bags = Math.max(0, Math.ceil(toBuy / kg - 1e-9));
+    order = { pallets: Math.ceil(bags / perPallet), bags, steres: null };
+    orderedQty = bags * kg;
   } else {
     const steres = Math.max(0, Math.ceil(toBuy * 2 - 1e-9) / 2);
     order = { pallets: null, bags: null, steres };

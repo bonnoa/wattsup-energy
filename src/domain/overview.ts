@@ -189,3 +189,37 @@ export function expectedSlots(
       3_600_000,
   );
 }
+
+export interface PeakSplit {
+  hp: { kwh: number; energyCents: number };
+  hc: { kwh: number; energyCents: number };
+  /** kWh d'autres créneaux (jours sous un contrat Base ou sur mesure). */
+  otherKwh: number;
+}
+
+/**
+ * Part heures pleines / heures creuses d'une valorisation par créneau : « hp » et « hc »,
+ * et les créneaux Tempo « couleur_hp » / « couleur_hc ». null sans aucun kWh HP ou HC.
+ */
+export function peakSplit(
+  bySlot: Record<string, { kwh: number; energyCents: number }>,
+): PeakSplit | null {
+  const split: PeakSplit = {
+    hp: { kwh: 0, energyCents: 0 },
+    hc: { kwh: 0, energyCents: 0 },
+    otherKwh: 0,
+  };
+  for (const [key, s] of Object.entries(bySlot)) {
+    const part =
+      key === "hp" || key.endsWith("_hp")
+        ? split.hp
+        : key === "hc" || key.endsWith("_hc")
+          ? split.hc
+          : null;
+    if (part) {
+      part.kwh += s.kwh;
+      part.energyCents += s.energyCents;
+    } else split.otherKwh += s.kwh;
+  }
+  return split.hp.kwh + split.hc.kwh > 0 ? split : null;
+}

@@ -66,10 +66,12 @@ function Summary({
   f,
   forecast,
   target,
+  bagsPerPallet,
 }: {
   f: FuelForecast;
   forecast: Extract<Forecast, { status: "ok" }>;
   target: "current" | "next";
+  bagsPerPallet: number;
 }) {
   const label = target === "current" ? f.currentLabel : f.nextLabel;
   const goal =
@@ -80,8 +82,13 @@ function Summary({
   const nothing = forecast.toBuy <= 0;
   const what =
     f.fuel === "pellet"
-      ? `${order.pallets} palette${(order.pallets ?? 0) > 1 ? "s" : ""} (${order.bags} sacs)`
+      ? `${formatNumber(order.bags ?? 0)} sac${(order.bags ?? 0) > 1 ? "s" : ""}`
       : `${formatNumber(order.steres ?? 0, 1)} stère${(order.steres ?? 0) > 1 ? "s" : ""}`;
+  // Pour qui achète à la palette : combien de palettes entières couvrent ces sacs.
+  const byPallet =
+    f.fuel === "pellet" && !nothing && order.pallets
+      ? `À la palette : ${order.pallets} palette${order.pallets > 1 ? "s" : ""} (${formatNumber(order.pallets * bagsPerPallet)} sacs).`
+      : null;
   return (
     <p className="text-[17px] leading-snug font-semibold text-pretty">
       {nothing ? (
@@ -96,6 +103,7 @@ function Summary({
           {forecast.costEur !== null && <>, soit environ {eur(forecast.costEur)}</>}.
         </>
       )}
+      {byPallet && <span className="block pt-1 text-xs font-normal text-muted">{byPallet}</span>}
       {forecast.costEur === null && !nothing && (
         <span className="block pt-1 text-xs font-normal text-muted">
           Coût inconnu : aucun achat chiffré.
@@ -166,7 +174,12 @@ export function ForecastCard({ view }: { view: RefillForecastView }) {
               label: SCENARIO_LABELS[s].replace("Hiver ", ""),
             }))}
           />
-          <Summary f={f} forecast={forecast} target={effectiveTarget} />
+          <Summary
+            f={f}
+            forecast={forecast}
+            target={effectiveTarget}
+            bagsPerPallet={view.bagsPerPallet}
+          />
           <div className={tiles}>
             <StatTile
               label={effectiveTarget === "current" ? "Reste à consommer" : "Besoin de la saison"}
@@ -211,7 +224,7 @@ export function ForecastCard({ view }: { view: RefillForecastView }) {
                 </>
               )}{" "}
               {f.fuel === "pellet"
-                ? "Commande arrondie à la palette entière."
+                ? "Commande arrondie au sac supérieur."
                 : "Commande arrondie au demi-stère."}{" "}
               {forecast.costEur !== null && "Coût au dernier prix d'achat connu."}
             </p>

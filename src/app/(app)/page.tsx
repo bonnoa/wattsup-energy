@@ -3,6 +3,7 @@ import {
   CategoriesOverviewCard,
   KpiTiles,
   OriginCard,
+  PeakCard,
   PeriodSwitcher,
   SolarCard,
 } from "@/components/cards/overview-cards";
@@ -44,6 +45,7 @@ export default async function OverviewPage({
             <KpiTiles overview={overview} solar={modules.solar} battery={modules.battery} />
           </div>
           <MonthlyCostCard months={overview.months} period={overview.period} />
+          <PeakCard overview={overview} />
           <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,340px),1fr))] items-start gap-4">
             <OriginCard overview={overview} solar={modules.solar} battery={modules.battery} />
             <CategoriesOverviewCard overview={overview} />

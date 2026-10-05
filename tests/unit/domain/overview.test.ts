@@ -4,6 +4,7 @@ import {
   energyBalance,
   expectedSlots,
   parsePeriod,
+  peakSplit,
   periodNav,
   shortMonth,
   solarYield,
@@ -11,6 +12,29 @@ import {
 } from "@/domain/overview";
 
 const TODAY = "2026-10-03";
+
+describe("peakSplit", () => {
+  it("regroupe les créneaux HP et HC (Tempo compris) ; le reste à part", () => {
+    expect(
+      peakSplit({
+        hp: { kwh: 100, energyCents: 2500 },
+        hc: { kwh: 50, energyCents: 900 },
+        blue_hp: { kwh: 20, energyCents: 300 },
+        red_hc: { kwh: 10, energyCents: 150 },
+        base: { kwh: 5, energyCents: 100 },
+      }),
+    ).toEqual({
+      hp: { kwh: 120, energyCents: 2800 },
+      hc: { kwh: 60, energyCents: 1050 },
+      otherKwh: 5,
+    });
+  });
+
+  it("aucun kWh en HP ni en HC : null", () => {
+    expect(peakSplit({ base: { kwh: 5, energyCents: 100 } })).toBeNull();
+    expect(peakSplit({})).toBeNull();
+  });
+});
 
 describe("shortMonth", () => {
   it("mois abrégé d'une clé AAAA-MM", () => {

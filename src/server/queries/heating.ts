@@ -272,6 +272,8 @@ export interface FuelForecast {
 export interface RefillForecastView {
   fuels: FuelForecast[];
   bagKg: number;
+  /** Sacs par palette (équivalent palette de la commande). */
+  bagsPerPallet: number;
 }
 
 /**
@@ -327,6 +329,7 @@ export async function getRefillForecast(
 
   return {
     bagKg: ctx.settings.pelletBagKg,
+    bagsPerPallet: ctx.settings.pelletBagsPerPallet,
     fuels: fuels.map((fuel) => {
       const history = past.map((s, i) => ({
         label: s.label,

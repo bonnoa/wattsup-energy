@@ -19,15 +19,22 @@ import {
   energyBalance,
   expectedSlots,
   parsePeriod,
+  peakSplit,
   periodNav,
   solarYield,
   yearMonths,
   type EnergyBalance,
+  type PeakSplit,
   type Period,
 } from "@/domain/overview";
 import { batteryGaps, type BatteryGap, type BatteryMonth } from "@/domain/battery-data";
 import { visibleModules } from "@/domain/profile";
-import { buildTimeline, priceTimeline, type TimelineResult } from "@/domain/tariff/timeline";
+import {
+  buildTimeline,
+  currentContract,
+  priceTimeline,
+  type TimelineResult,
+} from "@/domain/tariff/timeline";
 import type { PriceableInterval } from "@/domain/tariff/types";
 import { cellOf, radiationKwhM2, sunshineHours } from "@/domain/weather";
 import { addDays, eachDay, localParts, zonedInstant } from "@/lib/time";
@@ -78,6 +85,12 @@ export type Overview =
       /** Coût et kWh soutirés par mois de l'année de la période. */
       months: MonthCost[];
       balance: EnergyBalance;
+      /**
+       * Part HP / HC de l'électricité soutirée sur la période, si le contrat en cours a des
+       * heures creuses (HP/HC ou Tempo) ; `approximated` : une part des kWh (envois
+       * quotidiens sans créneau) a été répartie par supposition.
+       */
+      peak: (PeakSplit & { approximated: boolean }) | null;
       /** Mois de la période où la batterie a une charge sans décharge, ou l'inverse. */
       batteryGaps: BatteryGap[];
       categories: {
@@ -334,6 +347,13 @@ export async function getOverview(
       kwh,
     };
   };
+  const peakOf = () => {
+    const id = currentContract(contracts, today)?.id;
+    const kind = contracts.find((c) => c.id === id)?.kind;
+    if (kind !== "hphc" && kind !== "tempo") return null;
+    const split = peakSplit(periodCost.bySlot);
+    return split && { ...split, approximated: periodCost.approximatedKwh > 0 };
+  };
   const balance = energyBalance(totals, { batteryGridCharging: ctx.settings.batteryGridCharging });
 
   let solar: Extract<Overview, { status: "ok" }>["solar"] = null;
@@ -382,6 +402,7 @@ export async function getOverview(
       previous: previousMonth(key),
     })),
     batteryGaps: batteryGaps(battery),
+    peak: peakOf(),
     balance,
     categories: categories
       .filter((c) => modules.heatingCategories || !c.isHeating)

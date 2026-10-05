@@ -9,7 +9,7 @@ import {
   lastPurchasePrice,
   seasonConsumption,
   toBaseQty,
-  weightedAvgPrice,
+  referencePrice,
   type Fuel,
 } from "@/domain/heating/fuel";
 import { visibleModules } from "@/domain/profile";
@@ -154,11 +154,12 @@ export async function getHeating(
 
   const colors = await tempoColorsFor(ctx.householdId, addDays(previousSeason.from, -1), to);
   const pricing = { timezone: tz, tempoColor: (d: string) => colors.get(d) };
-  const avgPrice = Object.fromEntries(
-    fuels.map((f) => [f, weightedAvgPrice(events, f, ctx.settings)]),
-  ) as Record<Fuel, number | null>;
-
   const figures = async (from: string, until: string) => {
+    // Chaque saison est chiffrée au prix de ses 12 derniers mois d'achats (SPEC §7.4).
+    const priceAt = zonedInstant(until, 0, tz);
+    const avgPrice = Object.fromEntries(
+      fuels.map((f) => [f, referencePrice(events, f, ctx.settings, priceAt)?.perUnit ?? null]),
+    ) as Record<Fuel, number | null>;
     const intervals = await electricIntervals(from, until);
     const priced =
       intervals.length > 0
@@ -190,7 +191,7 @@ export async function getHeating(
       dju: djuTotal,
       tMean: temps.length > 0 ? temps.reduce((a, b) => a + b, 0) / temps.length : null,
     };
-    return { data, byMonth: priced?.byMonth ?? {}, weather };
+    return { data, byMonth: priced?.byMonth ?? {}, weather, avgPrice };
   };
 
   const current = await figures(season.from, to);
@@ -223,7 +224,7 @@ export async function getHeating(
     if (!fuels.includes(e.fuel) || current.data.fuels[e.fuel]?.method !== "events") continue;
     const month = byKey.get(monthOf(e.at));
     if (!month) continue;
-    const cents = toBaseQty(e, ctx.settings) * (avgPrice[e.fuel] ?? 0) * 100;
+    const cents = toBaseQty(e, ctx.settings) * (current.avgPrice[e.fuel] ?? 0) * 100;
     if (e.fuel === "pellet") month.pelletCents += cents;
     else month.woodCents += cents;
   }

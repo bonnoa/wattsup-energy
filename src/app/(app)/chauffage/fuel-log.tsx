@@ -3,7 +3,13 @@
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { Badge, button, Card, Icon, type IconName } from "@/components/ui";
-import type { Fuel, FuelEventType, FuelUnit } from "@/domain/heating/fuel";
+import {
+  toBaseQty,
+  type Fuel,
+  type FuelEventType,
+  type FuelSettings,
+  type FuelUnit,
+} from "@/domain/heating/fuel";
 import { deleteFuelEventAction, updateFuelEventAction } from "@/server/actions/fuel";
 import { EVENT_LABELS, FUEL_LABELS, formatFuelQty, UNIT_NAMES } from "./labels";
 
@@ -114,16 +120,28 @@ function EditRow({
   );
 }
 
+/** Prix unitaire d'un achat : par sac (granulés) ou par stère (bois), null sans prix. */
+function unitPrice(item: LogItem, settings: FuelSettings): string | null {
+  if (item.priceEur === null) return null;
+  const base = toBaseQty(item, settings);
+  const units = item.fuel === "pellet" ? base / settings.pelletBagKg : base;
+  if (units <= 0) return null;
+  return `${eur(item.priceEur / units)} €/${item.fuel === "pellet" ? "sac" : "stère"}`;
+}
+
 /** Journal des 20 derniers achats, relevés et consommations. */
 export function FuelLog({
   items,
   timezone,
   showFuel,
+  settings,
 }: {
   items: LogItem[];
   timezone: string;
   /** Granulés et bois actifs : on précise le combustible de chaque ligne. */
   showFuel: boolean;
+  /** Poids du sac et sacs par palette, pour le prix par sac. */
+  settings: FuelSettings;
 }) {
   const router = useRouter();
   const [editing, setEditing] = useState<string | null>(null);
@@ -173,7 +191,10 @@ export function FuelLog({
                     <span className="font-medium">{EVENT_LABELS[item.type]}</span>
                     <span className="tabular-nums">{formatFuelQty(item.qty, item.unit)}</span>
                     {item.priceEur !== null && (
-                      <span className="text-muted tabular-nums">· {eur(item.priceEur)} €</span>
+                      <span className="text-muted tabular-nums">
+                        · {eur(item.priceEur)} €
+                        {unitPrice(item, settings) && <> · {unitPrice(item, settings)}</>}
+                      </span>
                     )}
                     {showFuel && <Badge>{FUEL_LABELS[item.fuel]}</Badge>}
                   </span>

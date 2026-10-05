@@ -143,7 +143,7 @@ export function HeatingCostCard({ view }: { view: HeatingView }) {
     <Card
       icon="flame"
       title="Coût de chauffe par mois"
-      description="Électricité des postes « chauffage » au contrat en vigueur, combustibles au prix moyen de vos achats."
+      description="Électricité des postes « chauffage » au contrat en vigueur, combustibles au prix moyen de vos achats des 12 mois précédents."
     >
       {unpriced.length > 0 && (
         <Notice title="Coût incomplet :">

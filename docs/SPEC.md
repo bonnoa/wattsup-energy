@@ -302,7 +302,7 @@ Le rate limiting utilise une fenêtre glissante en mémoire, par token (instance
 - Même projection que pour le solaire.
 
 ### 7.4 Chauffage
-- Coût de chauffe = électricité des catégories `is_heating`, valorisée par le moteur tarifaire (**énergie seule** : l'abonnement reste au budget électricité), + granulés et bois valorisés au **prix moyen pondéré des achats** (`fuel_event.purchase`). Un combustible consommé sans aucun achat chiffré compte ses kWh mais pas de coût, et l'écran le signale.
+- Coût de chauffe = électricité des catégories `is_heating`, valorisée par le moteur tarifaire (**énergie seule** : l'abonnement reste au budget électricité), + granulés et bois valorisés au **prix de référence** : moyenne des achats chiffrés (`fuel_event.purchase`) des **12 mois précédant** la fin de la saison (aujourd'hui pour la saison en cours), pondérée par la quantité ; à défaut, le dernier achat chiffré avant, sinon le premier après. Un prix ancien ne pèse donc plus sur les saisons récentes. La tuile « Prix moyen payé » affiche ce prix et son origine ; le journal donne le prix par sac (ou par stère) de chaque achat. Un combustible consommé sans aucun achat chiffré compte ses kWh mais pas de coût, et l'écran le signale.
 - **Saisie manuelle (mode principal V1)**, conçue pour aller vite sur mobile depuis la vue Chauffage :
   - bouton **« + Sac versé »** (1 tap = 1 événement `consumption` de 1 sac, horodaté maintenant, annulable 10 s) ; pour le bois, « + ½ stère utilisé » ;
   - formulaire **« Achat »** : quantité (sacs, palettes ou stères), prix total, date ;

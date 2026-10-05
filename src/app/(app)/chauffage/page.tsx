@@ -1,5 +1,10 @@
 import { PageHeader } from "@/components/page-header";
-import { currentStock, weightedAvgPrice, type Fuel } from "@/domain/heating/fuel";
+import {
+  currentStock,
+  referencePrice,
+  type Fuel,
+  type ReferencePrice,
+} from "@/domain/heating/fuel";
 import { visibleModules } from "@/domain/profile";
 import { listFuelEvents } from "@/server/fuel";
 import { pageContext } from "@/server/page";
@@ -10,6 +15,17 @@ import { HeatingCostCard, HeatingKpis, SeasonSwitcher } from "./heating-cards";
 import { FuelCard } from "./quick-actions";
 
 export const metadata = { title: "Chauffage · WattsUp Energy" };
+
+const purchaseMonth = (d: Date, timeZone: string) =>
+  d.toLocaleDateString("fr-FR", { month: "short", year: "numeric", timeZone });
+
+/** Origine du prix de référence, sous la tuile « Prix moyen payé ». */
+function priceNote(price: ReferencePrice | null, timeZone: string): string | null {
+  if (!price) return null;
+  if (price.basis === "recent") return "achats des 12 derniers mois";
+  const month = purchaseMonth(price.purchasedAt, timeZone);
+  return price.basis === "last" ? `dernier achat, ${month}` : `premier achat, ${month}`;
+}
 
 export default async function HeatingPage({
   searchParams,
@@ -43,24 +59,36 @@ export default async function HeatingPage({
       />
       {fuels.length > 0 && (
         <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,340px),1fr))] items-start gap-4">
-          {fuels.map((fuel) => (
-            <FuelCard
-              key={fuel}
-              summary={{
-                fuel,
-                stock: currentStock(events, fuel, now, ctx.settings),
-                avgPrice: weightedAvgPrice(events, fuel, ctx.settings),
-                bagKg: ctx.settings.pelletBagKg,
-              }}
-            />
-          ))}
+          {fuels.map((fuel) => {
+            const price = referencePrice(events, fuel, ctx.settings, now);
+            return (
+              <FuelCard
+                key={fuel}
+                summary={{
+                  fuel,
+                  stock: currentStock(events, fuel, now, ctx.settings),
+                  avgPrice: price?.perUnit ?? null,
+                  priceNote: priceNote(price, ctx.timezone),
+                  bagKg: ctx.settings.pelletBagKg,
+                }}
+              />
+            );
+          })}
         </div>
       )}
       <SeasonSwitcher view={view} />
       <HeatingKpis view={view} />
       <HeatingCostCard view={view} />
       {fuels.length > 0 && (
-        <FuelLog items={log} timezone={ctx.timezone} showFuel={fuels.length > 1} />
+        <FuelLog
+          items={log}
+          timezone={ctx.timezone}
+          showFuel={fuels.length > 1}
+          settings={{
+            pelletBagKg: ctx.settings.pelletBagKg,
+            pelletBagsPerPallet: ctx.settings.pelletBagsPerPallet,
+          }}
+        />
       )}
       {forecast && <ForecastCard view={forecast} />}
     </>

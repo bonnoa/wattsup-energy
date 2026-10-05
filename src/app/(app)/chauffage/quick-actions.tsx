@@ -18,8 +18,10 @@ export interface FuelSummary {
   fuel: Fuel;
   /** Stock en unité de base : kg (granulés) ou stères (bois). */
   stock: number;
-  /** Prix moyen pondéré des achats par unité de base, null sans achat au prix connu. */
+  /** Prix de référence par unité de base (achats des 12 derniers mois), null sans achat chiffré. */
   avgPrice: number | null;
+  /** D'où vient ce prix : « achats des 12 derniers mois », « dernier achat, mars 2024 »… */
+  priceNote: string | null;
   /** Poids d'un sac de granulés (Réglages). */
   bagKg: number;
 }
@@ -239,7 +241,7 @@ export function FuelCard({ summary }: { summary: FuelSummary }) {
   const [undo, setUndo] = useState<{ id: string; label: string } | null>(null);
   const [errors, setErrors] = useState<string[]>([]);
   const [pending, startTransition] = useTransition();
-  const { fuel, stock, avgPrice, bagKg } = summary;
+  const { fuel, stock, avgPrice, priceNote, bagKg } = summary;
   const pellet = fuel === "pellet";
   // Le stock arrive en unité de base ; on l'affiche en sacs (granulés) ou stères (bois).
   const shown = pellet ? stock / bagKg : stock;
@@ -279,7 +281,7 @@ export function FuelCard({ summary }: { summary: FuelSummary }) {
           label="Prix moyen payé"
           value={avgPrice === null ? "—" : formatNumber(pellet ? avgPrice * bagKg : avgPrice, 2)}
           unit={pellet ? "€/sac" : "€/stère"}
-          sub={avgPrice === null ? "aucun achat chiffré" : undefined}
+          sub={avgPrice === null ? "aucun achat chiffré" : (priceNote ?? undefined)}
         />
       </div>
 

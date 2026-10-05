@@ -5,7 +5,7 @@ import {
   lastPurchasePrice,
   seasonConsumption,
   toBaseQty,
-  weightedAvgPrice,
+  referencePrice,
   type FuelEvent,
 } from "@/domain/heating/fuel";
 
@@ -118,12 +118,40 @@ describe("prix", () => {
     ev("2025-10-02T10:00:00Z", "consumption", 1),
   ];
 
-  it("prix moyen pondéré par la quantité, en € par kg ou par stère", () => {
-    expect(weightedAvgPrice(purchases, "pellet", settings)).toBeCloseTo(
-      (396 + 75) / (990 + 150),
-      9,
+  it("prix de référence : moyenne pondérée des achats des 12 mois précédents", () => {
+    // Fin août 2025 : seul l'achat de septembre 2024.
+    expect(referencePrice(purchases, "pellet", settings, new Date("2025-08-31T00:00:00Z"))).toEqual(
+      { perUnit: 396 / 990, basis: "recent" },
     );
-    expect(weightedAvgPrice(purchases, "wood", settings)).toBeNull();
+    // Un an jour pour jour après, l'achat de 2024 sort de la fenêtre.
+    expect(
+      referencePrice(purchases, "pellet", settings, new Date("2025-09-01T10:00:00Z"))?.perUnit,
+    ).toBeCloseTo(75 / 150, 9);
+    // Les deux dans la fenêtre : pondéré par la quantité.
+    expect(
+      referencePrice(
+        [...purchases, ev("2025-03-01T10:00:00Z", "purchase", 20, "bag", 140)],
+        "pellet",
+        settings,
+        new Date("2025-08-31T00:00:00Z"),
+      )?.perUnit,
+    ).toBeCloseTo((396 + 140) / (990 + 300), 9);
+    // Au 1er mars 2026, seul l'achat de septembre 2025 compte : l'ancien prix est écarté.
+    expect(
+      referencePrice(purchases, "pellet", settings, new Date("2026-03-01T00:00:00Z"))?.perUnit,
+    ).toBeCloseTo(75 / 150, 9);
+    expect(
+      referencePrice(purchases, "wood", settings, new Date("2026-03-01T00:00:00Z")),
+    ).toBeNull();
+  });
+
+  it("sans achat dans les 12 mois : le dernier achat chiffré avant, sinon le premier après", () => {
+    expect(referencePrice(purchases, "pellet", settings, new Date("2027-06-01T00:00:00Z"))).toEqual(
+      { perUnit: 75 / 150, basis: "last", purchasedAt: new Date("2025-09-01T10:00:00Z") },
+    );
+    expect(referencePrice(purchases, "pellet", settings, new Date("2024-01-01T00:00:00Z"))).toEqual(
+      { perUnit: 396 / 990, basis: "next", purchasedAt: new Date("2024-09-01T10:00:00Z") },
+    );
   });
 
   it("dernier prix d'achat connu, par unité de base", () => {

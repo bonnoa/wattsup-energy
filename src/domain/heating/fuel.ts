@@ -117,16 +117,45 @@ export function seasonConsumption(
 const pricedPurchases = (events: readonly FuelEvent[], fuel: Fuel) =>
   ofFuel(events, fuel).filter((e) => e.type === "purchase" && e.priceEur !== null);
 
-/** Prix moyen pondéré des achats, en € par kg (granulés) ou par stère (bois). */
-export function weightedAvgPrice(
+/** Fenêtre du prix de référence : les achats des 12 mois précédents. */
+const PRICE_WINDOW_MS = 365 * 86_400_000;
+
+export type ReferencePrice =
+  | { perUnit: number; basis: "recent" }
+  /** Aucun achat chiffré dans les 12 mois : le dernier avant, sinon le premier après. */
+  | { perUnit: number; basis: "last" | "next"; purchasedAt: Date };
+
+const unitPrice = (e: FuelEvent, s: FuelSettings) => {
+  const qty = toBaseQty(e, s);
+  return qty > 0 ? (e.priceEur ?? 0) / qty : null;
+};
+
+/**
+ * Prix de référence à une date, en € par kg (granulés) ou par stère (bois) : moyenne des
+ * achats chiffrés des 12 mois précédents, pondérée par la quantité. Un prix ancien ne
+ * pèse donc plus sur le coût d'aujourd'hui.
+ */
+export function referencePrice(
   events: readonly FuelEvent[],
   fuel: Fuel,
   s: FuelSettings,
-): number | null {
+  at: Date,
+): ReferencePrice | null {
   const purchases = pricedPurchases(events, fuel);
-  const qty = purchases.reduce((a, e) => a + toBaseQty(e, s), 0);
-  const eur = purchases.reduce((a, e) => a + (e.priceEur ?? 0), 0);
-  return qty > 0 ? eur / qty : null;
+  const recent = purchases.filter(
+    (e) => e.at <= at && e.at.getTime() > at.getTime() - PRICE_WINDOW_MS,
+  );
+  const qty = recent.reduce((a, e) => a + toBaseQty(e, s), 0);
+  if (qty > 0) {
+    return { perUnit: recent.reduce((a, e) => a + (e.priceEur ?? 0), 0) / qty, basis: "recent" };
+  }
+  const last = purchases.filter((e) => e.at <= at).at(-1);
+  const next = purchases.find((e) => e.at > at);
+  const fallback = last ?? next;
+  const perUnit = fallback ? unitPrice(fallback, s) : null;
+  return fallback && perUnit !== null
+    ? { perUnit, basis: last ? "last" : "next", purchasedAt: fallback.at }
+    : null;
 }
 
 /** Prix unitaire du dernier achat au prix connu (base de la prévision, SPEC §7.5). */
@@ -136,7 +165,5 @@ export function lastPurchasePrice(
   s: FuelSettings,
 ): number | null {
   const last = pricedPurchases(events, fuel).at(-1);
-  if (!last) return null;
-  const qty = toBaseQty(last, s);
-  return qty > 0 ? (last.priceEur ?? 0) / qty : null;
+  return last ? unitPrice(last, s) : null;
 }

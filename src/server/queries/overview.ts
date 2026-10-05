@@ -30,6 +30,8 @@ export interface MonthCost {
   key: string;
   energyCents: number;
   subscriptionCents: number;
+  /** kWh soutirés au réseau. */
+  kwh: number;
 }
 
 export interface SolarPoint {
@@ -57,7 +59,7 @@ export type Overview =
         previousCents: number | null;
         unknownContractDays: number;
       };
-      /** Coût de l'électricité par mois de l'année de la période. */
+      /** Coût et kWh soutirés par mois de l'année de la période. */
       months: MonthCost[];
       balance: EnergyBalance;
       categories: {
@@ -257,6 +259,12 @@ export async function getOverview(
     i.granularity === "hour" ? localParts(i.start, tz).date : i.date;
   const inPeriod = intervals.filter((i) => dayOf(i) >= period.from && dayOf(i) < period.to);
   const periodCost = period.kind === "year" ? yearCost : price(inPeriod, period.from, period.to);
+  // kWh soutirés par mois, chiffrés ou non (sans contrat, le coût reste vide, pas l'énergie).
+  const kwhByMonth = new Map<string, number>();
+  for (const i of intervals) {
+    const month = dayOf(i).slice(0, 7);
+    kwhByMonth.set(month, (kwhByMonth.get(month) ?? 0) + i.kwh);
+  }
   const previousCost =
     previousIntervals.length > 0 ? price(previousIntervals, previous.from, previous.to) : null;
 
@@ -305,6 +313,7 @@ export async function getOverview(
       key,
       energyCents: yearCost.byMonth[key]?.energyCents ?? 0,
       subscriptionCents: yearCost.byMonth[key]?.subscriptionCents ?? 0,
+      kwh: kwhByMonth.get(key) ?? 0,
     })),
     balance,
     categories: categories

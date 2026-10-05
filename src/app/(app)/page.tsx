@@ -2,11 +2,11 @@ import {
   BudgetCard,
   CategoriesOverviewCard,
   KpiTiles,
-  MonthlyCostCard,
   OriginCard,
   PeriodSwitcher,
   SolarCard,
 } from "@/components/cards/overview-cards";
+import { MonthlyCostCard } from "@/components/cards/monthly-cost-card";
 import { PageHeader } from "@/components/page-header";
 import { EmptyState } from "@/components/empty-state";
 import { visibleModules } from "@/domain/profile";
@@ -41,7 +41,7 @@ export default async function OverviewPage({
             <BudgetCard overview={overview} />
             <KpiTiles overview={overview} solar={modules.solar} battery={modules.battery} />
           </div>
-          <MonthlyCostCard overview={overview} />
+          <MonthlyCostCard months={overview.months} period={overview.period} />
           <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,340px),1fr))] items-start gap-4">
             <OriginCard overview={overview} solar={modules.solar} battery={modules.battery} />
             <CategoriesOverviewCard overview={overview} />

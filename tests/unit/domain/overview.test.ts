@@ -5,11 +5,19 @@ import {
   expectedSlots,
   parsePeriod,
   periodNav,
+  shortMonth,
   solarYield,
   yearMonths,
 } from "@/domain/overview";
 
 const TODAY = "2026-10-03";
+
+describe("shortMonth", () => {
+  it("mois abrégé d'une clé AAAA-MM", () => {
+    expect(shortMonth("2026-02")).toBe("févr.");
+    expect(shortMonth("2026-12")).toBe("déc.");
+  });
+});
 
 describe("parsePeriod", () => {
   it("mois ou année ; par défaut le mois en cours ; fin bornée au lendemain d'aujourd'hui", () => {

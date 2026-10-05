@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { StackedBars } from "@/components/charts/stacked-bars";
 import { Badge, button, Card, Notice, StatTile } from "@/components/ui";
-import { monthLabel } from "@/domain/overview";
+import { monthLabel, shortMonth } from "@/domain/overview";
 import { formatEurFromCents, formatNumber, formatPercent } from "@/lib/format";
 import type { HeatingView } from "@/server/queries/heating";
 import { FUEL_LABELS } from "./labels";
@@ -11,21 +11,6 @@ import { settingsHref } from "@/lib/settings-tabs";
 // degrés-jours alignés (deux graphiques sur le même axe du temps, pas de double échelle).
 
 const eur = (cents: number) => formatEurFromCents(cents, 0);
-const MONTH_SHORT = [
-  "janv.",
-  "févr.",
-  "mars",
-  "avr.",
-  "mai",
-  "juin",
-  "juil.",
-  "août",
-  "sept.",
-  "oct.",
-  "nov.",
-  "déc.",
-];
-const shortMonth = (key: string) => MONTH_SHORT[Number(key.slice(5, 7)) - 1] ?? key;
 const temp = (t: number) => `${t.toLocaleString("fr-FR", { maximumFractionDigits: 1 })} °C`;
 const delta = (current: number, previous: number | undefined | null) =>
   previous && previous > 0 ? current / previous - 1 : null;
@@ -190,9 +175,11 @@ export function HeatingCostCard({ view }: { view: HeatingView }) {
           key: m.key,
           label: shortMonth(m.key),
           title: `${monthLabel(m.key)} : ${eur(m.electricCents + m.pelletCents + m.woodCents)}${m.tMean !== null ? ` · ${temp(m.tMean)} en moyenne` : ""}`,
-          segments: sources
-            .map((s) => ({ value: centsOf(m, s.key), color: s.color, label: s.label }))
-            .reverse(),
+          segments: sources.map((s) => ({
+            value: centsOf(m, s.key),
+            color: s.color,
+            label: s.label,
+          })),
         }))}
       />
       {!view.noLocation ? (

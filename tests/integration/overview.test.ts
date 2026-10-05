@@ -58,6 +58,7 @@ describe("vue d'ensemble sur le foyer de démo", () => {
     expect(o.budget.previousCents).toBeGreaterThan(0);
 
     const grid = await kwhOf(householdId, "grid_import", "2026-09-01", "2026-10-01");
+    expect(sept?.kwh).toBeCloseTo(grid, 3);
     expect(o.balance.gridImport).toBeCloseTo(grid, 3);
     expect(o.balance.consumption).toBeCloseTo(
       o.balance.origin.grid + o.balance.origin.solar + o.balance.origin.battery,

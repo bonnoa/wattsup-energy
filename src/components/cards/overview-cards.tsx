@@ -3,7 +3,7 @@ import { StackedBars } from "@/components/charts/stacked-bars";
 import { CoverageBadge } from "@/components/coverage-badge";
 import { Badge, button, Card, Notice, StatTile, tiles } from "@/components/ui";
 import { CATEGORY_SWATCH, CategoryTile, categoryColor } from "@/components/ui/category";
-import { monthLabel } from "@/domain/overview";
+import { monthLabel, shortMonth } from "@/domain/overview";
 import { addDays } from "@/lib/time";
 import { formatEurFromCents, formatKwh, formatNumber, formatPercent } from "@/lib/format";
 import type { Overview } from "@/server/queries/overview";
@@ -14,21 +14,6 @@ import { settingsHref } from "@/lib/settings-tabs";
 type Ok = Extract<Overview, { status: "ok" }>;
 
 const eur = (cents: number) => formatEurFromCents(cents, 0);
-const MONTH_SHORT = [
-  "janv.",
-  "févr.",
-  "mars",
-  "avr.",
-  "mai",
-  "juin",
-  "juil.",
-  "août",
-  "sept.",
-  "oct.",
-  "nov.",
-  "déc.",
-];
-const shortMonth = (key: string) => MONTH_SHORT[Number(key.slice(5, 7)) - 1] ?? key;
 
 /** Sélecteur mois / année et navigation ‹ › (liens : la période est dans l'URL). */
 export function PeriodSwitcher({ overview }: { overview: Ok }) {
@@ -216,65 +201,6 @@ export function KpiTiles({
   );
 }
 
-/** Coût de l'électricité mois par mois ; chaque barre ouvre le mois. */
-export function MonthlyCostCard({ overview }: { overview: Ok }) {
-  const { months, period } = overview;
-  const year = period.key.slice(0, 4);
-  const selected = period.kind === "month" ? months.find((m) => m.key === period.key) : null;
-  const totals = selected
-    ? { energy: selected.energyCents, subscription: selected.subscriptionCents }
-    : {
-        energy: months.reduce((a, m) => a + m.energyCents, 0),
-        subscription: months.reduce((a, m) => a + m.subscriptionCents, 0),
-      };
-  return (
-    <Card
-      title={`Coût mensuel de l'électricité · ${year}`}
-      description="Contrat et prix en vigueur chaque jour, abonnement compris. Touchez un mois pour le détail."
-    >
-      <div className="flex flex-wrap items-stretch gap-5">
-        <div className="min-w-0 flex-[1_1_320px]">
-          <StackedBars
-            ariaLabel={`Coût de l'électricité par mois en ${year}`}
-            bars={months.map((m) => ({
-              key: m.key,
-              label: shortMonth(m.key),
-              href: `/?p=${m.key}`,
-              selected: period.kind === "month" && m.key === period.key,
-              title: `${monthLabel(m.key)} : ${eur(m.energyCents + m.subscriptionCents)}`,
-              segments: [
-                { value: m.subscriptionCents, color: "bg-[#C9C2B4]", label: "Abonnement" },
-                { value: m.energyCents, color: "bg-grid", label: "Consommation" },
-              ],
-            }))}
-          />
-        </div>
-        <div className="flex grow basis-[220px] flex-col gap-2.5 rounded-control bg-bg p-4 text-[13px] md:grow-0">
-          <h3 className="font-semibold capitalize">{period.label}</h3>
-          <div className="flex items-center justify-between gap-2">
-            <span className="flex items-center gap-2 text-[#5E625C]">
-              <span className="size-2 rounded-[2px] bg-grid" />
-              Consommation
-            </span>
-            <span className="tabular-nums">{eur(totals.energy)}</span>
-          </div>
-          <div className="flex items-center justify-between gap-2">
-            <span className="flex items-center gap-2 text-[#5E625C]">
-              <span className="size-2 rounded-[2px] bg-[#C9C2B4]" />
-              Abonnement
-            </span>
-            <span className="tabular-nums">{eur(totals.subscription)}</span>
-          </div>
-          <div className="mt-auto flex justify-between border-t border-border-strong pt-2.5 font-semibold">
-            <span>Total</span>
-            <span className="tabular-nums">{eur(totals.energy + totals.subscription)}</span>
-          </div>
-        </div>
-      </div>
-    </Card>
-  );
-}
-
 /** D'où vient l'énergie consommée : réseau, solaire direct, batterie. */
 export function OriginCard({
   overview,
@@ -405,9 +331,13 @@ const fmtHours = (h: number) =>
   `${h.toLocaleString("fr-FR", { maximumFractionDigits: h < 10 ? 1 : 0 })} h`;
 const fmtYield = (y: number) => y.toLocaleString("fr-FR", { maximumFractionDigits: 2 });
 
+// Couleur de la courbe d'ensoleillement (et de son repère dans la tuile).
+const SUNSHINE = "#5E625C";
+
 /**
- * Production et ensoleillement : deux graphiques alignés sur le même axe du temps (pas de
- * double échelle), et le rendement kWh produits par kWh/m² reçu, comparé à N-1.
+ * Production et ensoleillement : barres de production et courbe d'ensoleillement superposée
+ * (chacune sur sa propre échelle, valeurs dans l'info-bulle), et le rendement kWh produits
+ * par kWh/m² reçu, comparé à N-1.
  */
 export function SolarCard({ overview }: { overview: Ok }) {
   const { solar, period } = overview;
@@ -434,7 +364,7 @@ export function SolarCard({ overview }: { overview: Ok }) {
           label="Ensoleillement"
           value={formatNumber(sunshine)}
           unit="h"
-          dot="bg-[#8A8E86]"
+          dot="bg-[#5E625C]"
         />
         <StatTile
           label="Rendement"
@@ -466,38 +396,39 @@ export function SolarCard({ overview }: { overview: Ok }) {
           est bien renseigné dans l&apos;automatisation Home Assistant.
         </p>
       ) : (
-        <>
-          <div className="flex flex-col gap-1">
-            <span className="text-[11px] text-muted">Production (kWh)</span>
-            <StackedBars
-              height={120}
-              ariaLabel={`Production solaire ${byMonth ? "par mois" : "par jour"}, ${period.label}`}
-              bars={solar.points.map((p, i) => ({
-                key: p.key,
-                label: label(p.key, i),
-                title: `${pointTitle(p.key)} : ${formatKwh(p.kwh, p.kwh < 10 ? 1 : 0)}`,
-                segments: [{ value: p.kwh, color: "bg-solar", label: "Production" }],
-              }))}
-            />
+        <div className="flex flex-col gap-2">
+          <div className="flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-muted">
+            <span className="flex items-center gap-1.5">
+              <span className="size-2 rounded-[2px] bg-solar" />
+              Production (kWh)
+            </span>
+            {!solar.noLocation && (
+              <span className="flex items-center gap-1.5">
+                <span className="h-0.5 w-3 rounded-full" style={{ background: SUNSHINE }} />
+                Ensoleillement (heures, échelle propre)
+              </span>
+            )}
           </div>
-          {!solar.noLocation && (
-            <div className="flex flex-col gap-1">
-              <span className="text-[11px] text-muted">Ensoleillement (heures)</span>
-              <StackedBars
-                height={64}
-                ariaLabel={`Heures d'ensoleillement ${byMonth ? "par mois" : "par jour"}, ${period.label}`}
-                bars={solar.points.map((p, i) => ({
-                  key: p.key,
-                  label: label(p.key, i),
-                  title: `${pointTitle(p.key)} : ${p.sunshineHours === null ? "inconnu" : fmtHours(p.sunshineHours)}`,
-                  segments: [
-                    { value: p.sunshineHours ?? 0, color: "bg-[#8A8E86]", label: "Ensoleillement" },
-                  ],
-                }))}
-              />
-            </div>
-          )}
-        </>
+          <StackedBars
+            height={140}
+            ariaLabel={`Production solaire et ensoleillement ${byMonth ? "par mois" : "par jour"}, ${period.label}`}
+            bars={solar.points.map((p, i) => ({
+              key: p.key,
+              label: label(p.key, i),
+              title: `${pointTitle(p.key)} : ${formatKwh(p.kwh, p.kwh < 10 ? 1 : 0)}${
+                solar.noLocation || p.sunshineHours === null
+                  ? ""
+                  : ` · ${fmtHours(p.sunshineHours)} de soleil`
+              }`,
+              segments: [{ value: p.kwh, color: "bg-solar", label: "Production" }],
+            }))}
+            line={
+              solar.noLocation
+                ? undefined
+                : { values: solar.points.map((p) => p.sunshineHours), color: SUNSHINE }
+            }
+          />
+        </div>
       )}
     </Card>
   );

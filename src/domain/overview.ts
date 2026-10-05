@@ -34,6 +34,24 @@ export const monthLabel = (key: string) => {
   return `${MONTHS[(m ?? 1) - 1]} ${y}`;
 };
 
+const MONTHS_SHORT = [
+  "janv.",
+  "févr.",
+  "mars",
+  "avr.",
+  "mai",
+  "juin",
+  "juil.",
+  "août",
+  "sept.",
+  "oct.",
+  "nov.",
+  "déc.",
+];
+
+/** Mois abrégé d'une clé « AAAA-MM » (libellés sous les barres). */
+export const shortMonth = (key: string) => MONTHS_SHORT[Number(key.slice(5, 7)) - 1] ?? key;
+
 const nextMonth = (key: string) => {
   const [y = 0, m = 1] = key.split("-").map(Number);
   return m === 12 ? `${y + 1}-01` : `${y}-${String(m + 1).padStart(2, "0")}`;

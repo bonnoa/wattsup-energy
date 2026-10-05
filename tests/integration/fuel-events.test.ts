@@ -4,6 +4,7 @@ import { db } from "@/db";
 import { fuelEvent } from "@/db/schema";
 import type { HouseholdContext } from "@/server/context";
 import {
+  addPastConsumption,
   addPurchase,
   addQuickConsumption,
   deleteFuelEvent,
@@ -36,6 +37,21 @@ describe("combustibles", () => {
 
     await setStock(ctx, { fuel: "pellet", qty: 50, unit: "bag" }, new Date("2025-11-01T09:00:00Z"));
     expect(await fuelStock(ctx, "pellet", new Date("2025-11-02T00:00:00Z"))).toBe(50 * 15);
+  });
+
+  it("consommation passée : total d'un mois terminé, daté du 15 à midi ; mois en cours refusé", async () => {
+    const ctx = await createTestHousehold();
+    const now = new Date("2026-10-05T08:00:00Z");
+    await addPastConsumption(ctx, { fuel: "pellet", qty: 42, unit: "bag", month: "2025-01" }, now);
+    const [event] = await listFuelEvents(ctx);
+    expect(event).toMatchObject({ type: "consumption", qty: 42, unit: "bag" });
+    expect(event?.at.toISOString()).toBe("2025-01-15T11:00:00.000Z");
+    await expect(
+      addPastConsumption(ctx, { fuel: "pellet", qty: 1, unit: "bag", month: "2026-10" }, now),
+    ).rejects.toThrow(FuelError);
+    await expect(
+      addPastConsumption(ctx, { fuel: "wood", qty: 1, unit: "bag", month: "2025-01" }, now),
+    ).rejects.toThrow(FuelError);
   });
 
   it("bois : ½ stère par tap ; unité incohérente refusée", async () => {

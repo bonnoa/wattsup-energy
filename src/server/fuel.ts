@@ -8,7 +8,7 @@ import {
   type FuelEvent,
   type FuelUnit,
 } from "@/domain/heating/fuel";
-import { zonedInstant } from "@/lib/time";
+import { localParts, zonedInstant } from "@/lib/time";
 import type { HouseholdContext } from "./context";
 
 // Saisie des combustibles (T24). Chaque opération filtre par ctx.householdId.
@@ -24,6 +24,8 @@ const assertUnit = (fuel: Fuel, unit: FuelUnit) => {
 
 export interface FuelEventRow extends FuelEvent {
   id: string;
+  /** Moment de la saisie (le journal liste les dernières saisies). */
+  createdAt: Date;
 }
 
 /** Quantité d'un tap : un sac de granulés, un demi-stère de bois. */
@@ -40,6 +42,7 @@ const toRow = (r: typeof fuelEvent.$inferSelect): FuelEventRow => ({
   qty: r.qty,
   unit: r.unit,
   priceEur: r.priceEur,
+  createdAt: r.createdAt,
 });
 
 /** Tous les événements du foyer, du plus ancien au plus récent (calcul du stock). */
@@ -98,6 +101,35 @@ export async function addPurchase(ctx: HouseholdContext, input: PurchaseInput) {
     at: zonedInstant(input.date, 12, ctx.timezone),
     ...normalize(ctx, input.qty, input.unit),
     priceEur: input.priceEur,
+  });
+}
+
+export interface PastConsumptionInput {
+  fuel: Fuel;
+  qty: number;
+  unit: FuelUnit;
+  /** Mois « AAAA-MM » déjà terminé. */
+  month: string;
+}
+
+/**
+ * « Consommation passée » : le total d'un mois terminé, daté du 15 à midi (heure locale),
+ * pour retrouver les saisons d'avant l'appli (prévision, coût de chauffe, N-1).
+ */
+export async function addPastConsumption(
+  ctx: HouseholdContext,
+  input: PastConsumptionInput,
+  now = new Date(),
+) {
+  assertUnit(input.fuel, input.unit);
+  if (input.month >= localParts(now, ctx.timezone).date.slice(0, 7)) {
+    throw new FuelError("choisissez un mois terminé : le mois en cours se saisit sac par sac");
+  }
+  return insert(ctx, {
+    fuel: input.fuel,
+    type: "consumption",
+    at: zonedInstant(`${input.month}-15`, 12, ctx.timezone),
+    ...normalize(ctx, input.qty, input.unit),
   });
 }
 

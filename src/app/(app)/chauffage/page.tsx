@@ -1,4 +1,5 @@
 import { PageHeader } from "@/components/page-header";
+import { localParts } from "@/lib/time";
 import {
   currentStock,
   referencePrice,
@@ -45,11 +46,20 @@ export default async function HeatingPage({
   ];
   const events = fuels.length > 0 ? await listFuelEvents(ctx) : [];
   const now = new Date();
+  // Dernières saisies d'abord : une consommation passée y apparaît tout de suite.
   const log = events
     .filter((e) => fuels.includes(e.fuel))
-    .slice(-20)
-    .reverse()
-    .map((e) => ({ ...e, at: e.at.toISOString() }));
+    .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+    .slice(0, 20)
+    .map((e) => ({
+      id: e.id,
+      fuel: e.fuel,
+      type: e.type,
+      at: e.at.toISOString(),
+      qty: e.qty,
+      unit: e.unit,
+      priceEur: e.priceEur,
+    }));
 
   return (
     <>
@@ -83,7 +93,8 @@ export default async function HeatingPage({
         <FuelLog
           items={log}
           timezone={ctx.timezone}
-          showFuel={fuels.length > 1}
+          fuels={fuels}
+          currentMonth={localParts(now, ctx.timezone).date.slice(0, 7)}
           settings={{
             pelletBagKg: ctx.settings.pelletBagKg,
             pelletBagsPerPallet: ctx.settings.pelletBagsPerPallet,

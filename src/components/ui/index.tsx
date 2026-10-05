@@ -208,13 +208,47 @@ export function SwitchRow({
         <span className="text-sm font-medium">{label}</span>
         {description && <span className="text-xs text-subtle text-pretty">{description}</span>}
       </span>
+      <SwitchTrack checked={checked} />
+    </button>
+  );
+}
+
+/** Piste et pastille d'un interrupteur (la pastille glisse à droite quand c'est actif). */
+function SwitchTrack({ checked, small = false }: { checked: boolean; small?: boolean }) {
+  return (
+    <span
+      aria-hidden
+      className={`flex flex-none rounded-full transition-colors ${
+        small ? "h-5 w-9 p-[3px]" : "h-6 w-[42px] p-[3px]"
+      } ${checked ? "justify-end bg-ink" : "justify-start bg-[#D6D1C5]"}`}
+    >
       <span
-        className={`flex h-6 w-[42px] flex-none rounded-full p-[3px] transition-colors ${
-          checked ? "justify-end bg-ink" : "justify-start bg-[#D6D1C5]"
-        }`}
-      >
-        <span className="size-[18px] rounded-full bg-surface shadow-[0_1px_2px_rgba(0,0,0,0.2)]" />
-      </span>
+        className={`${small ? "size-[14px]" : "size-[18px]"} rounded-full bg-surface shadow-[0_1px_2px_rgba(0,0,0,0.2)]`}
+      />
+    </span>
+  );
+}
+
+/** Option activable dans une barre d'outils de graphique : petit interrupteur et libellé. */
+export function Toggle({
+  label,
+  checked,
+  onChange,
+}: {
+  label: string;
+  checked: boolean;
+  onChange: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      onClick={onChange}
+      className="flex min-h-9 items-center gap-2 text-[13px] font-medium text-ink"
+    >
+      <SwitchTrack checked={checked} small />
+      {label}
     </button>
   );
 }

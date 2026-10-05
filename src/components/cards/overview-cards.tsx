@@ -92,6 +92,8 @@ export function BudgetCard({ overview }: { overview: Ok }) {
     budget.previousCents && budget.previousCents > 0
       ? budget.totalCents / budget.previousCents - 1
       : null;
+  // Écart en euros ; les centimes seulement sous 10 €, sinon « +0 € » pour un petit écart.
+  const gap = Math.abs(budget.totalCents - (budget.previousCents ?? 0));
   // Période en cours : comparée aux mêmes jours de l'année précédente.
   const previousYear = Number(period.key.slice(0, 4)) - 1;
   const previousLabel = !period.complete
@@ -110,6 +112,7 @@ export function BudgetCard({ overview }: { overview: Ok }) {
             className={`text-xs font-medium tabular-nums ${delta <= 0 ? "text-[#7FD1B0]" : "text-[#F2A091]"}`}
           >
             {delta <= 0 ? "−" : "+"}
+            {formatEurFromCents(gap, gap < 1000 ? 2 : 0)} · {delta <= 0 ? "−" : "+"}
             {formatPercent(Math.abs(delta))} vs {previousLabel}
           </span>
         )}

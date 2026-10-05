@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { StackedBars } from "@/components/charts/stacked-bars";
-import { Card } from "@/components/ui";
+import { Card, Toggle } from "@/components/ui";
 import { monthLabel, shortMonth, type Period } from "@/domain/overview";
 import { formatEurFromCents, formatKwh, formatPercent } from "@/lib/format";
 import type { MonthCost } from "@/server/queries/overview";
@@ -148,17 +148,13 @@ export function MonthlyCostCard({ months, period }: { months: MonthCost[]; perio
         <div className="flex min-w-0 flex-[1_1_320px] flex-col gap-2">
           {hasPrevious && (
             <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-muted">
-              <label className="flex items-center gap-2 text-[13px] text-ink">
-                <input
-                  type="checkbox"
-                  checked={compare}
-                  onChange={toggleCompare}
-                  className="size-4 accent-[var(--color-grid)]"
-                />
-                Comparer à {previousYear}
-              </label>
+              <Toggle
+                label={`Comparer à ${previousYear}`}
+                checked={compare}
+                onChange={toggleCompare}
+              />
               {comparing && (
-                <>
+                <span className="flex gap-3">
                   <span className="flex items-center gap-1.5">
                     <span className="size-2 rounded-[2px] bg-grid" />
                     {year}
@@ -167,7 +163,7 @@ export function MonthlyCostCard({ months, period }: { months: MonthCost[]; perio
                     <span className="size-2 rounded-[2px] bg-grid/25" />
                     {previousYear}
                   </span>
-                </>
+                </span>
               )}
             </div>
           )}

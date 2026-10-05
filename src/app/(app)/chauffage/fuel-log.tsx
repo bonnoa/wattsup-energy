@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { Badge, button, Card, Icon, type IconName } from "@/components/ui";
 import {
   toBaseQty,
@@ -12,6 +12,7 @@ import {
 } from "@/domain/heating/fuel";
 import { deleteFuelEventAction, updateFuelEventAction } from "@/server/actions/fuel";
 import { EVENT_LABELS, FUEL_LABELS, formatFuelQty, UNIT_NAMES } from "./labels";
+import { PastConsumptionForm } from "./past-consumption-form";
 
 export interface LogItem {
   id: string;
@@ -133,24 +134,40 @@ function unitPrice(item: LogItem, settings: FuelSettings): string | null {
 export function FuelLog({
   items,
   timezone,
-  showFuel,
+  fuels,
+  currentMonth,
   settings,
 }: {
   items: LogItem[];
   timezone: string;
-  /** Granulés et bois actifs : on précise le combustible de chaque ligne. */
-  showFuel: boolean;
+  /** Combustibles actifs ; s'il y en a deux, on précise celui de chaque ligne. */
+  fuels: readonly Fuel[];
+  /** Mois en cours « AAAA-MM » (borne de la consommation passée). */
+  currentMonth: string;
   /** Poids du sac et sacs par palette, pour le prix par sac. */
   settings: FuelSettings;
 }) {
   const router = useRouter();
   const [editing, setEditing] = useState<string | null>(null);
+  const [pastOpen, setPastOpen] = useState(false);
   const [pending, startTransition] = useTransition();
+  const showFuel = fuels.length > 1;
+  // Le lien de la prévision (« Saisir une consommation passée ») ouvre le formulaire.
+  useEffect(() => {
+    const open = () => {
+      if (window.location.hash === "#consommation-passee") setPastOpen(true);
+    };
+    open();
+    window.addEventListener("hashchange", open);
+    return () => window.removeEventListener("hashchange", open);
+  }, []);
   const when = (iso: string) =>
     new Date(iso).toLocaleString("fr-FR", {
       weekday: "short",
       day: "numeric",
       month: "short",
+      // L'année seulement quand elle diffère : une consommation passée reste lisible.
+      year: iso.slice(0, 4) === currentMonth.slice(0, 4) ? undefined : "numeric",
       hour: "2-digit",
       minute: "2-digit",
       timeZone: timezone,
@@ -159,8 +176,27 @@ export function FuelLog({
   return (
     <Card
       title="Journal des combustibles"
-      description="Les 20 derniers achats, relevés et consommations."
+      description="Vos 20 dernières saisies : achats, relevés et consommations."
+      actions={
+        !pastOpen && (
+          <button type="button" onClick={() => setPastOpen(true)} className={button.secondary}>
+            <Icon name="plus" size={14} />
+            Consommation passée
+          </button>
+        )
+      }
     >
+      {pastOpen && (
+        <PastConsumptionForm
+          fuels={fuels}
+          currentMonth={currentMonth}
+          onClose={() => {
+            setPastOpen(false);
+            if (window.location.hash)
+              history.replaceState(null, "", window.location.pathname + window.location.search);
+          }}
+        />
+      )}
       {items.length === 0 ? (
         <p className="text-sm text-muted">
           Rien pour l&apos;instant : commencez par un achat ou un relevé de stock.

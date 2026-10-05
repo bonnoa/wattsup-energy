@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { getHouseholdContext } from "../context";
 import {
+  addPastConsumption,
   addPurchase,
   addQuickConsumption,
   deleteFuelEvent,
@@ -60,6 +61,22 @@ export async function purchaseAction(input: unknown): Promise<FuelActionResult> 
   if (!p.ok) return fail(p.errors);
   const ctx = await getHouseholdContext();
   return run(() => addPurchase(ctx, p.data));
+}
+
+/** « Consommation passée » : total d'un mois terminé. */
+export async function pastConsumptionAction(input: unknown): Promise<FuelActionResult> {
+  const p = parse(
+    z.object({
+      fuel,
+      qty,
+      unit,
+      month: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/, "mois attendu"),
+    }),
+    input,
+  );
+  if (!p.ok) return fail(p.errors);
+  const ctx = await getHouseholdContext();
+  return run(() => addPastConsumption(ctx, p.data));
 }
 
 /** « Corriger le stock ». */

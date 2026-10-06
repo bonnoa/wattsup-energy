@@ -2,12 +2,13 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 import { authClient } from "@/lib/auth-client";
 
 // Menu du profil : le bloc nom (barre latérale) ou l'initiale (mobile) l'ouvrent. « Mon
-// compte », puis un trait, puis « Se déconnecter ». Fermé par Échap, un clic à côté ou
-// un changement de page.
+// compte », puis un trait, puis « Se déconnecter ». Au clavier : focus sur le premier
+// élément à l'ouverture, flèches, Début / Fin ; Échap referme et rend le focus au bouton.
+// Fermé aussi par un clic à côté ou un changement de page.
 
 const itemClass =
   "flex w-full items-center gap-2.5 rounded-[8px] px-3 py-2.5 text-left text-[13px] font-medium text-ink no-underline hover:bg-bg";
@@ -65,22 +66,40 @@ export function AccountMenu({
   const initial = userName.slice(0, 1).toUpperCase();
   const onAccount = pathname === "/compte";
 
+  const menu = useRef<HTMLDivElement>(null);
+  const button = useRef<HTMLButtonElement>(null);
+  const items = () => [...(menu.current?.querySelectorAll<HTMLElement>('[role="menuitem"]') ?? [])];
+
   useEffect(() => setOpen(false), [pathname]);
   useEffect(() => {
     if (!open) return;
-    const close = (e: MouseEvent | KeyboardEvent) => {
-      if (
-        e instanceof KeyboardEvent ? e.key === "Escape" : !root.current?.contains(e.target as Node)
-      )
-        setOpen(false);
+    // Menu ouvert : le focus va sur « Mon compte » (navigation au clavier, ARIA menu).
+    items()[0]?.focus();
+    const outside = (e: MouseEvent) => {
+      if (!root.current?.contains(e.target as Node)) setOpen(false);
     };
-    document.addEventListener("mousedown", close);
-    document.addEventListener("keydown", close);
-    return () => {
-      document.removeEventListener("mousedown", close);
-      document.removeEventListener("keydown", close);
-    };
+    document.addEventListener("mousedown", outside);
+    return () => document.removeEventListener("mousedown", outside);
   }, [open]);
+
+  /** Flèches, Début / Fin entre les éléments ; Échap referme et rend le focus au bouton. */
+  const onMenuKey = (e: KeyboardEvent) => {
+    const list = items();
+    const i = list.indexOf(document.activeElement as HTMLElement);
+    const go = (n: number) => {
+      e.preventDefault();
+      list[(n + list.length) % list.length]?.focus();
+    };
+    if (e.key === "ArrowDown") go(i + 1);
+    else if (e.key === "ArrowUp") go(i - 1);
+    else if (e.key === "Home") go(0);
+    else if (e.key === "End") go(list.length - 1);
+    else if (e.key === "Escape") {
+      e.preventDefault();
+      setOpen(false);
+      button.current?.focus();
+    } else if (e.key === "Tab") setOpen(false);
+  };
 
   const signOut = async () => {
     await authClient.signOut();
@@ -91,6 +110,7 @@ export function AccountMenu({
   const trigger =
     variant === "sidebar" ? (
       <button
+        ref={button}
         type="button"
         aria-haspopup="menu"
         aria-expanded={open}
@@ -120,6 +140,7 @@ export function AccountMenu({
       </button>
     ) : (
       <button
+        ref={button}
         type="button"
         aria-haspopup="menu"
         aria-expanded={open}
@@ -138,8 +159,10 @@ export function AccountMenu({
       {trigger}
       {open && (
         <div
+          ref={menu}
           role="menu"
           aria-label="Compte"
+          onKeyDown={onMenuKey}
           className={`absolute z-30 w-60 rounded-control border border-border bg-surface p-1.5 text-ink shadow-[0_8px_24px_rgba(0,0,0,0.14)] ${
             variant === "sidebar" ? "bottom-full left-0 mb-2" : "top-full right-0 mt-2"
           }`}

@@ -9,11 +9,20 @@ type Mode = "connexion" | "inscription";
 
 const COPY: Record<
   Mode,
-  { title: string; submit: string; switchText: string; switchHref: string; switchLabel: string }
+  {
+    title: string;
+    submit: string;
+    /** Libellé pendant l'envoi. */
+    pending: string;
+    switchText: string;
+    switchHref: string;
+    switchLabel: string;
+  }
 > = {
   connexion: {
     title: "Connexion",
     submit: "Se connecter",
+    pending: "Connexion…",
     switchText: "Pas encore de compte ?",
     switchHref: "/inscription",
     switchLabel: "Créer un compte",
@@ -21,6 +30,7 @@ const COPY: Record<
   inscription: {
     title: "Créer un compte",
     submit: "Créer mon compte",
+    pending: "Création du compte…",
     switchText: "Déjà inscrit ?",
     switchHref: "/connexion",
     switchLabel: "Se connecter",
@@ -37,7 +47,7 @@ const ERRORS: Record<string, string> = {
 };
 
 const inputClass =
-  "h-11 w-full rounded-[8px] border border-border-strong bg-surface px-3 text-sm outline-none focus:border-ink";
+  "h-11 w-full rounded-[8px] border border-border-strong bg-surface px-3 text-sm outline-none focus:border-ink focus-visible:ring-2 focus-visible:ring-grid/30";
 
 export function AuthForm({
   mode,
@@ -107,7 +117,14 @@ export function AuthForm({
       )}
       <label className="flex flex-col gap-1.5 text-sm">
         <span className="text-muted">Email</span>
-        <input name="email" type="email" required autoComplete="email" className={inputClass} />
+        <input
+          name="email"
+          type="email"
+          required
+          autoComplete="email"
+          spellCheck={false}
+          className={inputClass}
+        />
       </label>
       <label className="flex flex-col gap-1.5 text-sm">
         <span className="text-muted">Mot de passe</span>
@@ -130,7 +147,7 @@ export function AuthForm({
         disabled={pending}
         className="h-11 rounded-[8px] bg-ink text-sm font-medium text-bg disabled:opacity-60"
       >
-        {pending ? "…" : copy.submit}
+        {pending ? copy.pending : copy.submit}
       </button>
       {(mode === "inscription" || signupOpen) && (
         <p className="text-sm text-muted">

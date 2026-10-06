@@ -6,7 +6,7 @@ import { button, Card, Notice } from "@/components/ui";
 import { authClient } from "@/lib/auth-client";
 
 const inputClass =
-  "h-10 w-full rounded-[8px] border border-border-strong bg-surface px-3 text-[14px] outline-none focus:border-ink";
+  "h-10 w-full rounded-[8px] border border-border-strong bg-surface px-3 text-[14px] outline-none focus:border-ink focus-visible:ring-2 focus-visible:ring-grid/30";
 const labelClass = "flex flex-col gap-1.5 text-xs text-muted";
 
 type Message = { ok: boolean; text: string } | null;
@@ -90,6 +90,7 @@ function EmailForm({ email }: { email: string }) {
               <input
                 name="email"
                 type="email"
+                spellCheck={false}
                 required
                 autoComplete="email"
                 className={inputClass}
@@ -100,6 +101,7 @@ function EmailForm({ email }: { email: string }) {
               <input
                 name="confirm"
                 type="email"
+                spellCheck={false}
                 required
                 autoComplete="off"
                 className={inputClass}

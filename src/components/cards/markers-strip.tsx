@@ -26,7 +26,7 @@ const KINDS: Record<Marker["kind"], { label: string; icon: IconName }> = {
 };
 
 const inputClass =
-  "h-10 w-full rounded-[8px] border border-border-strong bg-surface px-3 text-[14px] outline-none focus:border-ink";
+  "h-10 w-full rounded-[8px] border border-border-strong bg-surface px-3 text-[14px] outline-none focus:border-ink focus-visible:ring-2 focus-visible:ring-grid/30";
 const labelClass = "flex flex-col gap-1.5 text-xs text-muted";
 
 function MarkerForm({

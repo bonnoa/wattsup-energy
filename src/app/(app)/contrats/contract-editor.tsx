@@ -15,7 +15,7 @@ const COLORS: { id: TempoColor; label: string; dot: string }[] = [
 ];
 
 const inputClass =
-  "h-10 w-full rounded-[8px] border border-border-strong bg-surface px-3 text-[13px] outline-none focus:border-ink";
+  "h-10 w-full rounded-[8px] border border-border-strong bg-surface px-3 text-[13px] outline-none focus:border-ink focus-visible:ring-2 focus-visible:ring-grid/30";
 const labelClass = "flex flex-col gap-1.5 text-xs text-muted";
 const smallButton =
   "rounded-[8px] border border-border-strong px-2.5 py-1.5 text-xs text-[#5E625C] hover:bg-bg";

@@ -36,6 +36,39 @@
     height: 100%;
   }
 
+  /* Thème clair seulement : contrôles natifs (sélecteurs, dates) clairs même si le système
+     est en sombre. */
+  html {
+    color-scheme: light;
+  }
+
+  /* Focus clavier visible partout, à la couleur de la charte. */
+  :focus-visible {
+    outline: 2px solid var(--color-grid);
+    outline-offset: 2px;
+  }
+
+  /* Pas de délai de double-tap sur mobile. */
+  a,
+  button,
+  input,
+  select,
+  summary,
+  label {
+    touch-action: manipulation;
+  }
+
+  /* Mouvement réduit : transitions et animations (pastille qui pulse) neutralisées. */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    ::before,
+    ::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+
   body {
     background: var(--color-bg);
     color: var(--color-ink);

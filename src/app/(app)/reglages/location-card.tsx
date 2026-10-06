@@ -16,7 +16,7 @@ const fmtDate = (iso: string) =>
 const fmtCoord = (n: number) => n.toLocaleString("fr-FR", { minimumFractionDigits: 2 });
 
 const inputClass =
-  "h-10 min-w-0 flex-1 rounded-[8px] border border-border-strong bg-surface px-3 text-[13px] outline-none focus:border-ink";
+  "h-10 min-w-0 flex-1 rounded-[8px] border border-border-strong bg-surface px-3 text-[13px] outline-none focus:border-ink focus-visible:ring-2 focus-visible:ring-grid/30";
 
 export function LocationCard({ status }: { status: Status | null }) {
   const [editing, setEditing] = useState(status === null);

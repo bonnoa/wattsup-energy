@@ -24,8 +24,9 @@ export const metadata: Metadata = {
   icons: { icon: "/wattsup.svg" },
 };
 
+// Barre du navigateur mobile : même couleur que le fond de page (en-tête mobile clair).
 export const viewport: Viewport = {
-  themeColor: "#16181A",
+  themeColor: "#F4F2EC",
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {

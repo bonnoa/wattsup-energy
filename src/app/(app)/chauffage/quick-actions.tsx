@@ -29,7 +29,7 @@ export interface FuelSummary {
 const UNDO_SECONDS = 10;
 
 const inputClass =
-  "h-11 w-full rounded-[8px] border border-border-strong bg-surface px-3 text-[15px] outline-none focus:border-ink tabular-nums";
+  "h-11 w-full rounded-[8px] border border-border-strong bg-surface px-3 text-[15px] outline-none focus:border-ink focus-visible:ring-2 focus-visible:ring-grid/30 tabular-nums";
 const labelClass = "flex flex-col gap-1.5 text-xs text-muted";
 
 const todayIso = () => new Date().toISOString().slice(0, 10);
@@ -171,7 +171,7 @@ function StockForm({ fuel, initial, onDone }: { fuel: Fuel; initial: number; onD
             value={text}
             onChange={(e) => setText(e.target.value)}
             aria-label={`${UNIT_NAMES[unit]} restants`}
-            className="w-full bg-transparent text-center text-2xl font-semibold outline-none tabular-nums"
+            className="w-full rounded-[6px] bg-transparent text-center text-2xl font-semibold outline-none tabular-nums focus-visible:ring-2 focus-visible:ring-grid/30"
           />
           <span className="text-[11px] text-subtle">{UNIT_NAMES[unit]} restants</span>
         </label>

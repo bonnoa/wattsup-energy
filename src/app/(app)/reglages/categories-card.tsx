@@ -45,7 +45,7 @@ const kwhFmt = (n: number) =>
   n.toLocaleString("fr-FR", { minimumFractionDigits: n < 10 ? 1 : 0, maximumFractionDigits: 1 });
 
 const inputClass =
-  "h-10 w-full rounded-[8px] border border-border-strong bg-surface px-3 text-[13px] outline-none focus:border-ink";
+  "h-10 w-full rounded-[8px] border border-border-strong bg-surface px-3 text-[13px] outline-none focus:border-ink focus-visible:ring-2 focus-visible:ring-grid/30";
 const labelClass = "flex flex-col gap-1.5 text-xs text-muted";
 
 const blank = (name = "", slug = ""): CategoryInput => ({

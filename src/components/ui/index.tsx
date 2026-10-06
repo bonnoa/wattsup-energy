@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { Fragment, type ReactNode } from "react";
 import { Icon, type IconName } from "./icon";
 
 // Briques d'interface partagées (SPEC §2 « Principes d'interface ») : une carte par objet,
@@ -168,11 +168,15 @@ export interface Figure {
  * (`ops[i]` entre le chiffre i et le suivant, ex. « − » puis « = »).
  */
 export function Figures({ items, ops }: { items: Figure[]; ops?: string[] }) {
+  // Colonnes égales posées sur un filet : le calcul est ancré à la carte, sans fond.
+  const columns = items.map(() => "minmax(0,1fr)").join(" auto ");
   return (
-    <div className="flex flex-wrap items-end gap-x-3 gap-y-2">
+    <div
+      className="grid items-end gap-x-3 border-t border-track pt-3"
+      style={{ gridTemplateColumns: columns }}
+    >
       {items.map((f, i) => (
-        // Le séparateur reste collé au chiffre qui le suit quand la ligne se coupe.
-        <div key={f.label} className="flex items-end gap-3">
+        <Fragment key={f.label}>
           {i > 0 &&
             (ops?.[i - 1] ? (
               <span aria-hidden className="pb-px text-[17px] leading-none text-subtle">
@@ -181,9 +185,9 @@ export function Figures({ items, ops }: { items: Figure[]; ops?: string[] }) {
             ) : (
               <span aria-hidden className="h-8 w-px self-center bg-border" />
             ))}
-          <div className="flex min-w-0 flex-col gap-0.5">
-            <span className="text-[11px] text-muted">{f.label}</span>
-            <span className="flex items-baseline gap-1">
+          <div className="flex min-w-0 flex-col gap-1">
+            <span className="text-[11px] leading-tight text-muted text-pretty">{f.label}</span>
+            <span className="flex flex-wrap items-baseline gap-x-1">
               <span
                 className={`text-[17px] leading-none font-semibold tabular-nums ${f.tone ?? ""}`}
               >
@@ -192,7 +196,7 @@ export function Figures({ items, ops }: { items: Figure[]; ops?: string[] }) {
               {f.unit && <span className="text-[11px] text-subtle">{f.unit}</span>}
             </span>
           </div>
-        </div>
+        </Fragment>
       ))}
     </div>
   );

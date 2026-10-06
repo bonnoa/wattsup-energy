@@ -202,15 +202,17 @@ export function FuelLog({
     <Card
       title="Journal des combustibles"
       description="Vos 20 dernières saisies : achats, relevés et consommations."
-      actions={
-        !pastOpen && (
-          <button type="button" onClick={() => setPastOpen(true)} className={button.secondary}>
-            <Icon name="plus" size={14} />
-            Consommation passée
-          </button>
-        )
-      }
     >
+      {!pastOpen && (
+        <button
+          type="button"
+          onClick={() => setPastOpen(true)}
+          className={`${button.secondary} self-start`}
+        >
+          <Icon name="plus" size={14} />
+          Consommation passée
+        </button>
+      )}
       {pastOpen && (
         <PastConsumptionForm
           fuels={fuels}

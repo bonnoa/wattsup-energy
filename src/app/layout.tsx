@@ -21,7 +21,9 @@ const jetbrainsMono = localFont({
 export const metadata: Metadata = {
   title: "WattsUp Energy",
   description: "Analyse et optimisation de l'énergie du foyer, alimentée par Home Assistant.",
-  icons: { icon: "/wattsup.svg" },
+  icons: { icon: "/wattsup.svg", apple: "/icons/apple-touch-icon.png" },
+  // Ajout à l'écran d'accueil sur iPhone : plein écran, barre d'état claire.
+  appleWebApp: { capable: true, title: "WattsUp", statusBarStyle: "default" },
 };
 
 // Barre du navigateur mobile : même couleur que le fond de page (en-tête mobile clair).

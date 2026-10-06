@@ -24,5 +24,6 @@ export function middleware(request: NextRequest) {
 
 export const config = {
   // Exclut l'API (auth, ingestion par token, santé) et les fichiers statiques.
-  matcher: ["/((?!api|_next/static|_next/image|.*\\.(?:svg|png|ico|txt)$).*)"],
+  // Le manifeste et les icônes de l'appli installable restent publics.
+  matcher: ["/((?!api|_next/static|_next/image|.*\\.(?:svg|png|ico|txt|webmanifest)$).*)"],
 };

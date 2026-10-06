@@ -166,6 +166,8 @@ async function persistHourly(
           kwh: sql`case when ${energyInterval.source} = 'csv' then excluded.kwh else ${energyInterval.kwh} + excluded.kwh end`,
           source: sql`'ha'`,
         },
+        // Une valeur corrigée à la main n'est plus touchée.
+        setWhere: sql`${energyInterval.source} <> 'manual'`,
       });
   }
   if (states.length > 0) {
@@ -213,6 +215,7 @@ async function persistDaily(
       .onConflictDoUpdate({
         target: intervalKey,
         set: { kwh: sql`excluded.kwh`, source: sql`'ha'` },
+        setWhere: sql`${energyInterval.source} <> 'manual'`,
       });
   }
 

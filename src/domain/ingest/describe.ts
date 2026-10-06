@@ -1,4 +1,5 @@
 import { formatNumber } from "@/lib/format";
+import { metricLabel } from "./metrics";
 
 // Avertissements et erreurs du journal des envois (SPEC §6.1), en phrases pour l'interface.
 // Le journal garde les codes bruts ; une entrée inconnue (version future) est ignorée.
@@ -8,15 +9,6 @@ export interface WarningLine {
   tone: "info" | "warning";
   text: string;
 }
-
-const CORE_LABELS: Record<string, string> = {
-  grid_import: "import réseau",
-  grid_export: "export réseau",
-  solar_production: "production solaire",
-  battery_charge: "charge batterie",
-  battery_charge_grid: "charge batterie depuis le réseau",
-  battery_discharge: "décharge batterie",
-};
 
 const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
@@ -52,10 +44,7 @@ export function describeWarnings(
   warnings: readonly unknown[],
   categoryNames: Record<string, string>,
 ): WarningLine[] {
-  const label = (metric: string) =>
-    metric.startsWith("category:")
-      ? (categoryNames[metric.slice(9)] ?? `« ${metric.slice(9)} »`)
-      : (CORE_LABELS[metric] ?? metric);
+  const label = (metric: string) => metricLabel(metric, categoryNames);
 
   const groups = new Map<string, { tone: WarningLine["tone"]; text: string; labels: string[] }>();
   const lines: (WarningLine | string)[] = [];

@@ -164,7 +164,7 @@ Toutes les tables métier portent `household_id` (FK, `ON DELETE CASCADE`). **Au
 | `ingest_token` | tokens HA | `id`, `household_id`, `prefix` (affiché), `hash` (sha-256), `created_at`, `last_used_at`, `revoked_at` |
 | `ingest_log` | journal des pushes (30 j) | `household_id`, `received_at`, `status`, `error`, `payload_size` |
 | `meter_state` | dernier index connu par métrique, pour calculer les deltas | `household_id`, `metric`, `ts`, `value` |
-| `energy_interval` | **table de faits** | `household_id`, `start` (timestamptz), `granularity` (`hour`\|`day`), `metric`, `tariff_slot` (`all`\|`hp`\|`hc`), `kwh` numeric(12,4), `source` (`ha`\|`csv`) — PK `(household_id, metric, start, granularity, tariff_slot)` |
+| `energy_interval` | **table de faits** | `household_id`, `start` (timestamptz), `granularity` (`hour`\|`day`), `metric`, `tariff_slot` (`all`\|`hp`\|`hc`), `kwh` numeric(12,4), `source` (`ha`\|`csv`\|`manual`, correction de l'onglet Données) — PK `(household_id, metric, start, granularity, tariff_slot)` |
 | `weather_daily` | météo quotidienne **globale par maille** (donnée publique Open-Meteo, partagée entre les foyers d'une même maille de 0,01°) | `lat_e2`, `lon_e2` (coordonnées × 100, entiers), `date`, `t_min`, `t_max`, `t_mean`, `sunshine_s`, `radiation_mj_m2`, `source` (`forecast`\|`archive`), `fetched_at` — PK `(lat_e2, lon_e2, date)`. DJU calculé à la lecture. Remplace la table par foyer alimentée par HA jusqu'à T16b |
 | `tempo_calendar` | couleurs Tempo **globales** (partagées entre tous les foyers, donnée publique) | `date` PK, `color` (`bleu`\|`blanc`\|`rouge`), `source` (`rte`\|`community`\|`seed`), `fetched_at` |
 | `tempo_override` | couleur poussée par HA ou corrigée à la main, par foyer | `household_id`, `date`, `color`, `source` (`ha`\|`manual`) |
@@ -426,6 +426,13 @@ La météo ne passe plus par Home Assistant : le serveur la récupère auprès d
 - Un **repère** est une note datée posée sur la frise du temps pour expliquer une hausse ou une baisse de consommation : type (Équipement, Maintenance, Absence, Autre), texte court, date, et date de fin facultative pour une durée (« maintenance du 3 au 10 »).
 - **Repères automatiques**, déduits des données et non modifiables : début de chaque contrat souscrit (« Nouveau contrat : … ») et mise en service des équipements de Rentabilité.
 - Affichage sur la **Vue d'ensemble** : une ligne discrète sous le sélecteur de période (« 2 repères · … », dépliable pour lire, modifier ou supprimer ; rien s'il n'y en a pas), le bouton « + Repère » à côté (date préremplie : aujourd'hui si la période le contient, sinon son premier jour), et un **point sous le mois** concerné dans l'histogramme du coût mensuel (texte dans l'info-bulle ; toucher le mois l'ouvre avec ses repères). Un repère sur plusieurs mois marque chacun d'eux.
+
+### 7.11 Onglet Données (Réglages)
+Section technique pour contrôler et corriger les valeurs enregistrées, sans parcourir des centaines de milliers de lignes :
+- **Valeurs suspectes** : valeurs au-delà du seuil de plausibilité de leur compteur (§6, × 24 pour un jour), les plus récentes d'abord (100 au plus), à corriger ou supprimer en place.
+- **Un jour, un compteur** : les valeurs d'un jour local (24 heures, ou le total du jour et ses créneaux), corrigibles une à une ; suppression de toute la journée. Compteur et jour dans l'URL (`?onglet=donnees&compteur=…&jour=…`, par défaut l'import réseau, la veille).
+- **Supprimer une plage** : un compteur (ou tous), du … au … inclus ; aperçu (nombre de valeurs et kWh) puis suppression confirmée. La plage peut ensuite être réimportée (historique HA §6.4, ou CSV).
+- Une valeur corrigée passe en source **`manual`** : ni un envoi de Home Assistant (horaire ou quotidien), ni l'import CSV, ni l'historique ne la remplacent. Une correction au-delà du seuil de plausibilité est refusée.
 
 ## 8. Blueprint Home Assistant (livré en V1)
 

@@ -13,10 +13,13 @@ import type { HouseholdContext } from "@/server/context";
 import { getLastPushAt, listIngestLog } from "@/server/ingest/status";
 import { getActiveIngestToken } from "@/server/ingest/token";
 import { getLocationStatus } from "@/server/location";
+import { dayValues, storedMetrics, suspectValues, type StoredValue } from "@/server/energy-data";
+import { addDays, localParts } from "@/lib/time";
 import { pageContext } from "@/server/page";
 import { ScrollToActive } from "./active-tab";
 import { CategoriesCard } from "./categories-card";
 import { CsvCard } from "./csv-card";
+import { DayCard, RangeCard, SuspectCard } from "./data-cards";
 import { FuelSettingsCard } from "./fuel-settings-card";
 import { HaHistoryCard } from "./ha-history-card";
 import { IngestCard } from "./ingest-card";
@@ -153,10 +156,55 @@ async function HistoryTab({ ctx }: { ctx: HouseholdContext }) {
   );
 }
 
+const toItem = (v: StoredValue) => ({ ...v, start: v.start.toISOString() });
+
+async function DataTab({
+  ctx,
+  metric,
+  day,
+}: {
+  ctx: HouseholdContext;
+  metric: string | undefined;
+  day: string | undefined;
+}) {
+  const [metrics, suspects, categories] = await Promise.all([
+    storedMetrics(ctx),
+    suspectValues(ctx),
+    listCategories(ctx),
+  ]);
+  const names = Object.fromEntries(categories.map((c) => [c.slug, c.name]));
+  const today = localParts(new Date(), ctx.timezone).date;
+  // Par défaut : l'import réseau (ou le premier compteur), la veille.
+  const m =
+    metric && metrics.includes(metric)
+      ? metric
+      : (metrics.find((x) => x === "grid_import") ?? metrics[0] ?? "grid_import");
+  const d = day && /^\d{4}-\d{2}-\d{2}$/.test(day) ? day : addDays(today, -1);
+  const values = await dayValues(ctx, m, d);
+  return (
+    <div className={panel}>
+      <SuspectCard items={suspects.map(toItem)} names={names} timezone={ctx.timezone} />
+      <DayCard
+        metrics={metrics}
+        names={names}
+        metric={m}
+        day={d}
+        items={values.map(toItem)}
+        timezone={ctx.timezone}
+      />
+      <RangeCard metrics={metrics} names={names} today={today} />
+    </div>
+  );
+}
+
 export default async function SettingsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ onglet?: string | string[] }>;
+  searchParams: Promise<{
+    onglet?: string | string[];
+    compteur?: string | string[];
+    jour?: string | string[];
+  }>;
 }) {
   const ctx = await pageContext("/reglages");
   const p = ctx.profile;
@@ -164,7 +212,9 @@ export default async function SettingsPage({
   const tabs = SETTINGS_TABS.map((t) => t.id).filter(
     (id) => id !== "equipements" || p.solar || p.battery || p.pellet || p.wood,
   );
-  const tab = parseSettingsTab((await searchParams).onglet, tabs);
+  const params = await searchParams;
+  const tab = parseSettingsTab(params.onglet, tabs);
+  const one = (v: string | string[] | undefined) => (typeof v === "string" ? v : undefined);
   return (
     <>
       <PageHeader title="Réglages" subtitle="Votre foyer et la liaison avec Home Assistant" />
@@ -182,6 +232,9 @@ export default async function SettingsPage({
       {tab === "equipements" && <EquipmentTab ctx={ctx} />}
       {tab === "home-assistant" && <HomeAssistantTab ctx={ctx} />}
       {tab === "postes" && <CategoriesTab ctx={ctx} />}
+      {tab === "donnees" && (
+        <DataTab ctx={ctx} metric={one(params.compteur)} day={one(params.jour)} />
+      )}
       {tab === "historique" && <HistoryTab ctx={ctx} />}
     </>
   );

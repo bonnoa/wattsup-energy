@@ -20,6 +20,11 @@ export const SETTINGS_TABS = [
   },
   { id: "postes", label: "Postes", description: "Les appareils ou circuits suivis séparément." },
   {
+    id: "donnees",
+    label: "Données",
+    description: "Contrôler et corriger les valeurs enregistrées.",
+  },
+  {
     id: "historique",
     label: "Historique",
     description: "Votre historique, depuis Home Assistant ou un fichier CSV.",

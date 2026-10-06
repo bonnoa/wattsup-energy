@@ -143,7 +143,8 @@ export const meterState = pgTable(
 );
 
 export const intervalGranularity = pgEnum("interval_granularity", ["hour", "day"]);
-export const dataSource = pgEnum("data_source", ["ha", "csv"]);
+/** Origine d'une valeur : envoi HA, import CSV, ou correction manuelle (onglet Données). */
+export const dataSource = pgEnum("data_source", ["ha", "csv", "manual"]);
 
 /**
  * Table de faits : énergie par intervalle. `tariff_slot` vaut "all" sauf pour les

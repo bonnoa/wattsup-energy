@@ -91,6 +91,7 @@ export default async function HeatingPage({
       <SeasonSwitcher view={view} />
       <HeatingKpis view={view} />
       <HeatingCostCard view={view} />
+      {forecast && <ForecastCard view={forecast} />}
       {fuels.length > 0 && (
         <FuelLog
           items={log}
@@ -103,7 +104,6 @@ export default async function HeatingPage({
           }}
         />
       )}
-      {forecast && <ForecastCard view={forecast} />}
     </>
   );
 }

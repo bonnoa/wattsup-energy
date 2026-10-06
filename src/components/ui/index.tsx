@@ -154,6 +154,50 @@ export function StatTile({
   );
 }
 
+export interface Figure {
+  label: string;
+  value: string;
+  unit?: string;
+  /** Classe de couleur du chiffre (ex. `text-pellet`), pour le résultat d'un calcul. */
+  tone?: string;
+}
+
+/**
+ * Chiffres de détail, sans fond : ils soutiennent la réponse de la carte sans rivaliser
+ * avec elle. Séparés par un trait fin, ou par des opérateurs quand ils forment un calcul
+ * (`ops[i]` entre le chiffre i et le suivant, ex. « − » puis « = »).
+ */
+export function Figures({ items, ops }: { items: Figure[]; ops?: string[] }) {
+  return (
+    <div className="flex flex-wrap items-end gap-x-3 gap-y-2">
+      {items.map((f, i) => (
+        // Le séparateur reste collé au chiffre qui le suit quand la ligne se coupe.
+        <div key={f.label} className="flex items-end gap-3">
+          {i > 0 &&
+            (ops?.[i - 1] ? (
+              <span aria-hidden className="pb-px text-[17px] leading-none text-subtle">
+                {ops[i - 1]}
+              </span>
+            ) : (
+              <span aria-hidden className="h-8 w-px self-center bg-border" />
+            ))}
+          <div className="flex min-w-0 flex-col gap-0.5">
+            <span className="text-[11px] text-muted">{f.label}</span>
+            <span className="flex items-baseline gap-1">
+              <span
+                className={`text-[17px] leading-none font-semibold tabular-nums ${f.tone ?? ""}`}
+              >
+                {f.value}
+              </span>
+              {f.unit && <span className="text-[11px] text-subtle">{f.unit}</span>}
+            </span>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 /**
  * Encart d'explication : une donnée incohérente ou une étape manquante, dite en clair,
  * avec si possible l'action qui la corrige en un clic.

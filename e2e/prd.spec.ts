@@ -35,10 +35,10 @@ test("parcours 2 : 12 sacs en réserve → prévision de l'hiver prochain en pal
   const next = forecast.getByRole("radio", { name: "Saison prochaine" });
   if (await next.count()) await next.click();
   await expect(
-    forecast.getByText(/Pour passer l'hiver .* prévoyez \d+ palettes? \(\d+ sacs\)/),
+    forecast.getByText(/Pour passer l'hiver .* prévoyez [\d\s\u202f]+ sacs?/),
   ).toBeVisible();
   await forecast.getByRole("radio", { name: "rigoureux" }).click();
-  await expect(forecast.getByText(/prévoyez \d+ palettes?/)).toBeVisible();
+  await expect(forecast.getByText(/prévoyez [\d\s\u202f]+ sacs?/)).toBeVisible();
 });
 
 test("parcours 3 : rentabilité solaire et batterie, mise à jour du coût", async ({

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { button, Card, Notice, StatTile, tiles } from "@/components/ui";
+import { button, Card, Figures, Notice } from "@/components/ui";
 import type { Forecast, Scenario } from "@/domain/heating/forecast";
 import type { Fuel } from "@/domain/heating/fuel";
 import { formatNumber } from "@/lib/format";
@@ -34,7 +34,11 @@ function Segmented<T extends string>({
   onChange: (v: T) => void;
 }) {
   return (
-    <div role="radiogroup" aria-label={label} className="flex gap-1 rounded-[10px] bg-chip p-[3px]">
+    <div
+      role="radiogroup"
+      aria-label={label}
+      className="inline-flex gap-0.5 rounded-[9px] bg-chip p-[2px]"
+    >
       {options.map((o) => (
         <button
           key={o.id}
@@ -42,7 +46,7 @@ function Segmented<T extends string>({
           role="radio"
           aria-checked={value === o.id}
           onClick={() => onChange(o.id)}
-          className={`flex-1 rounded-[8px] px-2.5 py-1.5 text-[13px] font-medium ${
+          className={`rounded-[7px] px-2.5 py-1 text-[12px] font-medium whitespace-nowrap ${
             value === o.id ? "bg-surface shadow-[0_1px_2px_rgba(0,0,0,0.08)]" : "text-[#5E625C]"
           }`}
         >
@@ -90,7 +94,7 @@ function Summary({
       ? `À la palette : ${order.pallets} palette${order.pallets > 1 ? "s" : ""} (${formatNumber(order.pallets * bagsPerPallet)} sacs).`
       : null;
   return (
-    <p className="text-[17px] leading-snug font-semibold text-pretty">
+    <p className="text-[20px] leading-snug font-semibold tracking-tight text-pretty">
       {nothing ? (
         <>
           {goal}, votre stock suffit
@@ -130,26 +134,43 @@ export function ForecastCard({ view }: { view: RefillForecastView }) {
       title="Prévision de réapprovisionnement"
       description="D'après vos deux dernières saisons, corrigées du froid (degrés-jours), et votre stock actuel."
     >
-      {view.fuels.length > 1 && (
-        <Segmented
-          label="Combustible"
-          value={fuel}
-          onChange={setFuel}
-          options={view.fuels.map((x) => ({ id: x.fuel, label: FUEL_LABELS[x.fuel] }))}
-        />
-      )}
-      {f.current && (
-        <Segmented
-          label="Échéance"
-          value={effectiveTarget}
-          onChange={setTarget}
-          options={[
-            { id: "current", label: "Fin de cette saison" },
-            { id: "next", label: "Saison prochaine" },
-          ]}
-        />
-      )}
+      {/* Réglages de la prévision : compacts, sur une ligne, au-dessus de la réponse. */}
+      <div className="flex flex-wrap gap-2">
+        {view.fuels.length > 1 && (
+          <Segmented
+            label="Combustible"
+            value={fuel}
+            onChange={setFuel}
+            options={view.fuels.map((x) => ({ id: x.fuel, label: FUEL_LABELS[x.fuel] }))}
+          />
+        )}
+        {f.current && (
+          <Segmented
+            label="Échéance"
+            value={effectiveTarget}
+            onChange={setTarget}
+            options={[
+              { id: "current", label: "Fin de cette saison" },
+              { id: "next", label: "Saison prochaine" },
+            ]}
+          />
+        )}
 
+        {forecast && forecast.status !== "insufficient" && (
+          <span className="flex items-center gap-1.5 text-[12px] text-muted">
+            Hiver
+            <Segmented
+              label="Scénario"
+              value={scenario}
+              onChange={setScenario}
+              options={(Object.keys(SCENARIO_LABELS) as Scenario[]).map((s) => ({
+                id: s,
+                label: SCENARIO_LABELS[s].replace("Hiver ", ""),
+              }))}
+            />
+          </span>
+        )}
+      </div>
       {!forecast || forecast.status === "insufficient" ? (
         <Notice
           tone="info"
@@ -165,46 +186,47 @@ export function ForecastCard({ view }: { view: RefillForecastView }) {
         </Notice>
       ) : (
         <>
-          <Segmented
-            label="Scénario"
-            value={scenario}
-            onChange={setScenario}
-            options={(Object.keys(SCENARIO_LABELS) as Scenario[]).map((s) => ({
-              id: s,
-              label: SCENARIO_LABELS[s].replace("Hiver ", ""),
-            }))}
-          />
           <Summary
             f={f}
             forecast={forecast}
             target={effectiveTarget}
             bagsPerPallet={view.bagsPerPallet}
           />
-          <div className={tiles}>
-            <StatTile
-              label={effectiveTarget === "current" ? "Reste à consommer" : "Besoin de la saison"}
-              {...qty(
-                f.fuel,
-                effectiveTarget === "current" ? forecast.remaining : forecast.need,
-                bagKg,
-              )}
-            />
-            <StatTile
-              label={
-                effectiveTarget === "next" && f.current
-                  ? "Stock restant après cet hiver"
-                  : "Stock disponible"
-              }
-              {...qty(f.fuel, forecast.stock, bagKg)}
-            />
-            <StatTile
-              label="À acheter"
-              {...qty(f.fuel, forecast.toBuy, bagKg)}
-              dot={forecast.toBuy > 0 ? "bg-pellet" : "bg-battery"}
-            />
-          </div>
-          <details className="rounded-control bg-bg px-3 py-2.5 text-xs text-muted">
-            <summary className="cursor-pointer font-medium text-ink">Base de calcul</summary>
+          {/* Le calcul derrière la réponse, en ligne et sans fond. */}
+          <Figures
+            ops={["−", "="]}
+            items={[
+              {
+                label: effectiveTarget === "current" ? "Reste à consommer" : "Besoin de la saison",
+                ...qty(
+                  f.fuel,
+                  effectiveTarget === "current" ? forecast.remaining : forecast.need,
+                  bagKg,
+                ),
+              },
+              {
+                label:
+                  effectiveTarget === "next" && f.current
+                    ? "Stock après cet hiver"
+                    : "Stock disponible",
+                ...qty(f.fuel, forecast.stock, bagKg),
+              },
+              {
+                label: "À acheter",
+                ...qty(f.fuel, forecast.toBuy, bagKg),
+                tone:
+                  forecast.toBuy > 0
+                    ? f.fuel === "pellet"
+                      ? "text-pellet"
+                      : "text-wood"
+                    : "text-positive",
+              },
+            ]}
+          />
+          <details className="text-xs text-muted">
+            <summary className="cursor-pointer text-[#5E625C] hover:text-ink">
+              Base de calcul
+            </summary>
             <p className="pt-2 text-pretty tabular-nums">
               {forecast.basis.weatherCorrected &&
               forecast.perDju !== null &&

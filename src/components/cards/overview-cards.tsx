@@ -1,10 +1,10 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { StackedBars } from "@/components/charts/stacked-bars";
+import { SolarChart } from "@/components/cards/solar-chart";
 import { CoverageBadge } from "@/components/coverage-badge";
 import { Badge, button, Card, Icon, Notice, StatTile, tiles } from "@/components/ui";
 import { CATEGORY_SWATCH, CategoryTile, categoryColor } from "@/components/ui/category";
-import { monthLabel, shortMonth } from "@/domain/overview";
+import { monthLabel } from "@/domain/overview";
 import { addDays } from "@/lib/time";
 import { formatEurFromCents, formatKwh, formatNumber, formatPercent } from "@/lib/format";
 import type { Overview } from "@/server/queries/overview";
@@ -464,12 +464,10 @@ export function CategoriesOverviewCard({ overview }: { overview: Ok }) {
   );
 }
 
-const fmtHours = (h: number) =>
-  `${h.toLocaleString("fr-FR", { maximumFractionDigits: h < 10 ? 1 : 0 })} h`;
 const fmtYield = (y: number) => y.toLocaleString("fr-FR", { maximumFractionDigits: 2 });
 
-// Couleur de la courbe d'ensoleillement (et de son repère dans la tuile).
-const SUNSHINE = "#5E625C";
+// Repère de la tuile Ensoleillement : couleur de la courbe du graphique.
+const SUNSHINE_DOT = "bg-[#5E625C]";
 
 /**
  * Production et ensoleillement : barres de production et courbe d'ensoleillement superposée
@@ -481,15 +479,7 @@ export function SolarCard({ overview }: { overview: Ok }) {
   const { solar, period } = overview;
   if (!solar) return null;
   const byMonth = period.kind === "year";
-  const label = (key: string, i: number) =>
-    byMonth ? shortMonth(key) : i % 7 === 0 ? String(Number(key.slice(8))) : "";
-  const pointTitle = (key: string) =>
-    byMonth
-      ? monthLabel(key)
-      : new Date(`${key}T12:00:00Z`).toLocaleDateString("fr-FR", { day: "numeric", month: "long" });
   const sunshine = solar.points.reduce((a, p) => a + (p.sunshineHours ?? 0), 0);
-  const maxKwh = Math.max(...solar.points.map((p) => p.kwh), 0);
-  const maxSunshine = Math.max(...solar.points.map((p) => p.sunshineHours ?? 0), 0);
   const delta =
     solar.yield !== null && solar.previousYield ? solar.yield / solar.previousYield - 1 : null;
   return (
@@ -504,7 +494,7 @@ export function SolarCard({ overview }: { overview: Ok }) {
           label="Ensoleillement"
           value={formatNumber(sunshine)}
           unit="h"
-          dot="bg-[#5E625C]"
+          dot={SUNSHINE_DOT}
         />
         <StatTile
           label="Rendement"
@@ -536,44 +526,13 @@ export function SolarCard({ overview }: { overview: Ok }) {
           est bien renseigné dans l&apos;automatisation Home Assistant.
         </p>
       ) : (
-        <div className="flex flex-col gap-2">
-          <div className="flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-muted">
-            <span className="flex items-center gap-1.5">
-              <span className="size-2 rounded-[2px] bg-solar" />
-              Production (kWh)
-            </span>
-            {!solar.noLocation && (
-              <span className="flex items-center gap-1.5">
-                <span className="h-0.5 w-3 rounded-full" style={{ background: SUNSHINE }} />
-                Ensoleillement (h)
-              </span>
-            )}
-          </div>
-          {/* Valeur du haut de chaque échelle : barres à gauche, courbe à droite. */}
-          <div className="-mb-1 flex justify-between text-[10px] text-subtle tabular-nums">
-            <span>{formatKwh(maxKwh, maxKwh < 10 ? 1 : 0)}</span>
-            {!solar.noLocation && maxSunshine > 0 && <span>{fmtHours(maxSunshine)}</span>}
-          </div>
-          <StackedBars
-            height={140}
-            ariaLabel={`Production solaire et ensoleillement ${byMonth ? "par mois" : "par jour"}, ${period.label}`}
-            bars={solar.points.map((p, i) => ({
-              key: p.key,
-              label: label(p.key, i),
-              title: `${pointTitle(p.key)} : ${formatKwh(p.kwh, p.kwh < 10 ? 1 : 0)}${
-                solar.noLocation || p.sunshineHours === null
-                  ? ""
-                  : ` · ${fmtHours(p.sunshineHours)} de soleil`
-              }`,
-              segments: [{ value: p.kwh, color: "bg-solar", label: "Production" }],
-            }))}
-            line={
-              solar.noLocation
-                ? undefined
-                : { values: solar.points.map((p) => p.sunshineHours), color: SUNSHINE }
-            }
-          />
-        </div>
+        <SolarChart
+          points={solar.points}
+          byMonth={byMonth}
+          periodLabel={period.label}
+          year={period.key.slice(0, 4)}
+          noLocation={solar.noLocation}
+        />
       )}
     </Card>
   );

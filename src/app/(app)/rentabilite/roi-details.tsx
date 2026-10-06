@@ -81,15 +81,15 @@ export function RoiDetails({ roi, view }: { roi: EquipmentRoi; view: RoiView }) 
         <RingGauge ratio={payback.ratio} label={formatPercent(payback.ratio)} />
         <div className="flex min-w-0 flex-col items-start gap-1.5">
           <Badge tone={status.tone}>{status.label}</Badge>
+          {/* Ce qu'on lit d'abord : ce que l'équipement a déjà rapporté, face à son coût. */}
+          <p className="text-[26px] leading-none font-semibold tracking-tight tabular-nums">
+            {eur(payback.cumulativeCents)}
+          </p>
           <p className="text-[13px] text-muted text-pretty">
-            <span className="font-semibold text-ink tabular-nums">
-              {eur(payback.cumulativeCents)}
-            </span>{" "}
             économisés sur {formatNumber(roi.equipment.costEur)} €
             {roi.dataFrom && roi.dataFrom > roi.equipment.installedOn && (
               <> (depuis la première donnée, le {fmtDay(roi.dataFrom)})</>
             )}
-            .
           </p>
         </div>
       </div>
@@ -127,7 +127,7 @@ export function RoiDetails({ roi, view }: { roi: EquipmentRoi; view: RoiView }) 
         {lines.map((l) => (
           <li key={l.label} className="flex justify-between gap-2">
             <span className="text-[#5E625C]">{l.label}</span>
-            <span className="tabular-nums">{eur(l.cents)}</span>
+            <span className="whitespace-nowrap tabular-nums">{eur(l.cents)}</span>
           </li>
         ))}
       </ul>

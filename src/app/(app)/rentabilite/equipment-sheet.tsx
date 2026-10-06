@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
-import { button, Card, Icon, Notice, StatTile, tiles } from "@/components/ui";
+import { button, Card, Icon, Notice } from "@/components/ui";
 import { formatNumber } from "@/lib/format";
 import { deleteEquipmentAction, saveEquipmentAction } from "@/server/actions/equipment";
 import type { Equipment, EquipmentKind } from "@/server/equipment";
@@ -134,8 +134,18 @@ export function EquipmentCard({
     <Card
       icon={kind === "solar" ? "sun" : "bolt"}
       title={item?.label ?? KIND[kind].title}
+      // Coût et capacité en ligne de contexte : le coût est repris dans « X € économisés sur
+      // Y € », l'amortissement reste ce qu'on lit d'abord.
       description={
-        item ? `${KIND[kind].title} · installée le ${fmtDate(item.installedOn)}` : KIND[kind].title
+        item
+          ? [
+              KIND[kind].title,
+              item.capacity !== null && `${formatNumber(item.capacity, 2)} ${KIND[kind].unit}`,
+              `installée le ${fmtDate(item.installedOn)}`,
+            ]
+              .filter(Boolean)
+              .join(" · ")
+          : KIND[kind].title
       }
       actions={
         item &&
@@ -178,19 +188,7 @@ export function EquipmentCard({
       {editing ? (
         <EquipmentForm kind={kind} initial={item} onDone={done} />
       ) : item ? (
-        <>
-          <div className={tiles}>
-            <StatTile label="Coût" value={formatNumber(item.costEur)} unit="€" />
-            {item.capacity !== null && (
-              <StatTile
-                label="Capacité"
-                value={formatNumber(item.capacity, 2)}
-                unit={KIND[kind].unit}
-              />
-            )}
-          </div>
-          {children}
-        </>
+        children
       ) : (
         <Notice
           tone="info"

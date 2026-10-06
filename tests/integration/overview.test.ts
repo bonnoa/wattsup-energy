@@ -84,6 +84,10 @@ describe("vue d'ensemble sur le foyer de démo", () => {
     expect(o.categories.find((c) => c.name === "Eau chaude")?.kwh).toBeCloseTo(water, 3);
 
     expect(o.solar?.points).toHaveLength(30);
+    // N-1 : production de septembre 2025, jour par jour.
+    const solar2025 = await kwhOf(householdId, "solar_production", "2025-09-01", "2025-10-01");
+    const previous = (o.solar?.points ?? []).reduce((a, p) => a + (p.previousKwh ?? 0), 0);
+    expect(previous).toBeCloseTo(solar2025, 3);
     expect(o.solar?.kwh).toBeGreaterThan(0);
     expect(o.solar?.yield).toBeGreaterThan(0);
     expect(o.solar?.previousYield).toBeGreaterThan(0);

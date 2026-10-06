@@ -58,11 +58,14 @@ export function StackedBars({
   height = 160,
   ariaLabel,
   line,
+  previousColor = "bg-grid/25",
 }: {
   bars: Bar[];
   height?: number;
   ariaLabel: string;
   line?: BarLine;
+  /** Couleur des barres de comparaison (année précédente). */
+  previousColor?: string;
 }) {
   const max = Math.max(
     ...bars.map((b) =>
@@ -104,7 +107,7 @@ export function StackedBars({
             >
               {paired && (
                 <div
-                  className="min-w-0 flex-1 rounded-t-[4px] bg-grid/25"
+                  className={`min-w-0 flex-1 rounded-t-[4px] ${previousColor}`}
                   style={{ height: b.previous ? toHeight(b.previous) : 0 }}
                 />
               )}
@@ -169,9 +172,11 @@ export function StackedBars({
             className="flex min-w-0 flex-1 flex-col items-center gap-[3px] px-[1.5px]"
           >
             <span
-              className={`w-full truncate text-center text-[10px] tabular-nums ${
-                b.selected ? "font-semibold text-ink" : "text-subtle"
-              }`}
+              className={`w-full text-center text-[10px] tabular-nums ${
+                // Beaucoup de barres (un mois en jours) : libellés espacés, qui peuvent déborder
+                // sur les colonnes voisines vides ; sinon tronqués à leur colonne.
+                bars.length > 20 ? "overflow-visible whitespace-nowrap" : "truncate"
+              } ${b.selected ? "font-semibold text-ink" : "text-subtle"}`}
             >
               {b.label}
             </span>

@@ -65,6 +65,8 @@ export interface SolarPoint {
   key: string;
   kwh: number;
   sunshineHours: number | null;
+  /** Production du même jour (ou mois) un an plus tôt, null sans donnée. */
+  previousKwh: number | null;
 }
 
 export type Overview =
@@ -390,6 +392,7 @@ export async function getOverview(
         key,
         kwh: current.kwhByKey.get(key) ?? 0,
         sunshineHours: current.sunshine.get(key) ?? null,
+        previousKwh: before.kwhByKey.get(shiftYear(key, -1)) ?? null,
       })),
       kwh: balance.solar,
       yield: solarYield(balance.solar, current.radiation),

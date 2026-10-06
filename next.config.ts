@@ -8,6 +8,7 @@ const nextConfig: NextConfig = {
   // Le blueprint Home Assistant est servi tel quel (T31) : à embarquer dans le build autonome.
   outputFileTracingIncludes: {
     "/api/blueprint/wattsup_push.yaml": ["./homeassistant/blueprints/wattsup_push.yaml"],
+    "/api/blueprint/wattsup_history.yaml": ["./homeassistant/blueprints/wattsup_history.yaml"],
   },
 };
 

@@ -140,6 +140,11 @@ triggers:
   - trigger: time
     at: "00:05:00"
     id: daily
+  # Historique à la demande : lancé par le script « WattsUp Energy — envoyer l'historique »
+  # (blueprint wattsup_history.yaml), avec deux dates.
+  - trigger: event
+    event_type: wattsup_backfill
+    id: backfill
 
 variables:
   granularity: !input granularity
@@ -154,6 +159,18 @@ variables:
     battery_discharge_kwh: !input battery_discharge
   categories: !input categories
   tempo_color: !input tempo_color
+
+  # Historique : compteur WattsUp → capteur, d'après les mêmes entrées que l'envoi horaire.
+  backfill_metrics: >-
+    {%- set ns = namespace(m={}) -%}
+    {%- if grid_import -%}{%- set ns.m = dict(ns.m, grid_import=grid_import) -%}{%- endif -%}
+    {%- for key, e in energy_entities.items() -%}
+      {%- if e -%}{%- set ns.m = dict(ns.m, **{key[:-4]: e}) -%}{%- endif -%}
+    {%- endfor -%}
+    {%- for slug, e in (categories or {}).items() -%}
+      {%- if e -%}{%- set ns.m = dict(ns.m, **{'category:' ~ slug: e}) -%}{%- endif -%}
+    {%- endfor -%}
+    {{ ns.m }}
 
   # Construit le payload v1. Les capteurs indisponibles ou non numériques sont
   # omis (jamais remplacés par 0, qui fausserait les deltas).
@@ -198,31 +215,98 @@ variables:
     {{- ns.p | to_json -}}
 
 conditions:
-  # Seul le déclencheur du mode choisi envoie (horaire ou 00:05).
-  - condition: trigger
-    id: !input granularity
+  # Seul le déclencheur du mode choisi envoie (horaire ou 00:05), plus l'historique demandé.
+  - condition: or
+    conditions:
+      - condition: trigger
+        id: !input granularity
+      - condition: trigger
+        id: backfill
 
 actions:
-  - action: rest_command.wattsup_push
-    data:
-      payload: "{{ payload }}"
-    response_variable: wattsup_response
-    continue_on_error: true
   - if:
-      - condition: template
-        # Refus, ou envoi accepté sans aucune donnée d'énergie (capteurs mal choisis).
-        value_template: >-
-          {{ wattsup_response is not defined or wattsup_response.status != 200
-             or 'no_energy_data' in (wattsup_response.content | string) }}
+      - condition: trigger
+        id: backfill
     then:
+      # Historique, jour par jour : statistiques horaires du recorder (variation, en kWh),
+      # envoyées avec la correspondance des compteurs. WattsUp ne remplace jamais une
+      # valeur déjà présente et rejette les valeurs invraisemblables.
+      - variables:
+          bf_start: "{{ trigger.event.data.start }}"
+          bf_end: "{{ trigger.event.data.end }}"
+          bf_days: >-
+            {{ [((as_datetime(bf_end) - as_datetime(bf_start)).days + 1), 0] | max }}
+          bf_ids: "{{ backfill_metrics.values() | list | unique | list }}"
+      - repeat:
+          # 10 ans au plus (la limite de WattsUp).
+          count: "{{ [bf_days | int, 3660] | min }}"
+          sequence:
+            - variables:
+                bf_day: "{{ (as_datetime(bf_start) + timedelta(days=repeat.index - 1)).strftime('%Y-%m-%d') }}"
+            - action: recorder.get_statistics
+              data:
+                statistic_ids: "{{ bf_ids }}"
+                start_time: "{{ bf_day }} 00:00:00"
+                end_time: >-
+                  {{ (as_datetime(bf_day) + timedelta(days=1)).strftime('%Y-%m-%d') }} 00:00:00
+                period: hour
+                types:
+                  - change
+                units:
+                  energy: kWh
+              response_variable: bf_stats
+            - action: rest_command.wattsup_push
+              data:
+                payload: >-
+                  {{ {'version': 1, 'backfill': {'metrics': backfill_metrics,
+                      'statistics': bf_stats.statistics}} | to_json }}
+              response_variable: wattsup_response
+              continue_on_error: true
+            - if:
+                - condition: template
+                  value_template: >-
+                    {{ wattsup_response is not defined or wattsup_response.status != 200 }}
+              then:
+                - action: persistent_notification.create
+                  data:
+                    notification_id: wattsup_backfill
+                    title: WattsUp Energy — historique interrompu
+                    message: >-
+                      Envoi du {{ bf_day }} refusé (statut
+                      {{ wattsup_response.status if wattsup_response is defined else 'inconnu' }}) :
+                      {{ wattsup_response.content if wattsup_response is defined else 'pas de réponse' }}
+                - stop: Historique interrompu
+            # 120 envois par minute au plus côté WattsUp : on reste très en dessous.
+            - delay:
+                seconds: 1
       - action: persistent_notification.create
         data:
-          notification_id: wattsup_push_error
-          title: WattsUp Energy — envoi refusé ou vide
+          notification_id: wattsup_backfill
+          title: WattsUp Energy — historique envoyé
           message: >-
-            Statut {{ wattsup_response.status if wattsup_response is defined else 'inconnu' }} :
-            {{ wattsup_response.content if wattsup_response is defined else 'pas de réponse' }}
+            Du {{ bf_start }} au {{ bf_end }}. Détail dans WattsUp › Réglages › Home Assistant ›
+            Derniers envois.
     else:
-      - action: persistent_notification.dismiss
+      - action: rest_command.wattsup_push
         data:
-          notification_id: wattsup_push_error
+          payload: "{{ payload }}"
+        response_variable: wattsup_response
+        continue_on_error: true
+      - if:
+          - condition: template
+            # Refus, ou envoi accepté sans aucune donnée d'énergie (capteurs mal choisis).
+            value_template: >-
+              {{ wattsup_response is not defined or wattsup_response.status != 200
+                 or 'no_energy_data' in (wattsup_response.content | string) }}
+        then:
+          - action: persistent_notification.create
+            data:
+              notification_id: wattsup_push_error
+              title: WattsUp Energy — envoi refusé ou vide
+              message: >-
+                Statut {{ wattsup_response.status if wattsup_response is defined else 'inconnu' }} :
+                {{ wattsup_response.content if wattsup_response is defined else 'pas de réponse' }}
+        else:
+          - action: persistent_notification.dismiss
+            data:
+              notification_id: wattsup_push_error

@@ -1,3 +1,5 @@
+import { isBackfill } from "@/domain/ingest/backfill";
+import { backfill } from "@/server/ingest/backfill";
 import { ingest } from "@/server/ingest/persist";
 import { verifyIngestToken } from "@/server/ingest/token";
 import { ingestRateLimiter } from "@/server/rate-limit";
@@ -26,8 +28,23 @@ export async function POST(request: Request): Promise<Response> {
   const body = await request.text();
   if (Buffer.byteLength(body) > MAX_BODY_BYTES) return tooLarge();
 
+  // Envoi d'historique (bloc `backfill`, SPEC §6.4) : traitement à part ; tout autre
+  // envoi suit le chemin ordinaire, inchangé.
+  const json = parseJson(body);
+  if (isBackfill(json)) {
+    const result = await backfill(auth.householdId, json, body);
+    return Response.json(result.body, { status: result.status });
+  }
   const result = await ingest(auth.householdId, body);
   return Response.json(result.body, { status: result.status });
+}
+
+function parseJson(body: string): unknown {
+  try {
+    return JSON.parse(body);
+  } catch {
+    return null; // le chemin ordinaire journalise le JSON invalide
+  }
 }
 
 const tooLarge = () =>

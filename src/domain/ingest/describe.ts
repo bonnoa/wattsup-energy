@@ -82,6 +82,8 @@ export function describeWarnings(
         tone: "info",
         text: `Bloc « ${String(raw.key)} » non exploité par cette version.`,
       });
+    } else if (raw.code === "backfill") {
+      lines.push(...backfillLines(raw));
     } else if (raw.code === "no_energy_data") {
       lines.push({
         tone: "warning",
@@ -94,6 +96,39 @@ export function describeWarnings(
     const g = groups.get(l) as { tone: WarningLine["tone"]; text: string; labels: string[] };
     return { tone: g.tone, text: `${capitalize(list(g.labels))} : ${g.text}.` };
   });
+}
+
+/** Résumé d'un envoi d'historique : valeurs ajoutées, déjà présentes, rejetées. */
+function backfillLines(raw: Raw): WarningLine[] {
+  const n = (v: unknown) => (typeof v === "number" ? v : 0);
+  const r = (typeof raw.rejected === "object" && raw.rejected !== null ? raw.rejected : {}) as Raw;
+  const rejected = n(r.implausible) + n(r.negative) + n(r.outOfRange) + n(r.unknownCategory);
+  const fr = (v: number) => formatNumber(v);
+  const lines: WarningLine[] = [
+    {
+      tone: "info",
+      text: `Historique : ${fr(n(raw.inserted))} valeurs ajoutées, ${fr(n(raw.existing))} déjà présentes (conservées).`,
+    },
+  ];
+  if (rejected > 0) {
+    const parts = [
+      n(r.implausible) && `${fr(n(r.implausible))} invraisemblables`,
+      n(r.negative) && `${fr(n(r.negative))} négatives`,
+      n(r.outOfRange) && `${fr(n(r.outOfRange))} hors période`,
+      n(r.unknownCategory) && `${fr(n(r.unknownCategory))} d'un poste inconnu`,
+    ].filter(Boolean);
+    lines.push({
+      tone: "warning",
+      text: `${fr(rejected)} valeurs rejetées : ${parts.join(", ")}.`,
+    });
+  }
+  if (raw.quotaReached === true) {
+    lines.push({
+      tone: "warning",
+      text: "Quota de valeurs du foyer atteint : la fin de l'envoi n'est pas enregistrée.",
+    });
+  }
+  return lines;
 }
 
 /** Erreur d'un envoi refusé : la liste des champs invalides est stockée en JSON. */

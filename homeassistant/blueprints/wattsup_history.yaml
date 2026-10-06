@@ -1,0 +1,42 @@
+blueprint:
+  name: WattsUp Energy — envoyer l'historique
+  description: >-
+    Envoie à WattsUp Energy l'historique de vos compteurs sur une période choisie,
+    à partir des statistiques longue durée de Home Assistant (heure par heure).
+    Utile après une panne, ou pour reprendre l'historique d'avant WattsUp.
+
+
+    Prérequis : l'automatisation « WattsUp Energy — envoi des données » (blueprint
+    wattsup_push.yaml, version avec historique) : elle lit les mêmes capteurs et fait
+    l'envoi, jour par jour. Les valeurs déjà présentes dans WattsUp ne sont jamais
+    remplacées ; les valeurs invraisemblables sont rejetées. Le résultat s'affiche dans
+    une notification, et le détail dans WattsUp › Réglages › Home Assistant › Derniers
+    envois.
+
+
+    Lancez le script, choisissez les dates : il rend la main tout de suite, l'envoi
+    continue en arrière-plan (environ une seconde par jour).
+  domain: script
+  source_url: https://github.com/bonnoa/wattsup-energy/blob/main/homeassistant/blueprints/wattsup_history.yaml
+
+fields:
+  start:
+    name: Du
+    description: Premier jour envoyé.
+    required: true
+    selector:
+      date: {}
+  end:
+    name: Au (inclus)
+    description: Dernier jour envoyé (au plus hier ; aujourd'hui n'est pas terminé).
+    required: true
+    selector:
+      date: {}
+
+mode: single
+
+sequence:
+  - event: wattsup_backfill
+    event_data:
+      start: "{{ start }}"
+      end: "{{ end }}"

@@ -19,7 +19,11 @@ export const SETTINGS_TABS = [
     description: "Token, granularité des envois et derniers envois reçus.",
   },
   { id: "postes", label: "Postes", description: "Les appareils ou circuits suivis séparément." },
-  { id: "historique", label: "Historique", description: "Import de votre historique en CSV." },
+  {
+    id: "historique",
+    label: "Historique",
+    description: "Votre historique, depuis Home Assistant ou un fichier CSV.",
+  },
 ] as const;
 
 export type SettingsTab = (typeof SETTINGS_TABS)[number]["id"];

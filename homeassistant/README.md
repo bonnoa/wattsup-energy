@@ -92,7 +92,26 @@ contrat (automatisation dédiée).
 Renseignez **Import HP** et **Import HC** (ou **Import réseau** seul pour un contrat
 Base).
 
-## 4. Vérifier
+## 4. Envoyer un historique (facultatif)
+
+Pour reprendre l'historique d'avant WattsUp, ou combler une panne, Home Assistant peut
+envoyer ses **statistiques longue durée** (heure par heure) sur une période choisie. Il
+faut une version récente de Home Assistant (action `recorder.get_statistics`).
+
+1. **Mettez à jour** le blueprint d'envoi (réimportez `wattsup_push.yaml` en remplaçant la
+   version installée) : l'automatisation garde ses réglages et sait désormais envoyer
+   l'historique.
+2. **Importez** le blueprint `wattsup_history.yaml` (WattsUp › Réglages › Historique, bouton
+   « Importer “envoyer l'historique” ») et créez un script à partir de lui.
+3. **Lancez** le script et choisissez les dates (au plus 10 ans, jusqu'à hier). L'envoi se
+   fait jour par jour en arrière-plan, environ une seconde par jour ; une notification
+   annonce la fin.
+
+WattsUp ne remplace jamais une valeur déjà présente et rejette les valeurs
+invraisemblables (sauts de compteur). Le détail s'affiche dans WattsUp › Réglages › Home
+Assistant › Derniers envois.
+
+## 5. Vérifier
 
 - WattsUp : « Home Assistant connecté · Dernier push il y a X min » dans la navigation.
 - Home Assistant : en cas de refus (token, mode, format), une notification persistante

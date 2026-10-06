@@ -96,6 +96,29 @@ describe("describeWarnings", () => {
   });
 });
 
+describe("describeWarnings — historique", () => {
+  it("résume l'envoi : ajoutées, présentes, rejetées, quota", () => {
+    expect(
+      describeWarnings(
+        [
+          {
+            code: "backfill",
+            inserted: 1200,
+            existing: 48,
+            rejected: { implausible: 2, negative: 0, outOfRange: 1, unknownCategory: 0 },
+            quotaReached: true,
+          },
+        ],
+        {},
+      ).map((l) => [l.tone, l.text.replace(/\u202f/g, " ")]),
+    ).toEqual([
+      ["info", "Historique : 1 200 valeurs ajoutées, 48 déjà présentes (conservées)."],
+      ["warning", "3 valeurs rejetées : 2 invraisemblables, 1 hors période."],
+      ["warning", "Quota de valeurs du foyer atteint : la fin de l'envoi n'est pas enregistrée."],
+    ]);
+  });
+});
+
 describe("describeLogError", () => {
   it("erreurs de validation (JSON stocké) : une ligne par champ", () => {
     expect(

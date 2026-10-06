@@ -6,7 +6,7 @@ export interface LogEntry {
   /** ISO. */
   receivedAt: string;
   httpStatus: number;
-  mode: "hourly" | "daily" | null;
+  mode: "hourly" | "daily" | "backfill" | null;
   payloadSize: number;
   warnings: unknown[];
   error: string | null;
@@ -66,7 +66,11 @@ export function IngestLogCard({
                   <span className="tabular-nums">{when(e.receivedAt)}</span>
                   {e.mode && (
                     <span className="text-xs text-subtle">
-                      {e.mode === "hourly" ? "horaire" : "quotidien"}
+                      {e.mode === "hourly"
+                        ? "horaire"
+                        : e.mode === "daily"
+                          ? "quotidien"
+                          : "historique"}
                     </span>
                   )}
                 </span>

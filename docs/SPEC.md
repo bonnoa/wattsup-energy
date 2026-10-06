@@ -263,6 +263,29 @@ Règles :
 
 Le rate limiting utilise une fenêtre glissante en mémoire, par token (instance unique en V1). Une interface `RateLimiter` permet de brancher Redis ou Postgres plus tard.
 
+### 6.4 Historique à la demande (bloc `backfill`, additionnel)
+
+Même endpoint, même token, même `rest_command` : un envoi qui porte un bloc `backfill` est aiguillé à part, tout autre envoi suit le chemin ordinaire **inchangé**. Lancé dans HA par le script « WattsUp Energy — envoyer l'historique » (blueprint `wattsup_history.yaml`, deux dates), qui déclenche l'automatisation d'envoi (événement `wattsup_backfill`) : elle lit, jour par jour, les statistiques horaires du recorder (`recorder.get_statistics`, type `change`, unités converties en kWh) des capteurs déjà choisis, et les envoie (une requête par jour, une seconde d'écart).
+
+```json
+{
+  "version": 1,
+  "backfill": {
+    "metrics": { "grid_import": "sensor.import", "category:chauffe-eau": "sensor.ballon" },
+    "statistics": {
+      "sensor.import": [{ "start": "2026-03-10T08:00:00+00:00", "end": "…", "change": 0.5 }]
+    }
+  }
+}
+```
+
+- `metrics` : compteur WattsUp (§5) → capteur ; `statistics` : réponse brute du recorder.
+- **Jamais de remplacement** : une heure (ou un jour) déjà présente pour ce compteur est conservée, quel que soit le créneau (un jour reçu en HP et HC ne reçoit pas de total en plus). Écrit avec `source = ha`.
+- **Rejets comptés** : valeur au-delà du seuil de plausibilité (saut de compteur des statistiques), variation négative, hors période (10 ans au plus, heures terminées seulement), poste inconnu de WattsUp.
+- Foyer quotidien : heures additionnées par jour local (`tariff_slot = all`), jour terminé seulement.
+- Quota de valeurs par foyer partagé avec l'import CSV (§7.7). Journal : mode `backfill` (« historique »), résumé dans les avertissements ; un envoi d'historique ne compte pas comme dernier envoi pour l'état de la liaison.
+- Réponse `200` : `{ ok, inserted, existing, rejected: { implausible, negative, outOfRange, unknownCategory }, quotaReached }`.
+
 ---
 
 ## 7. Règles métier

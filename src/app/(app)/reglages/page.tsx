@@ -18,6 +18,7 @@ import { ScrollToActive } from "./active-tab";
 import { CategoriesCard } from "./categories-card";
 import { CsvCard } from "./csv-card";
 import { FuelSettingsCard } from "./fuel-settings-card";
+import { HaHistoryCard } from "./ha-history-card";
 import { IngestCard } from "./ingest-card";
 import { IngestLogCard } from "./ingest-log-card";
 import { LocationCard } from "./location-card";
@@ -25,6 +26,12 @@ import { ProfileForm } from "./profile-form";
 import { SolarBatteryCard } from "./solar-battery-card";
 
 export const metadata = { title: "Réglages · WattsUp Energy" };
+
+/** Adresse publique de l'instance (endpoint, blueprints), d'après la requête. */
+async function requestOrigin() {
+  const h = await headers();
+  return `${h.get("x-forwarded-proto") ?? "http"}://${h.get("host") ?? "localhost:3000"}`;
+}
 
 // Un ou deux encarts par onglet, en colonne de lecture confortable.
 const panel = "flex max-w-2xl flex-col gap-4";
@@ -97,8 +104,7 @@ async function HomeAssistantTab({ ctx }: { ctx: HouseholdContext }) {
     listIngestLog(ctx),
     listCategories(ctx),
   ]);
-  const h = await headers();
-  const origin = `${h.get("x-forwarded-proto") ?? "http"}://${h.get("host") ?? "localhost:3000"}`;
+  const origin = await requestOrigin();
   return (
     <div className={panel}>
       <IngestCard
@@ -137,6 +143,7 @@ async function HistoryTab({ ctx }: { ctx: HouseholdContext }) {
   const categories = await listCategories(ctx);
   return (
     <div className={panel}>
+      <HaHistoryCard origin={await requestOrigin()} />
       <CsvCard
         granularity={ctx.granularity}
         timezone={ctx.timezone}

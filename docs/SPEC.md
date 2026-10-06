@@ -172,6 +172,7 @@ Toutes les tables métier portent `household_id` (FK, `ON DELETE CASCADE`). **Au
 | `contract` | contrats du foyer : **souscrits** (datés) et **simulés** (offres à comparer) | `id`, `household_id`, `name`, `kind` (`base`\|`hphc`\|`tempo`\|`custom`, fixe), `status` (`subscribed`\|`simulated`), `start_date` et `end_date` (souscrit seulement ; fin vide = en cours). Deux contrats souscrits d'un même foyer ne se chevauchent jamais |
 | `contract_period` | **historique des grilles de prix** d'un contrat | `id`, `contract_id`, `household_id`, `valid_from` (date), `config` JSONB (grille complète validée par `parseContractInput`, plages HC comprises). Un contrat a au moins une période ; une période s'applique de `valid_from` jusqu'à la suivante |
 | `fuel_event` | combustibles | `household_id`, `fuel` (`pellet`\|`wood`), `type` (`purchase`\|`stock_snapshot`\|`consumption`), `at` (instant : ordre des événements d'un même jour, annulation), `qty`, `unit` (`bag`\|`kg`\|`stere` ; une palette saisie est enregistrée en sacs), `price_eur` (achats) |
+| `marker` | repères | `household_id`, `kind` (`equipment`\|`maintenance`\|`absence`\|`other`), `text` (140 caractères au plus), `start_date`, `end_date` (facultative, incluse) |
 | `equipment` | ROI | `household_id`, `kind` (`solar`\|`battery`, un par type), `label`, `capacity` (kWc ou kWh), `installed_on`, `cost_eur` |
 | `csv_import` | suivi des imports | `id`, `household_id`, `filename`, `status`, `rows_ok`, `rows_rejected`, `errors` JSONB |
 
@@ -396,6 +397,11 @@ La météo ne passe plus par Home Assistant : le serveur la récupère auprès d
 - **Robustesse** : timeout de 10 s, 3 essais avec backoff ; un échec n'est jamais bloquant, la journée manquante est reprise au passage suivant. `WEATHER_SYNC=off` désactive tout appel sortant.
 - **Isolation** : l'accès réseau passe par `src/server/weather/`, derrière une interface `WeatherSource` ; les calculs (DJU, rendement) restent dans `src/domain`.
 - **Sans localisation** : les cartes météo affichent un état vide « Indiquez votre commune » avec un lien vers Réglages ; la prévision retombe sur la saisie manuelle des DJU.
+
+### 7.10 Repères
+- Un **repère** est une note datée posée sur la frise du temps pour expliquer une hausse ou une baisse de consommation : type (Équipement, Maintenance, Absence, Autre), texte court, date, et date de fin facultative pour une durée (« maintenance du 3 au 10 »).
+- **Repères automatiques**, déduits des données et non modifiables : début de chaque contrat souscrit (« Nouveau contrat : … ») et mise en service des équipements de Rentabilité.
+- Affichage sur la **Vue d'ensemble** : une ligne discrète sous le sélecteur de période (« 2 repères · … », dépliable pour lire, modifier ou supprimer ; rien s'il n'y en a pas), le bouton « + Repère » à côté (date préremplie : aujourd'hui si la période le contient, sinon son premier jour), et un **point sous le mois** concerné dans l'histogramme du coût mensuel (texte dans l'info-bulle ; toucher le mois l'ouvre avec ses repères). Un repère sur plusieurs mois marque chacun d'eux.
 
 ## 8. Blueprint Home Assistant (livré en V1)
 

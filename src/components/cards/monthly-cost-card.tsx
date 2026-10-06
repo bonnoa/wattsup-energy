@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { StackedBars } from "@/components/charts/stacked-bars";
 import { Card, Toggle } from "@/components/ui";
+import { markedMonths, type Marker } from "@/domain/markers";
 import { monthLabel, shortMonth, type Period } from "@/domain/overview";
 import { formatEurFromCents, formatKwh, formatPercent } from "@/lib/format";
 import type { MonthCost } from "@/server/queries/overview";
@@ -61,7 +62,16 @@ function Row({ color, label, value }: { color: string; label: string; value: str
   );
 }
 
-export function MonthlyCostCard({ months, period }: { months: MonthCost[]; period: Period }) {
+export function MonthlyCostCard({
+  months,
+  period,
+  markers,
+}: {
+  months: MonthCost[];
+  period: Period;
+  /** Repères de l'année : un point sous chaque mois concerné, texte dans l'info-bulle. */
+  markers: Marker[];
+}) {
   const [unit, setUnit] = useState<Unit>("eur");
   const [compare, setCompare] = useState(false);
   useEffect(() => {
@@ -98,6 +108,7 @@ export function MonthlyCostCard({ months, period }: { months: MonthCost[]; perio
     kwh: sum((m) => m.kwh),
   };
   const isEur = unit === "eur";
+  const marked = markedMonths(markers);
   const previousYear = String(Number(year) - 1);
   const hasPrevious = months.some((m) => m.previous);
   const comparing = compare && hasPrevious;
@@ -182,8 +193,9 @@ export function MonthlyCostCard({ months, period }: { months: MonthCost[]; perio
                 comparing && m.previous
                   ? ` · ${monthLabel(`${previousYear}${m.key.slice(4)}`)} : ${fmt(valueOf(m.previous))}`
                   : ""
-              }`,
+              }${(marked.get(m.key) ?? []).map((x) => ` · ${x.text}`).join("")}`,
               previous: comparing ? (m.previous ? valueOf(m.previous) : null) : undefined,
+              marked: marked.has(m.key),
               segments: isEur
                 ? [
                     { value: m.subscriptionCents, color: SUBSCRIPTION, label: "Abonnement" },
@@ -192,6 +204,12 @@ export function MonthlyCostCard({ months, period }: { months: MonthCost[]; perio
                 : [{ value: m.kwh, color: "bg-grid", label: "Soutiré" }],
             }))}
           />
+          {marked.size > 0 && (
+            <p className="flex items-center gap-1.5 text-[11px] text-muted">
+              <span className="size-[5px] rounded-full bg-ink" />
+              Repère : touchez le mois pour le lire.
+            </p>
+          )}
         </div>
         <div className="flex grow basis-[220px] flex-col gap-2.5 rounded-control bg-bg p-4 text-[13px] md:grow-0">
           <h3 className="font-semibold capitalize">{period.label}</h3>

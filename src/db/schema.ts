@@ -254,6 +254,25 @@ export const equipment = pgTable(
   (t) => [unique("equipment_household_kind_uq").on(t.householdId, t.kind)],
 );
 
+/**
+ * Repères : une note datée sur la frise du temps (achat d'un appareil, maintenance,
+ * absence…), pour expliquer une hausse ou une baisse de la consommation. Fin facultative
+ * (incluse) pour une durée.
+ */
+export const marker = pgTable(
+  "marker",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    householdId: householdRef(),
+    kind: text("kind", { enum: ["equipment", "maintenance", "absence", "other"] }).notNull(),
+    text: text("text").notNull(),
+    startDate: date("start_date").notNull(),
+    endDate: date("end_date"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("marker_household_start_idx").on(t.householdId, t.startDate)],
+);
+
 /** Journal des pushes d'ingestion (conservé 30 jours). */
 export const ingestLog = pgTable(
   "ingest_log",

@@ -28,6 +28,7 @@ import {
   type Period,
 } from "@/domain/overview";
 import { batteryGaps, type BatteryGap, type BatteryMonth } from "@/domain/battery-data";
+import { autoMarkers, markersBetween, type Marker } from "@/domain/markers";
 import { visibleModules } from "@/domain/profile";
 import {
   buildTimeline,
@@ -41,6 +42,8 @@ import { addDays, eachDay, localParts, zonedInstant } from "@/lib/time";
 import { listCategories } from "../categories";
 import type { HouseholdContext } from "../context";
 import { listContracts } from "../contracts";
+import { listEquipment } from "../equipment";
+import { listMarkers } from "../markers";
 import { tempoColorsFor } from "../tempo/sync";
 
 // Vue d'ensemble (T20) : budget réel (contrat et grille en vigueur chaque jour), coût
@@ -91,6 +94,8 @@ export type Overview =
        * quotidiens sans créneau) a été répartie par supposition.
        */
       peak: (PeakSplit & { approximated: boolean }) | null;
+      /** Repères de l'année de la période (saisis et automatiques), triés par date. */
+      markers: Marker[];
       /** Mois de la période où la batterie a une charge sans décharge, ou l'inverse. */
       batteryGaps: BatteryGap[];
       categories: {
@@ -296,20 +301,32 @@ export async function getOverview(
   // Année précédente entière : comparaison mois par mois (N-1) et même période (budget).
   const previousYearFrom = `${Number(year) - 1}-01-01`;
   const modules = visibleModules(ctx.profile);
-  const [contracts, intervals, previousYearIntervals, totals, categories, home, coverage, battery] =
-    await Promise.all([
-      listContracts(ctx),
-      gridIntervals(ctx, yearFrom, yearTo),
-      gridIntervals(ctx, previousYearFrom, yearFrom),
-      totalsByMetric(ctx, period.from, period.to),
-      listCategories(ctx, now),
-      db
-        .select({ location: household.location })
-        .from(household)
-        .where(eq(household.id, ctx.householdId)),
-      periodCoverage(ctx, period, today),
-      modules.battery ? batteryMonths(ctx, period.from, period.to) : [],
-    ]);
+  const [
+    contracts,
+    intervals,
+    previousYearIntervals,
+    totals,
+    categories,
+    home,
+    coverage,
+    battery,
+    savedMarkers,
+    equipment,
+  ] = await Promise.all([
+    listContracts(ctx),
+    gridIntervals(ctx, yearFrom, yearTo),
+    gridIntervals(ctx, previousYearFrom, yearFrom),
+    totalsByMetric(ctx, period.from, period.to),
+    listCategories(ctx, now),
+    db
+      .select({ location: household.location })
+      .from(household)
+      .where(eq(household.id, ctx.householdId)),
+    periodCoverage(ctx, period, today),
+    modules.battery ? batteryMonths(ctx, period.from, period.to) : [],
+    listMarkers(ctx, yearFrom, yearTo),
+    listEquipment(ctx),
+  ]);
   const colors = await tempoColorsFor(ctx.householdId, addDays(previousYearFrom, -1), yearTo);
   const pricing = { timezone: tz, tempoColor: (d: string) => colors.get(d) };
   const price = (list: PriceableInterval[], from: string, to: string): TimelineResult =>
@@ -403,6 +420,11 @@ export async function getOverview(
     })),
     batteryGaps: batteryGaps(battery),
     peak: peakOf(),
+    markers: markersBetween(
+      [...savedMarkers, ...autoMarkers(contracts, equipment)],
+      yearFrom,
+      yearTo,
+    ),
     balance,
     categories: categories
       .filter((c) => modules.heatingCategories || !c.isHeating)

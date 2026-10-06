@@ -3,6 +3,7 @@ import { beforeAll, describe, expect, it } from "vitest";
 import { db } from "@/db";
 import { energyInterval } from "@/db/schema";
 import { householdContextFor } from "@/server/context";
+import { createMarker } from "@/server/markers";
 import { getOverview } from "@/server/queries/overview";
 import { zonedInstant } from "@/lib/time";
 import { seedDemo } from "../../scripts/seed/seed";
@@ -136,6 +137,33 @@ describe("vue d'ensemble sur le foyer de démo", () => {
     const o = await getOverview(ctx, "2026", now);
     if (o.status !== "ok") throw new Error(o.status);
     expect(o.batteryGaps).toEqual([{ missing: "charge", months: ["2026-02"] }]);
+  });
+
+  it("repères : ceux de l'année seulement (les automatiques sont testés dans le domaine)", async () => {
+    const base = await createTestHousehold();
+    await db.insert(energyInterval).values({
+      householdId: base.householdId,
+      metric: "grid_import",
+      start: new Date("2026-03-10T10:00:00Z"),
+      granularity: "hour",
+      kwh: 1,
+      source: "ha",
+    });
+    await createMarker(base, {
+      kind: "absence",
+      text: "Vacances",
+      startDate: "2026-07-28",
+      endDate: "2026-08-15",
+    });
+    await createMarker(base, {
+      kind: "other",
+      text: "Hors année",
+      startDate: "2025-05-01",
+      endDate: null,
+    });
+    const o = await getOverview(base, "2026", now);
+    if (o.status !== "ok") throw new Error(o.status);
+    expect(o.markers.map((m) => m.text)).toEqual(["Vacances"]);
   });
 
   it("aucune donnée : no-data", async () => {

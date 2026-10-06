@@ -23,6 +23,8 @@ export interface Bar {
   selected?: boolean;
   /** Valeur de comparaison (année précédente), en barre claire à gauche ; null : aucune. */
   previous?: number | null;
+  /** Un repère tombe sur cette barre : petit point sous l'étiquette (texte dans `title`). */
+  marked?: boolean;
 }
 
 /** Courbe superposée : une valeur par barre (null : pas de point, la courbe s'interrompt). */
@@ -73,6 +75,7 @@ export function StackedBars({
   );
   const anySelected = bars.some((b) => b.selected);
   const paired = bars.some((b) => b.previous !== undefined);
+  const anyMarked = bars.some((b) => b.marked);
   const toHeight = (value: number) => (max > 0 ? `${(value / max) * 100}%` : 0);
   return (
     <div className="flex flex-col gap-1.5" role="img" aria-label={ariaLabel}>
@@ -163,11 +166,18 @@ export function StackedBars({
         {bars.map((b) => (
           <span
             key={b.key}
-            className={`min-w-0 flex-1 truncate px-[1.5px] text-center text-[10px] tabular-nums ${
-              b.selected ? "font-semibold text-ink" : "text-subtle"
-            }`}
+            className="flex min-w-0 flex-1 flex-col items-center gap-[3px] px-[1.5px]"
           >
-            {b.label}
+            <span
+              className={`w-full truncate text-center text-[10px] tabular-nums ${
+                b.selected ? "font-semibold text-ink" : "text-subtle"
+              }`}
+            >
+              {b.label}
+            </span>
+            {anyMarked && (
+              <span className={`size-[5px] rounded-full ${b.marked ? "bg-ink" : ""}`} />
+            )}
           </span>
         ))}
       </div>

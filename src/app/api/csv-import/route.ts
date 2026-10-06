@@ -1,5 +1,5 @@
 import { CSV_LIMITS } from "@/domain/ingest/csv";
-import { importCsv } from "@/server/csv/import";
+import { beginCsvImport, importCsv } from "@/server/csv/import";
 import { getHouseholdContext, UnauthorizedError } from "@/server/context";
 
 // Import CSV depuis Réglages (T22), authentifié par la session. Le corps est lu en flux ;
@@ -21,6 +21,8 @@ export async function POST(request: Request) {
     return Response.json({ error: "fichier de plus de 20 Mo" }, { status: 413 });
   }
   if (!request.body) return Response.json({ error: "fichier vide" }, { status: 400 });
+  const slot = beginCsvImport(ctx.householdId);
+  if (!slot.ok) return Response.json({ error: slot.error }, { status: 429 });
   const body = request.body;
   const household = ctx;
 
@@ -37,6 +39,8 @@ export async function POST(request: Request) {
       } catch (err) {
         console.error("[csv-import] échec", err);
         send({ type: "error", error: "import interrompu : réessayez" });
+      } finally {
+        slot.release();
       }
       controller.close();
     },

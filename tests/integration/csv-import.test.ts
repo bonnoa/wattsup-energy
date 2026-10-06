@@ -4,7 +4,7 @@ import { db } from "@/db";
 import { energyInterval } from "@/db/schema";
 import { createCategory } from "@/server/categories";
 import type { HouseholdContext } from "@/server/context";
-import { importCsv } from "@/server/csv/import";
+import { beginCsvImport, importCsv } from "@/server/csv/import";
 import { createTestHousehold, describeTenantIsolation } from "../helpers/tenancy";
 
 /** Flux d'octets découpé en petits morceaux (lignes coupées en plein milieu). */
@@ -25,6 +25,43 @@ const rows = (ctx: HouseholdContext, metric = "grid_import") =>
     .select()
     .from(energyInterval)
     .where(and(eq(energyInterval.householdId, ctx.householdId), eq(energyInterval.metric, metric)));
+
+describe("import CSV : garde-fous", () => {
+  it("quota de valeurs par foyer : l'import s'arrête et le dit", async () => {
+    const ctx = await createTestHousehold();
+    const csv = ["2024-01-01T00:00Z", "2024-01-01T01:00Z", "2024-01-01T02:00Z"]
+      .map((t) => `${t},grid_import,0.5`)
+      .join("\n");
+    const report = await importCsv(ctx, streamOf(csv), undefined, { quota: 2 });
+    expect(report.imported).toBe(2);
+    expect(report.stopped).toContain("quota");
+    expect(await rows(ctx)).toHaveLength(2);
+    // Quota déjà atteint : rien n'est lu.
+    const again = await importCsv(ctx, streamOf(csv), undefined, { quota: 2 });
+    expect(again).toMatchObject({ lines: 0, imported: 0 });
+  });
+
+  it("un import à la fois par foyer, et au plus 10 par heure", () => {
+    const id = crypto.randomUUID();
+    const first = beginCsvImport(id, 0);
+    expect(first.ok).toBe(true);
+    expect(beginCsvImport(id, 1)).toMatchObject({
+      ok: false,
+      error: expect.stringContaining("en cours"),
+    });
+    if (first.ok) first.release();
+    for (let i = 2; i <= 10; i++) {
+      const slot = beginCsvImport(id, i);
+      if (slot.ok) slot.release();
+    }
+    expect(beginCsvImport(id, 11)).toMatchObject({
+      ok: false,
+      error: expect.stringContaining("par heure"),
+    });
+    // Une heure plus tard, la fenêtre glissante libère une place.
+    expect(beginCsvImport(id, 3_600_001).ok).toBe(true);
+  });
+});
 
 describe("import CSV", () => {
   it("une année horaire (8 760 lignes) en moins de 10 s", async () => {

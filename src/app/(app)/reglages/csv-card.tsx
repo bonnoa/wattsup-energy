@@ -3,7 +3,14 @@
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 import { Badge, button, Card, CardFooter, Icon, Notice, StatTile } from "@/components/ui";
-import { CSV_LIMITS, isCsvHeader, parseCsvLine, type CsvLineResult } from "@/domain/ingest/csv";
+import {
+  CSV_LIMITS,
+  csvWindow,
+  isCsvHeader,
+  parseCsvLine,
+  type CsvLineResult,
+} from "@/domain/ingest/csv";
+import { localParts } from "@/lib/time";
 import { formatNumber } from "@/lib/format";
 import type { CsvReport } from "@/server/csv/import";
 
@@ -114,7 +121,12 @@ export function CsvCard({
   const input = useRef<HTMLInputElement>(null);
   const [phase, setPhase] = useState<Phase>({ step: "idle" });
   const [dragging, setDragging] = useState(false);
-  const ctx = { timezone, granularity, slugs };
+  const ctx = {
+    timezone,
+    granularity,
+    slugs,
+    window: csvWindow(localParts(new Date(), timezone).date, timezone),
+  };
 
   const choose = async (file: File | undefined) => {
     if (!file) return;
@@ -185,7 +197,10 @@ export function CsvCard({
             {granularity === "daily" &&
               "La colonne tariff_slot (hp ou hc) sert à l'import réseau en heures pleines et creuses."}
           </p>
-          <p>Limites : 20 Mo et 500 000 lignes par fichier.</p>
+          <p>
+            Limites : 20 Mo et 500 000 lignes par fichier, données des 10 dernières années, 10
+            imports par heure.
+          </p>
         </div>
       </details>
 

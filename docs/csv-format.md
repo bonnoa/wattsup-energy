@@ -52,3 +52,9 @@ timestamp,metric,kwh,tariff_slot
 - Dans un même fichier, si une période apparaît deux fois, la dernière valeur l'emporte.
 - Limites : **20 Mo** et **500 000 lignes** par fichier ; au-delà, l'import s'arrête et le
   rapport le signale. Écriture par lots de 5 000 lignes.
+- Dates acceptées : depuis le 1er janvier d'il y a **10 ans**, jusqu'à aujourd'hui.
+- Une valeur invraisemblable est rejetée : plus de 36 kWh en une heure pour l'import, l'export
+  et les postes, 50 kWh pour la production solaire, 20 kWh pour la batterie (× 24 pour une
+  ligne quotidienne).
+- **Un import à la fois**, **10 imports par heure** au plus, et **2 000 000 de valeurs** au plus
+  par foyer.

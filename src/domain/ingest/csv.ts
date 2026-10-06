@@ -1,11 +1,22 @@
-import { zonedInstant } from "@/lib/time";
+import { addDays, zonedInstant } from "@/lib/time";
+import { plausibleKwhPerHour } from "./hourly";
 import { categorySlug } from "./schema";
 import type { CoreMetric, Metric } from "./types";
 
 // Import CSV de l'historique (SPEC §7.7, T22) : `timestamp,metric,kwh[,tariff_slot]`,
 // valeurs en deltas. Analyse d'une ligne, pure ; une ligne invalide porte son motif.
 
-export const CSV_LIMITS = { bytes: 20 * 1024 * 1024, lines: 500_000, batch: 5000 } as const;
+export const CSV_LIMITS = {
+  bytes: 20 * 1024 * 1024,
+  lines: 500_000,
+  batch: 5000,
+  /** Profondeur d'historique acceptée, en années (jusqu'à demain). */
+  yearsBack: 10,
+  /** Intervalles stockés au plus par foyer (≈ 15 ans d'horaire sur une douzaine de compteurs). */
+  householdRows: 2_000_000,
+  /** Imports par heure et par foyer. */
+  importsPerHour: 10,
+} as const;
 
 const CORE: readonly CoreMetric[] = [
   "grid_import",
@@ -29,6 +40,8 @@ export interface CsvContext {
   granularity: "hourly" | "daily";
   /** Slugs des postes du foyer. */
   slugs: readonly string[];
+  /** Instants acceptés [from, to) : pas d'historique trop ancien, rien dans le futur. */
+  window: { from: Date; to: Date };
 }
 
 export type CsvLineResult = { ok: true; row: CsvRow } | { ok: false; error: string };
@@ -37,6 +50,14 @@ const DATE = /^\d{4}-\d{2}-\d{2}$/;
 const LOCAL = /^(\d{4}-\d{2}-\d{2})T(\d{2}):(\d{2})(?::(\d{2})(?:\.\d+)?)?$/;
 const ZONED = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?(?:Z|[+-]\d{2}:?\d{2})$/;
 const KWH = /^\d+(?:\.\d+)?$/;
+
+/** Instants acceptés : du 1er janvier d'il y a 10 ans à la fin d'aujourd'hui (jour local). */
+export function csvWindow(today: string, timezone: string): CsvContext["window"] {
+  return {
+    from: zonedInstant(`${Number(today.slice(0, 4)) - CSV_LIMITS.yearsBack}-01-01`, 0, timezone),
+    to: zonedInstant(addDays(today, 1), 0, timezone),
+  };
+}
 
 export const isCsvHeader = (line: string) => /^\s*timestamp\s*,/i.test(line);
 
@@ -90,6 +111,12 @@ export function parseCsvLine(line: string, ctx: CsvContext): CsvLineResult {
   if (!isDay && start.getTime() % 3_600_000 !== 0) {
     return { ok: false, error: "une ligne horaire commence à une heure pile" };
   }
+  if (start < ctx.window.from || start >= ctx.window.to) {
+    return {
+      ok: false,
+      error: `date hors de la plage acceptée (depuis ${ctx.window.from.getUTCFullYear()}, jusqu'à aujourd'hui)`,
+    };
+  }
 
   const metric = parseMetric(rawMetric, ctx.slugs);
   if (!(CORE as readonly string[]).includes(metric) && !metric.startsWith("category:")) {
@@ -101,6 +128,13 @@ export function parseCsvLine(line: string, ctx: CsvContext): CsvLineResult {
     return { ok: false, error: "kWh positif attendu (point décimal)" };
   }
   const kwh = Number(rawKwh);
+  const cap = plausibleKwhPerHour(metric) * (isDay ? 24 : 1);
+  if (kwh > cap) {
+    return {
+      ok: false,
+      error: `valeur invraisemblable : plus de ${cap} kWh ${isDay ? "en un jour" : "en une heure"}`,
+    };
+  }
 
   let tariffSlot: CsvRow["tariffSlot"] = "all";
   if (rawSlot !== undefined && rawSlot !== "") {

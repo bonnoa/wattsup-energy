@@ -21,6 +21,10 @@ const PLAUSIBLE_KWH_PER_HOUR: Record<string, number> = {
 };
 const DEFAULT_PLAUSIBLE_KWH_PER_HOUR = 36;
 
+/** Plafond de plausibilité d'un compteur, en kWh par heure (postes : 36). */
+export const plausibleKwhPerHour = (metric: string) =>
+  PLAUSIBLE_KWH_PER_HOUR[metric] ?? DEFAULT_PLAUSIBLE_KWH_PER_HOUR;
+
 export interface MeterReading {
   metric: Metric;
   ts: Date;
@@ -75,7 +79,7 @@ export function indexToIntervals(
   const intervals = spread(metric, from, to, delta);
 
   const kwhPerHour = (delta / (to - from)) * HOUR_MS;
-  const cap = PLAUSIBLE_KWH_PER_HOUR[metric] ?? DEFAULT_PLAUSIBLE_KWH_PER_HOUR;
+  const cap = plausibleKwhPerHour(metric);
   if (kwhPerHour > cap) {
     warnings.push({ code: "implausible", metric, kwhPerHour: round(kwhPerHour, 3) });
   }

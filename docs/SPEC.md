@@ -359,6 +359,7 @@ timestamp,metric,kwh[,tariff_slot]
 - `metric` prend les valeurs du §5.
 - Les valeurs sont des **deltas** (pas des index).
 - Limites : 20 Mo et 500 k lignes par fichier. Traitement par lots de 5 000 lignes dans une transaction.
+- **Garde-fous** : dates acceptées du 1er janvier d'il y a 10 ans jusqu'à aujourd'hui (jour local) ; valeur plafonnée au seuil de plausibilité du compteur (§6, × 24 pour une ligne quotidienne), au-delà la ligne est rejetée ; **un import à la fois** et **10 imports par heure** par foyer (refus 429 avec le délai) ; **quota de 2 000 000 valeurs** par foyer, l'import s'arrête en le disant une fois atteint. En complément, `SIGNUP_MODE=invite` est recommandé sur une instance publique.
 - Une ligne invalide est rejetée avec son motif, sans bloquer le reste.
 - Upsert : un intervalle déjà importé par CSV est remplacé (`source = csv`) ; un intervalle déjà reçu de Home Assistant est **conservé** (compté « gardé de HA » dans le rapport). Dans un même lot, la dernière valeur d'un intervalle l'emporte.
 - Un import HA ultérieur sur la même heure **écrase** la donnée CSV (HA fait foi).

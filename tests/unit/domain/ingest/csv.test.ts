@@ -1,8 +1,34 @@
 import { describe, expect, it } from "vitest";
 import { CSV_LIMITS, csvRowKey, isCsvHeader, parseCsvLine } from "@/domain/ingest/csv";
 
-const hourly = { timezone: "Europe/Paris", granularity: "hourly" as const, slugs: ["eau-chaude"] };
+const hourly = {
+  timezone: "Europe/Paris",
+  granularity: "hourly" as const,
+  slugs: ["eau-chaude"],
+  window: { from: new Date("2016-01-01T00:00:00Z"), to: new Date("2026-10-07T00:00:00Z") },
+};
 const daily = { ...hourly, granularity: "daily" as const };
+
+describe("parseCsvLine — garde-fous", () => {
+  it("refuse une date hors de la plage acceptée (trop ancienne ou future)", () => {
+    expect(parseCsvLine("2010-01-01T10:00,grid_import,1", hourly)).toMatchObject({
+      ok: false,
+      error: expect.stringContaining("hors de la plage acceptée"),
+    });
+    expect(parseCsvLine("2999-01-01T10:00,grid_import,1", hourly)).toMatchObject({ ok: false });
+  });
+
+  it("refuse une valeur invraisemblable (plafond par heure, × 24 pour un jour)", () => {
+    expect(parseCsvLine("2024-01-01T10:00,grid_import,1000000000000", hourly)).toMatchObject({
+      ok: false,
+      error: expect.stringContaining("invraisemblable"),
+    });
+    expect(parseCsvLine("2024-01-01T10:00,battery_charge,21", hourly)).toMatchObject({ ok: false });
+    expect(parseCsvLine("2024-01-01T10:00,battery_charge,20", hourly)).toMatchObject({ ok: true });
+    expect(parseCsvLine("2024-01-01,grid_import,800", daily)).toMatchObject({ ok: true });
+    expect(parseCsvLine("2024-01-01,grid_import,900", daily)).toMatchObject({ ok: false });
+  });
+});
 
 describe("parseCsvLine — lignes horaires", () => {
   it("horodatage avec décalage : début d'heure UTC", () => {
@@ -102,6 +128,13 @@ describe("en-tête, clé et limites", () => {
     const r = parseCsvLine("2024-01-01T00:00:00Z,grid_import,1", hourly);
     if (!r.ok) throw new Error(r.error);
     expect(csvRowKey(r.row)).toBe("grid_import|2024-01-01T00:00:00.000Z|hour|all");
-    expect(CSV_LIMITS).toEqual({ bytes: 20 * 1024 * 1024, lines: 500_000, batch: 5000 });
+    expect(CSV_LIMITS).toEqual({
+      bytes: 20 * 1024 * 1024,
+      lines: 500_000,
+      batch: 5000,
+      yearsBack: 10,
+      householdRows: 2_000_000,
+      importsPerHour: 10,
+    });
   });
 });

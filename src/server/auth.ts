@@ -16,9 +16,15 @@ export const auth = betterAuth({
     enabled: true,
     minPasswordLength: 10,
   },
-  // Suppression du compte depuis la page Compte (mot de passe exigé) : le foyer et toutes ses
-  // données partent en cascade.
-  user: { deleteUser: { enabled: true } },
+  user: {
+    // Suppression du compte depuis la page Compte (mot de passe exigé) : le foyer et toutes
+    // ses données partent en cascade.
+    deleteUser: { enabled: true },
+    // Changement d'email depuis la page Compte. L'instance n'envoie pas d'email : les
+    // adresses ne sont jamais vérifiées, le changement s'applique donc directement (session
+    // récente exigée par Better Auth ; l'interface fait saisir l'adresse deux fois).
+    changeEmail: { enabled: true, updateEmailWithoutVerification: true },
+  },
   hooks: {
     // L'inscription respecte SIGNUP_MODE, y compris par un appel direct à l'API.
     before: createAuthMiddleware(async (ctx) => {

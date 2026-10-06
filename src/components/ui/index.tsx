@@ -50,6 +50,7 @@ export function Card({
   description,
   actions,
   highlight = false,
+  danger = false,
   as: Tag = "section",
   children,
 }: {
@@ -59,6 +60,8 @@ export function Card({
   description?: ReactNode;
   actions?: ReactNode;
   highlight?: boolean;
+  /** Action irréversible (suppression du compte) : fond et bordure rouges. */
+  danger?: boolean;
   as?: "section" | "li";
   children?: ReactNode;
 }) {
@@ -66,15 +69,23 @@ export function Card({
   const Heading = Tag === "li" ? "h3" : "h2";
   return (
     <Tag
-      className={`flex flex-col gap-4 rounded-card border bg-surface p-4 sm:p-5 ${
-        highlight ? "border-grid shadow-[0_0_0_3px_rgba(61,90,128,0.12)]" : "border-border"
+      className={`flex flex-col gap-4 rounded-card border p-4 sm:p-5 ${
+        danger
+          ? "border-negative/40 bg-[#FBEAE7]"
+          : highlight
+            ? "border-grid bg-surface shadow-[0_0_0_3px_rgba(61,90,128,0.12)]"
+            : "border-border bg-surface"
       }`}
     >
       <div className="flex items-start gap-3">
         {icon && (
           <span
             className={`hidden size-10 flex-none items-center justify-center rounded-control sm:flex ${
-              highlight ? "bg-grid text-white" : "bg-bg text-subtle"
+              danger
+                ? "bg-negative/10 text-negative"
+                : highlight
+                  ? "bg-grid text-white"
+                  : "bg-bg text-subtle"
             }`}
           >
             <Icon name={icon} size={18} />
@@ -82,7 +93,9 @@ export function Card({
         )}
         <div className="flex min-w-0 flex-1 flex-col gap-1">
           <div className="flex flex-wrap items-center gap-2">
-            <Heading className="text-[15px] font-semibold">{title}</Heading>
+            <Heading className={`text-[15px] font-semibold ${danger ? "text-negative" : ""}`}>
+              {title}
+            </Heading>
             {badges}
           </div>
           {description && <div className="text-xs text-muted text-pretty">{description}</div>}

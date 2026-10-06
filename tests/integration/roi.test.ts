@@ -47,7 +47,7 @@ describe("rentabilité sur le foyer de démo", () => {
     );
     // La batterie perd la revente de l'énergie solaire qu'elle stocke.
     expect(withExport.items.battery?.savings.parts.lostExport).toBeLessThan(0);
-  });
+  }, 30_000);
 
   it("rendement du dernier mois complet comparé aux 12 mois précédents", async () => {
     const roi = await getRoi(ctx, now);

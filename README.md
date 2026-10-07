@@ -12,7 +12,7 @@
 <p align="center">
   <a href="https://wattsup-energy.kraftpunk.app"><strong>wattsup-energy.kraftpunk.app</strong></a>
   ·
-  <a href="https://github.com/bonnoa/wattsup-energy/wiki">Guide d'utilisation</a>
+  <a href="https://github.com/kraftpunkapp/wattsup-energy/wiki">Guide d'utilisation</a>
   ·
   <a href="#notes-de-version">Notes de version</a>
 </p>
@@ -52,7 +52,7 @@ WattsUp n'accède jamais à votre installation.
    blueprint d'automatisation prêt à importer.
 3. Les données arrivent dès le premier envoi ; vous pouvez aussi importer votre historique.
 
-Le [guide d'utilisation](https://github.com/bonnoa/wattsup-energy/wiki) détaille chaque écran.
+Le [guide d'utilisation](https://github.com/kraftpunkapp/wattsup-energy/wiki) détaille chaque écran.
 
 ## Configurer Home Assistant
 
@@ -62,8 +62,8 @@ choisissant vos capteurs d'énergie (réseau, solaire, batterie, postes). Le par
 bienvenue vous accompagne, et tout est détaillé, avec les cas particuliers (mode quotidien,
 reprise de l'historique, bouton « sac versé », capteurs REST pour afficher vos chiffres dans
 Home Assistant, messages d'erreur), dans la
-[documentation Home Assistant](https://github.com/bonnoa/wattsup-energy/tree/main/homeassistant)
-et dans le [wiki](https://github.com/bonnoa/wattsup-energy/wiki/Connecter-Home-Assistant).
+[documentation Home Assistant](https://github.com/kraftpunkapp/wattsup-energy/tree/main/homeassistant)
+et dans le [wiki](https://github.com/kraftpunkapp/wattsup-energy/wiki/Connecter-Home-Assistant).
 
 ## 🔒 Vos données restent en France
 

@@ -495,6 +495,14 @@ Légende des tailles : **S** = 1–2 fichiers · **M** = 3–5 fichiers (hors te
   - Vérifier : `tests/unit/domain/mail.test.ts`, `tests/integration/email-change.test.ts`, `tests/integration/email-change-mail.test.ts` (Resend simulé) ; navigateur
   - Fichiers : `src/server/auth.ts`, `src/domain/mail.ts`, `src/app/(app)/compte/account-card.tsx`, `src/app/(app)/compte/page.tsx`
 
+- [x] **T53 — Page Contact propre à l'instance** · S · Dépend de : T38, T52 (demandé le 2026-10-07)
+  - Acceptation :
+    - Administration › Paramètres (nouvelle entrée du bloc Administration, desktop) : intitulé de l'entrée Contact du menu (40 caractères, vide : « Contact ») et texte affiché sous le bouton de soutien de la page Contact (4 000 caractères, vide : aucun), avec aperçu
+    - Mise en forme minimale rendue par React (jamais de HTML injecté) : `**gras**`, lignes `* ` ou `- ` en puces, ligne vide entre paragraphes
+    - Colonnes `instance_settings.contact_label` et `contact_notice` (migration 0021) ; une instance installée depuis GitHub reste neutre
+  - Vérifier : `tests/unit/domain/instance-texts.test.ts`, `tests/integration/instance-texts.test.ts` (non-administrateur refusé, mode d'inscription conservé) ; navigateur
+  - Fichiers : `src/domain/instance-texts.ts`, `src/server/instance.ts`, `src/server/actions/admin.ts`, `src/components/rich-text.tsx`, `src/app/(app)/admin/parametres/*`, `src/app/(app)/contact/page.tsx`, `src/components/nav/app-nav.tsx`, `src/components/nav/account-menu.tsx`
+
 ### Ensuite (à voir ensemble)
 
 - T34 : mise à jour GitHub (README, image Docker GHCR, tag `v1.0.0`)

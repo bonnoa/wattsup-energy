@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link, { useLinkStatus } from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
+import { Icon } from "@/components/ui";
 import type { NavId, NavItem } from "@/domain/profile";
 import { HaStatus } from "./ha-status";
 import { NavIcon } from "./icons";
@@ -16,8 +17,8 @@ interface Props {
   ingest: { lastPushAt: string | null; granularity: "hourly" | "daily"; renderedAt: string };
   /** Version de l'appli, en petit sous le menu du profil. */
   version: string;
-  /** Entrée « Contact » du menu du profil (l'instance envoie des emails). */
-  contact: boolean;
+  /** Intitulé de l'entrée Contact du menu du profil ; null si l'instance n'envoie pas d'emails. */
+  contact: string | null;
   /** Entrées de menu qui portent une alerte en cours (pastille). */
   alertNav: NavId[];
   /** Administrateur de l'instance : section « Administration » (desktop seulement). */
@@ -42,38 +43,53 @@ function AlertDot({ className }: { className: string }) {
   );
 }
 
+const usersIcon = (
+  <svg
+    width={18}
+    height={18}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth={1.7}
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    aria-hidden
+  >
+    <path d="M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM2 21a7 7 0 0 1 14 0M16 3.5a4 4 0 0 1 0 7.5M18 14.5a7 7 0 0 1 4 6.5" />
+  </svg>
+);
+
+const ADMIN_LINKS: { href: string; label: string; icon: React.ReactNode }[] = [
+  { href: "/admin/utilisateurs", label: "Utilisateurs", icon: usersIcon },
+  { href: "/admin/parametres", label: "Paramètres", icon: <Icon name="sliders" size={18} /> },
+];
+
 /**
- * Section réservée à l'administrateur, sous la navigation : intitulé et lien en couleur
- * solaire sur un cadre pointillé, pour ne pas la confondre avec les pages du foyer.
+ * Section réservée à l'administrateur, sous la navigation : intitulé et liens en couleur
+ * solaire sur un cadre pointillé, pour ne pas les confondre avec les pages du foyer.
  */
-function AdminNav({ active }: { active: boolean }) {
+function AdminNav({ pathname }: { pathname: string }) {
   return (
     <nav aria-label="Administration" className="mt-6 flex flex-col gap-1.5">
       <p className="px-3 text-[10px] font-semibold tracking-[0.08em] text-solar uppercase">
         Administration
       </p>
-      <Link
-        href="/admin/utilisateurs"
-        aria-current={active ? "page" : undefined}
-        className={`flex items-center gap-3 rounded-[9px] border border-dashed px-3 py-2 text-sm font-medium text-solar no-underline hover:bg-solar/10 ${
-          active ? "border-solar bg-solar/15" : "border-solar/40"
-        }`}
-      >
-        <svg
-          width={18}
-          height={18}
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth={1.7}
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          aria-hidden
-        >
-          <path d="M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM2 21a7 7 0 0 1 14 0M16 3.5a4 4 0 0 1 0 7.5M18 14.5a7 7 0 0 1 4 6.5" />
-        </svg>
-        <span>Utilisateurs</span>
-      </Link>
+      {ADMIN_LINKS.map((l) => {
+        const active = isActive(pathname, l.href);
+        return (
+          <Link
+            key={l.href}
+            href={l.href}
+            aria-current={active ? "page" : undefined}
+            className={`flex items-center gap-3 rounded-[9px] border border-dashed px-3 py-2 text-sm font-medium text-solar no-underline hover:bg-solar/10 ${
+              active ? "border-solar bg-solar/15" : "border-solar/40"
+            }`}
+          >
+            <PendingIcon>{l.icon}</PendingIcon>
+            <span>{l.label}</span>
+          </Link>
+        );
+      })}
     </nav>
   );
 }
@@ -130,7 +146,7 @@ export function AppNav({
             );
           })}
         </nav>
-        {admin && <AdminNav active={isActive(pathname, "/admin/utilisateurs")} />}
+        {admin && <AdminNav pathname={pathname} />}
         <div className="mt-auto">
           <HaStatus {...ingest} />
         </div>

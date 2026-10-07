@@ -2,10 +2,11 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+import { parseContactTexts } from "@/domain/instance-texts";
 import { parseSignupSettings, type SignupMode } from "@/domain/signup";
 import { AdminError, deleteUserAsAdmin, ForbiddenError, setUserDisabled } from "../admin";
 import { getHouseholdContext } from "../context";
-import { updateSignupPolicy } from "../instance";
+import { updateContactTexts, updateSignupPolicy } from "../instance";
 
 export type AdminActionResult = { ok: true } | { ok: false; errors: string[] };
 
@@ -61,4 +62,23 @@ export async function saveSignupPolicyAction(
     await updateSignupPolicy(ctx, { mode: m.data, codes: parsed.codes });
     return true;
   });
+}
+
+/** Intitulé de l'entrée Contact et texte de la page Contact (administrateur seulement). */
+export async function saveContactTextsAction(raw: {
+  label: unknown;
+  notice: unknown;
+}): Promise<AdminActionResult> {
+  const parsed = parseContactTexts(raw);
+  if (!parsed.ok) return { ok: false, errors: [parsed.message] };
+  const ctx = await getHouseholdContext();
+  try {
+    await updateContactTexts(ctx, parsed.value);
+  } catch (err) {
+    if (err instanceof ForbiddenError) return { ok: false, errors: [err.message] };
+    throw err;
+  }
+  // L'intitulé apparaît dans le menu de toutes les pages.
+  revalidatePath("/", "layout");
+  return { ok: true };
 }

@@ -3,13 +3,18 @@ import { visibleModules } from "@/domain/profile";
 import { APP_VERSION } from "@/lib/version";
 import { getAlerts } from "@/server/alerts";
 import { getLastPushAt } from "@/server/ingest/status";
+import { getContactTexts } from "@/server/instance";
 import { mailConfigured } from "@/server/mail";
 import { pageContext } from "@/server/page";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const ctx = await pageContext();
   const { nav } = visibleModules(ctx.profile);
-  const [lastPushAt, alerts] = await Promise.all([getLastPushAt(ctx), getAlerts(ctx)]);
+  const [lastPushAt, alerts, contactTexts] = await Promise.all([
+    getLastPushAt(ctx),
+    getAlerts(ctx),
+    getContactTexts(),
+  ]);
   const alertNav = [...new Set(alerts.flatMap((a) => (a.nav ? [a.nav] : [])))];
   const ingest = {
     lastPushAt: lastPushAt?.toISOString() ?? null,
@@ -25,7 +30,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         householdName={ctx.householdName}
         ingest={ingest}
         version={APP_VERSION}
-        contact={mailConfigured()}
+        contact={mailConfigured() ? contactTexts.label : null}
         alertNav={alertNav}
         admin={ctx.isAdmin}
       />

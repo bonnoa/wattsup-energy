@@ -7,7 +7,7 @@ import { Icon } from "@/components/ui";
 import { authClient } from "@/lib/auth-client";
 
 // Menu du profil : le bloc nom (barre latérale) ou l'initiale (mobile) l'ouvrent. « Mon
-// compte », « Boîte à idées », « Contact » (si l'instance envoie des emails), puis un trait, puis « Se déconnecter ». Au clavier : focus sur le premier
+// compte », « Boîte à idées », l'entrée Contact (si l'instance envoie des emails ; intitulé réglable), puis un trait, puis « Se déconnecter ». Au clavier : focus sur le premier
 // élément à l'ouverture, flèches, Début / Fin ; Échap referme et rend le focus au bouton.
 // Fermé aussi par un clic à côté ou un changement de page.
 
@@ -61,8 +61,8 @@ export function AccountMenu({
   householdName: string;
   /** Version de l'appli : en pied du menu sur mobile (la barre latérale l'affiche dessous). */
   version: string;
-  /** Entrée « Contact » : seulement si l'instance envoie des emails. */
-  contact: boolean;
+  /** Intitulé de l'entrée Contact (réglé par l'administrateur) ; null si l'instance n'envoie pas d'emails. */
+  contact: string | null;
   /** sidebar : bloc nom en bas de la barre latérale ; header : initiale de l'en-tête mobile. */
   variant: "sidebar" | "header";
 }) {
@@ -194,7 +194,7 @@ export function AccountMenu({
               className={itemClass}
             >
               <Icon name="mail" size={16} />
-              Contact
+              {contact}
             </Link>
           )}
           <div role="separator" className="my-1.5 border-t border-track" />

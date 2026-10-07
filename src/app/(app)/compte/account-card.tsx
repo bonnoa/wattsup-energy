@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 import { button, Card, Notice } from "@/components/ui";
+import { NAME_MAX } from "@/domain/signup";
 import { authClient } from "@/lib/auth-client";
 
 const inputClass =
@@ -17,6 +18,81 @@ function Status({ message }: { message: Message }) {
     <p role="status" className={`text-sm ${message.ok ? "text-positive" : "text-negative"}`}>
       {message.text}
     </p>
+  );
+}
+
+/** Prénom et nom affichés dans le menu et les messages envoyés depuis l'appli. */
+function NameForm({ name }: { name: string }) {
+  const router = useRouter();
+  const [editing, setEditing] = useState(false);
+  const [message, setMessage] = useState<Message>(null);
+  const [pending, setPending] = useState(false);
+
+  const changeName = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const next = String(new FormData(e.currentTarget).get("name")).trim().replace(/\s+/g, " ");
+    if (!next) {
+      setMessage({ ok: false, text: "Indiquez au moins un prénom." });
+      return;
+    }
+    setPending(true);
+    const { error } = await authClient.updateUser({ name: next });
+    setPending(false);
+    if (error) {
+      setMessage({ ok: false, text: "Changement impossible. Réessayez." });
+      return;
+    }
+    setEditing(false);
+    setMessage({ ok: true, text: "Nom enregistré." });
+    router.refresh();
+  };
+
+  return (
+    <div className="flex flex-col gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="flex min-w-0 flex-col gap-0.5">
+          <h3 className="text-sm font-semibold">Prénom et nom</h3>
+          <p className="truncate text-[13px] text-muted">{name || "—"}</p>
+        </div>
+        {!editing && (
+          <button
+            type="button"
+            onClick={() => {
+              setEditing(true);
+              setMessage(null);
+            }}
+            className={button.secondary}
+          >
+            Modifier
+          </button>
+        )}
+      </div>
+      {editing && (
+        <form onSubmit={changeName} className="flex flex-col gap-3">
+          <label className={labelClass}>
+            Prénom et nom
+            <input
+              name="name"
+              defaultValue={name}
+              required
+              maxLength={NAME_MAX}
+              autoComplete="name"
+              autoFocus
+              className={inputClass}
+            />
+          </label>
+          <div className="flex gap-2">
+            <button type="submit" disabled={pending} className={button.primary}>
+              Enregistrer
+            </button>
+            <button type="button" onClick={() => setEditing(false)} className={button.secondary}>
+              Annuler
+            </button>
+          </div>
+        </form>
+      )}
+      <Status message={message} />
+    </div>
   );
 }
 
@@ -123,8 +199,8 @@ function EmailForm({ email }: { email: string }) {
   );
 }
 
-/** Identifiants : adresse email de connexion et mot de passe. */
-export function AccountCard({ email }: { email: string }) {
+/** Identité et identifiants : nom affiché, adresse email de connexion et mot de passe. */
+export function AccountCard({ name, email }: { name: string; email: string }) {
   const [message, setMessage] = useState<Message>(null);
   const [pending, setPending] = useState(false);
 
@@ -155,8 +231,15 @@ export function AccountCard({ email }: { email: string }) {
   };
 
   return (
-    <Card icon="key" title="Identifiants" description="Adresse de connexion et mot de passe.">
-      <EmailForm email={email} />
+    <Card
+      icon="key"
+      title="Identifiants"
+      description="Nom affiché, adresse de connexion et mot de passe."
+    >
+      <NameForm name={name} />
+      <div className="border-t border-track pt-4">
+        <EmailForm email={email} />
+      </div>
       <form onSubmit={changePassword} className="flex flex-col gap-3 border-t border-track pt-4">
         <h3 className="text-sm font-semibold">Changer de mot de passe</h3>
         <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,180px),1fr))] gap-2">

@@ -26,3 +26,13 @@ export function signupAllowed(
   if (code && codes.includes(code.trim())) return { ok: true };
   return { ok: false, message: "Code d'invitation invalide." };
 }
+
+/** Longueur maximale du nom affiché (prénom et nom), à l'inscription comme dans Mon compte. */
+export const NAME_MAX = 60;
+
+/** Nom affiché acceptable : non vide une fois les espaces retirés, NAME_MAX caractères au plus. */
+export function validName(name: unknown): boolean {
+  if (typeof name !== "string") return false;
+  const n = name.trim();
+  return n.length > 0 && n.length <= NAME_MAX;
+}

@@ -4,7 +4,13 @@ import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { nextCookies } from "better-auth/next-js";
 import { db } from "@/db";
 import * as schema from "@/db/schema";
-import { parseInviteCodes, parseSignupMode, signupAllowed } from "@/domain/signup";
+import {
+  NAME_MAX,
+  parseInviteCodes,
+  parseSignupMode,
+  signupAllowed,
+  validName,
+} from "@/domain/signup";
 import { resetPasswordEmail } from "@/domain/mail";
 import { ensureHousehold } from "./household";
 import { mailConfigured, sendMail } from "./mail";
@@ -47,6 +53,15 @@ export const auth = betterAuth({
   hooks: {
     // L'inscription respecte SIGNUP_MODE, y compris par un appel direct à l'API.
     before: createAuthMiddleware(async (ctx) => {
+      // Nom affiché (inscription, page Compte) : non vide, NAME_MAX caractères au plus.
+      if (ctx.path === "/sign-up/email" || ctx.path === "/update-user") {
+        const name: unknown = ctx.body?.name;
+        if (name !== undefined && !validName(name)) {
+          throw new APIError("BAD_REQUEST", {
+            message: `nom attendu, ${NAME_MAX} caractères au plus`,
+          });
+        }
+      }
       if (ctx.path !== "/sign-up/email") return;
       const allowed = signupAllowed(
         signupMode(),

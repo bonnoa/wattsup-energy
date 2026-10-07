@@ -148,6 +148,15 @@ Taille : **S** = 1–2 fichiers · **M** = 3–5 fichiers. Aucune tâche L/XL.
 
 **Checkpoint final** : les 8 critères de réussite de la spec (§13) sont vérifiés. Revue finale.
 
+### Jalon 7 : Compte, administration et retours des utilisateurs (ajouté le 2026-10-07)
+
+| # | Tâche | Taille | Dépend de | Critère d'acceptation clé |
+|---|---|---|---|---|
+| T35 | Prénom et nom modifiables (Mon compte), version de l'appli en bas du menu | S | T32 | le menu affiche le nouveau nom sans reconnexion |
+| T36 | Compte administrateur (`user.is_admin`, fixé par migration) et page Utilisateurs (désactiver, supprimer) | M | T35 | un non-administrateur ne lit ni ne modifie rien (test) ; un compte désactivé ne se connecte plus et ses envois HA sont refusés |
+| T37 | Boîte à idées : proposition, votes, filtre, recherche ; statut et suppression par l'administrateur ; email à chaque nouvelle idée | M | T36 | un vote par compte ; seul l'administrateur change un statut (test) |
+| T38 | Contact (prendre contact, signaler un bug) par email à l'administrateur | S | T36 | réponse directe à l'expéditeur (`reply_to`) |
+
 ## Parallélisation
 
 | Peut avancer en parallèle | Doit rester séquentiel |

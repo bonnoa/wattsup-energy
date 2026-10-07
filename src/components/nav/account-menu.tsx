@@ -52,10 +52,13 @@ function UserIcon() {
 export function AccountMenu({
   userName,
   householdName,
+  version,
   variant,
 }: {
   userName: string;
   householdName: string;
+  /** Version de l'appli : en pied du menu sur mobile (la barre latérale l'affiche dessous). */
+  version: string;
   /** sidebar : bloc nom en bas de la barre latérale ; header : initiale de l'en-tête mobile. */
   variant: "sidebar" | "header";
 }) {
@@ -180,6 +183,11 @@ export function AccountMenu({
             <SignOutIcon />
             Se déconnecter
           </button>
+          {variant === "header" && (
+            <p className="px-3 pt-1 pb-1.5 text-[11px] text-subtle tabular-nums">
+              Version {version}
+            </p>
+          )}
         </div>
       )}
     </div>

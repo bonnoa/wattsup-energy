@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { parseInviteCodes, parseSignupMode, signupAllowed } from "@/domain/signup";
+import {
+  NAME_MAX,
+  parseInviteCodes,
+  parseSignupMode,
+  signupAllowed,
+  validName,
+} from "@/domain/signup";
 
 describe("SIGNUP_MODE", () => {
   it("ouvert par défaut, fermé si la valeur est inconnue", () => {
@@ -24,5 +30,15 @@ describe("SIGNUP_MODE", () => {
       ok: false,
       message: "Les inscriptions sont fermées.",
     });
+  });
+});
+
+describe("validName", () => {
+  it("non vide une fois les espaces retirés, NAME_MAX caractères au plus", () => {
+    expect(validName("Alexandre Bonno")).toBe(true);
+    expect(validName("  ")).toBe(false);
+    expect(validName("a".repeat(NAME_MAX))).toBe(true);
+    expect(validName("a".repeat(NAME_MAX + 1))).toBe(false);
+    expect(validName(42)).toBe(false);
   });
 });

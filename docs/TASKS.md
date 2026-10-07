@@ -354,6 +354,42 @@ Légende des tailles : **S** = 1–2 fichiers · **M** = 3–5 fichiers (hors te
 
 ---
 
+## Jalon 7 : Compte, administration et retours des utilisateurs (demandé le 2026-10-07)
+
+- [x] **T35 — Nom modifiable et version affichée** · S · Dépend de : T32
+  - Acceptation :
+    - Mon compte : le prénom et nom (champ `user.name`, 60 caractères au plus) se modifie ; le menu le reprend aussitôt
+    - Numéro de version (`package.json`) en petit en bas de la barre latérale, et en bas du menu du profil sur mobile
+  - Vérifier : manuel (navigateur intégré)
+  - Fichiers : `src/app/(app)/compte/account-card.tsx`, `src/lib/version.ts`, `src/components/nav/*`
+
+- [ ] **T36 — Compte administrateur et page Utilisateurs** · M · Dépend de : T35
+  - Acceptation :
+    - Colonnes `user.is_admin` (défaut faux) et `user.disabled_at` ; la migration désigne `alexandre@bonno.xyz` comme administrateur, aucun écran ne permet de changer ce statut
+    - Barre latérale (desktop seulement) : entrée « Utilisateurs » sous un intitulé « Administration », d'aspect distinct, visible du seul administrateur ; `/admin/utilisateurs` renvoie les autres vers l'accueil
+    - Liste : nom, email, date d'inscription, profils activés, nombre de postes, nombre de valeurs importées, statut ; actions désactiver / réactiver et supprimer (confirmée), jamais sur son propre compte
+    - Compte désactivé : sessions fermées, connexion refusée (« compte désactivé »), envois Home Assistant refusés (401) ; réactivable
+  - Vérifier : `tests/integration/admin.test.ts` (refus pour un non-administrateur, désactivation, suppression en cascade) ; manuel
+  - Fichiers : `src/db/auth-schema.ts`, `drizzle/0014_*.sql`, `src/server/admin.ts`, `src/server/actions/admin.ts`, `src/app/(app)/admin/utilisateurs/*`
+
+- [ ] **T37 — Boîte à idées** · M · Dépend de : T36
+  - Acceptation :
+    - Menu du profil : « Boîte à idées » → `/idees` ; formulaire titre (60 caractères) et description (1 000 caractères)
+    - Liste commune à tous les comptes : titre, description, date, statut (Proposée, Planifiée, En cours, Terminée + version), votes (un par compte, retirable) ; tri par votes puis date ; filtre par statut et recherche (sans accents ni casse)
+    - Administrateur seulement, signalé comme tel : changement de statut (version exigée pour « Terminée », version courante proposée) et suppression ; auteur affiché
+    - Nouvelle idée : email à l'administrateur (si l'envoi d'emails est configuré) ; 5 idées par heure et par compte
+  - Vérifier : `tests/unit/domain/ideas.test.ts`, `tests/integration/ideas.test.ts` ; manuel
+  - Fichiers : `src/domain/ideas.ts`, `drizzle/0015_*.sql`, `src/server/ideas.ts`, `src/server/actions/ideas.ts`, `src/app/(app)/idees/*`
+
+- [ ] **T38 — Contact** · S · Dépend de : T36
+  - Acceptation :
+    - Menu du profil : « Contact » → `/contact` (si l'envoi d'emails est configuré) ; motif « Prendre contact » ou « Signaler un bug », message (2 000 caractères)
+    - Envoi par email à l'administrateur, nom et adresse du compte inclus, réponse directe à l'expéditeur (`reply_to`) ; 5 messages par heure et par compte
+  - Vérifier : `tests/unit/domain/mail.test.ts`, `tests/integration/contact.test.ts` ; manuel
+  - Fichiers : `src/server/contact.ts`, `src/server/actions/contact.ts`, `src/app/(app)/contact/*`
+
+---
+
 ## Dépendances à valider avant la phase 4 (« Demander d'abord »)
 
 | Paquet | Usage | Tâche |

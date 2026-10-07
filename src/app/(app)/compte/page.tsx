@@ -15,7 +15,7 @@ export default async function AccountPage() {
         subtitle={`${ctx.userName || "Mon compte"} · ${ctx.householdName}`}
       />
       <div className="flex max-w-2xl flex-col gap-4">
-        <AccountCard email={ctx.userEmail} />
+        <AccountCard name={ctx.userName} email={ctx.userEmail} />
         <OnboardingCard />
         <DeleteAccountCard />
       </div>

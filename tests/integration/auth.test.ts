@@ -2,6 +2,7 @@ import { eq } from "drizzle-orm";
 import { describe, expect, it } from "vitest";
 import { db } from "@/db";
 import { DEFAULT_PROFILE, DEFAULT_SETTINGS, household, user } from "@/db/schema";
+import { NAME_MAX } from "@/domain/signup";
 import { auth } from "@/server/auth";
 import { ensureHousehold } from "@/server/household";
 
@@ -34,6 +35,26 @@ describe("inscription", () => {
     await auth.api.signUpEmail({ body: { email, password: "motdepasse-solide", name: "B" } });
     const res = await auth.api.signInEmail({ body: { email, password: "motdepasse-solide" } });
     expect(res.token).toBeTruthy();
+  });
+});
+
+describe("nom affiché", () => {
+  it("refusé vide ou au-delà de NAME_MAX caractères ; modifiable depuis la session", async () => {
+    const password = "motdepasse-solide";
+    await expect(
+      auth.api.signUpEmail({ body: { email: unique(), password, name: "x".repeat(NAME_MAX + 1) } }),
+    ).rejects.toThrow(/nom attendu/);
+
+    const email = unique();
+    const created = await auth.api.signUpEmail({ body: { email, password, name: "E" } });
+    const signedIn = await auth.api.signInEmail({ body: { email, password }, returnHeaders: true });
+    const headers = new Headers({ cookie: signedIn.headers.get("set-cookie") ?? "" });
+    await expect(auth.api.updateUser({ body: { name: "  " }, headers })).rejects.toThrow(
+      /nom attendu/,
+    );
+    await auth.api.updateUser({ body: { name: "Élise Martin" }, headers });
+    const [row] = await db.select().from(user).where(eq(user.id, created.user.id));
+    expect(row?.name).toBe("Élise Martin");
   });
 });
 

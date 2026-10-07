@@ -13,12 +13,14 @@ interface Props {
   userName: string;
   householdName: string;
   ingest: { lastPushAt: string | null; granularity: "hourly" | "daily"; renderedAt: string };
+  /** Version de l'appli, en petit sous le menu du profil. */
+  version: string;
 }
 
 const isActive = (pathname: string, href: string) =>
   href === "/" ? pathname === "/" : pathname === href || pathname.startsWith(`${href}/`);
 
-export function AppNav({ items, userName, householdName, ingest }: Props) {
+export function AppNav({ items, userName, householdName, ingest, version }: Props) {
   const pathname = usePathname();
 
   return (
@@ -57,7 +59,13 @@ export function AppNav({ items, userName, householdName, ingest }: Props) {
           <HaStatus {...ingest} />
         </div>
         <div className="pt-4">
-          <AccountMenu userName={userName} householdName={householdName} variant="sidebar" />
+          <AccountMenu
+            userName={userName}
+            householdName={householdName}
+            version={version}
+            variant="sidebar"
+          />
+          <p className="px-2 pt-2 text-[11px] text-[#A9ADA6] tabular-nums">Version {version}</p>
         </div>
       </aside>
 
@@ -69,7 +77,12 @@ export function AppNav({ items, userName, householdName, ingest }: Props) {
         </div>
         <div className="flex items-center gap-2">
           <HaStatus {...ingest} compact />
-          <AccountMenu userName={userName} householdName={householdName} variant="header" />
+          <AccountMenu
+            userName={userName}
+            householdName={householdName}
+            version={version}
+            variant="header"
+          />
         </div>
       </header>
 

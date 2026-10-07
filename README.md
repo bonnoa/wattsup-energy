@@ -10,168 +10,98 @@
 </p>
 
 <p align="center">
-  <a href="LICENSE"><img alt="Licence GPL-3.0" src="https://img.shields.io/badge/licence-GPL--3.0-blue"></a>
-  <a href="https://github.com/bonnoa/wattsup-energy/pkgs/container/wattsup-energy"><img alt="Image Docker" src="https://img.shields.io/badge/docker-ghcr.io-2496ED"></a>
+  <a href="https://wattsup-energy.kraftpunk.app"><strong>wattsup-energy.kraftpunk.app</strong></a>
+  ·
+  <a href="https://github.com/bonnoa/wattsup-energy/wiki">Guide d'utilisation</a>
+  ·
+  <a href="#notes-de-version">Notes de version</a>
 </p>
 
 ---
 
-WattsUp Energy est une application web auto-hébergée. Home Assistant **pousse** chaque heure
-(ou chaque jour) les compteurs d'énergie du foyer ; WattsUp les transforme en euros et en
-conseils. Aucun port à ouvrir vers Home Assistant : l'application ne l'interroge jamais.
+## Ce que fait WattsUp Energy
 
-## Fonctionnalités
+Votre Home Assistant connaît déjà vos compteurs d'énergie. WattsUp les transforme en euros et
+en décisions : combien coûte le mois, quel contrat serait moins cher, quand lancer les
+appareils, combien de sacs de granulés commander, quand les panneaux seront remboursés.
 
 - **Vue d'ensemble** : coût du mois et projection de l'année, origine de la consommation
   (réseau, solaire, batterie), talon de consommation, heures conseillées pour consommer.
-- **Contrats** : Base, Heures creuses, Tempo ; historique des prix, comparaison des offres
-  heure par heure sur votre propre consommation.
+- **Contrats** : Base, Heures creuses, Tempo ; historique des prix et comparaison des offres
+  heure par heure, sur votre propre consommation.
 - **Chauffage** : granulés et bois (stock, achats, sacs versés), coût par saison corrigé de
   la météo, prévision de réapprovisionnement.
 - **Rentabilité** : retour sur investissement des panneaux solaires et de la batterie,
   simulateur « Et si… ».
-- **Alertes** dans l'appli, par email ou en notification push (stock bas, Home Assistant
-  muet, production solaire anormale, budget dépassé).
-- **Import CSV** de l'historique, **export** de toutes vos données, résumé lisible par des
-  capteurs REST de Home Assistant.
-- Multi-comptes (un foyer par compte), inscriptions ouvertes, sur invitation ou fermées,
-  thème clair ou sombre, application installable sur mobile.
+- **Alertes** dans l'appli, par email ou en notification sur le téléphone : stock bas,
+  Home Assistant muet, production solaire anormale, budget dépassé.
+- **Vos données** : import de l'historique en CSV, export complet à tout moment, résumé
+  lisible par des capteurs de Home Assistant.
+- Application installable sur le téléphone, thème clair ou sombre.
 
-## Installation
+Home Assistant **pousse** ses données vers WattsUp : aucun port à ouvrir chez vous,
+WattsUp n'accède jamais à votre installation.
 
-### Prérequis
+## S'inscrire
 
-- Docker et Docker Compose (machine Linux, NAS, Raspberry Pi 4/5 : image `amd64` et `arm64`).
-- Un nom de domaine et un reverse proxy en HTTPS (Caddy, Traefik, Nginx Proxy Manager…)
-  sont recommandés : l'application installable et les notifications push l'exigent.
+1. Rendez-vous sur [wattsup-energy.kraftpunk.app](https://wattsup-energy.kraftpunk.app) et
+   créez votre compte. Selon les périodes, les inscriptions peuvent être sur invitation : un
+   code vous est alors demandé.
+2. Le parcours de bienvenue vous guide : profil énergétique du foyer, commune (pour la
+   météo), contrat d'électricité, puis connexion de Home Assistant avec un token et un
+   blueprint d'automatisation prêt à importer.
+3. Les données arrivent dès le premier envoi ; vous pouvez aussi importer votre historique.
 
-### Docker Compose
+Le [guide d'utilisation](https://github.com/bonnoa/wattsup-energy/wiki) détaille chaque écran.
 
-Créez un dossier `wattsup` contenant ce `docker-compose.yml` :
+## 🔒 Vos données restent en France
 
-```yaml
-services:
-  db:
-    image: postgres:16-alpine
-    restart: unless-stopped
-    environment:
-      POSTGRES_USER: wattsup
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?à définir dans .env}
-      POSTGRES_DB: wattsup
-    volumes:
-      - db-data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U wattsup"]
-      interval: 5s
-      retries: 10
+Les données sont stockées sur des serveurs hébergés en France (Strasbourg et Gravelines) par
+OVHcloud, dans le cadre du RGPD.
 
-  app:
-    image: ghcr.io/bonnoa/wattsup-energy:1
-    restart: unless-stopped
-    depends_on:
-      db:
-        condition: service_healthy
-    environment:
-      DATABASE_URL: postgres://wattsup:${POSTGRES_PASSWORD}@db:5432/wattsup
-      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?à définir dans .env}
-      BETTER_AUTH_URL: ${BETTER_AUTH_URL:?à définir dans .env}
-    ports:
-      - "3000:3000"
+- Elles ne sont jamais revendues, cédées ni partagées, ni utilisées pour de la publicité ou
+  l'entraînement de modèles d'intelligence artificielle.
+- Vous pouvez les exporter à tout moment, et supprimer votre compte avec tout son historique
+  en quelques clics depuis Mon compte.
+- Seuls les emails (envoyés via Resend) et les notifications push (services de votre
+  navigateur : Google, Apple ou Mozilla) passent par des prestataires techniques, uniquement
+  pour vous être remis.
 
-volumes:
-  db-data:
-```
+## Code source
 
-et ce fichier `.env` à côté :
+Le code de WattsUp Energy est ouvert et auditable, sous licence [GPL-3.0](LICENSE). Les
+remarques et signalements sont les bienvenus : voir [CONTRIBUTING.md](CONTRIBUTING.md).
 
-```bash
-# openssl rand -hex 24
-POSTGRES_PASSWORD=
-# openssl rand -base64 32
-BETTER_AUTH_SECRET=
-# Adresse publique de l'instance, sans / final
-BETTER_AUTH_URL=https://wattsup.exemple.fr
-```
+## Soutenir le projet
 
-Puis :
+WattsUp vous rend service ? Vous pouvez soutenir son développement :
 
-```bash
-docker compose up -d
-```
+<a href="https://www.buymeacoffee.com/kraftpunk"><img src="https://img.buymeacoffee.com/button-api/?text=Buy%20me%20a%20coffee&emoji=%E2%98%95&slug=kraftpunk&button_colour=FFDD00&font_colour=000000&font_family=Inter&outline_colour=000000&coffee_colour=ffffff" alt="Buy me a coffee" height="48"></a>
 
-L'application écoute sur le port `3000` ; faites-y pointer votre reverse proxy. Les
-migrations de la base sont appliquées au démarrage.
+## Notes de version
 
-**Premier compte** : ouvrez l'adresse de l'instance et créez votre compte. Le premier compte
-créé devient **administrateur** : il gère les comptes, les inscriptions (ouvertes, sur
-invitation ou fermées) et les textes de la page Contact. Pensez à fermer les inscriptions
-ou à les passer sur invitation si l'instance est exposée sur Internet.
+### 1.0.0 — 7 octobre 2026
 
-### Autres plateformes
+Première version publique.
 
-L'image `ghcr.io/bonnoa/wattsup-energy` fonctionne telle quelle sur Coolify, Portainer,
-Unraid ou Kubernetes : il suffit d'une base PostgreSQL 16 et des variables ci-dessous.
-Sur Coolify, vous pouvez aussi déployer directement depuis ce dépôt (Dockerfile).
+**Fonctionnalités**
 
-### Variables d'environnement
+- Réception des données de Home Assistant, chaque heure ou chaque jour, avec blueprints
+  d'automatisation (envoi courant, historique, sacs de granulés versés).
+- Vue d'ensemble : coût du mois, projection de l'année, talon de consommation, heures
+  conseillées ; blocs masquables.
+- Contrats Base, Heures creuses et Tempo, comparaison des offres et suggestion d'un contrat
+  moins cher.
+- Chauffage aux granulés et au bois : stock, achats, coût par saison, prévision de
+  réapprovisionnement.
+- Rentabilité des panneaux solaires et de la batterie, simulateur « Et si… ».
+- Alertes dans l'appli, par email et en notification push.
+- Import CSV de l'historique, export complet des données, résumé pour les capteurs de Home
+  Assistant.
+- Thème sombre, application installable, boîte à idées et formulaire de contact.
 
-| Variable                                                 | Rôle                                                                                                                                                           |
-| -------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `DATABASE_URL`                                           | **Obligatoire.** Connexion PostgreSQL 16.                                                                                                                      |
-| `BETTER_AUTH_SECRET`                                     | **Obligatoire.** Secret des sessions, 32 caractères au moins.                                                                                                  |
-| `BETTER_AUTH_URL`                                        | **Obligatoire.** Adresse publique de l'instance.                                                                                                               |
-| `SIGNUP_MODE`, `INVITE_CODES`                            | Inscriptions au démarrage : `open` (défaut), `invite` (codes séparés par des virgules) ou `closed`. Ensuite réglables par l'administrateur.                    |
-| `RESEND_API_KEY`, `MAIL_FROM`                            | Envoi d'emails par [Resend](https://resend.com) : mot de passe oublié, confirmation d'adresse, alertes, page Contact. Sans elles, ces fonctions disparaissent. |
-| `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` | Notifications push. Clés générées une fois avec `npx web-push generate-vapid-keys` ; `VAPID_SUBJECT` : `mailto:…` ou l'adresse de l'instance.                  |
-| `TEMPO_SYNC`, `WEATHER_SYNC`                             | `off` pour couper les seuls appels sortants : calendrier Tempo (api-couleur-tempo.fr) et météo (Open-Meteo, coordonnées arrondies de la commune).              |
-| `RUN_MIGRATIONS`                                         | `off` pour ne pas appliquer les migrations au démarrage.                                                                                                       |
+**Sécurité**
 
-Un exemple commenté se trouve dans [`.env.example`](.env.example).
-
-### Mise à jour
-
-```bash
-docker compose pull && docker compose up -d
-```
-
-Le tag `1` suit les versions 1.x ; utilisez un tag précis (`1.0.0`) pour figer la version.
-
-### Sauvegarde
-
-Toutes les données sont dans PostgreSQL :
-
-```bash
-docker compose exec db pg_dump -U wattsup wattsup | gzip > wattsup-$(date +%F).sql.gz
-```
-
-## Connecter Home Assistant
-
-Dans WattsUp, **Réglages › API d'ingestion** donne l'adresse d'envoi et un token. Le
-blueprint d'automatisation fourni (`homeassistant/blueprints`, aussi servi par votre instance)
-envoie ensuite les compteurs chaque heure. Le parcours de bienvenue guide pas à pas ; le
-détail est dans [`homeassistant/README.md`](homeassistant/README.md) et dans le
-[wiki](https://github.com/bonnoa/wattsup-energy/wiki).
-
-## Développement
-
-Node.js 22, pnpm 9 (`corepack enable`), Docker pour PostgreSQL.
-
-```bash
-docker compose up -d db        # PostgreSQL local (bases wattsup et wattsup_test)
-cp .env.example .env.local
-pnpm install
-pnpm db:migrate && pnpm db:seed  # compte de démo : voir .env.example
-pnpm dev                       # http://localhost:3000
-pnpm lint && pnpm test         # lint, types, tests unitaires et d'intégration
-pnpm test:e2e                  # parcours Playwright sur un build de production
-```
-
-Next.js (App Router), TypeScript, PostgreSQL avec Drizzle, Better Auth, Tailwind CSS. Voir
-[CONTRIBUTING.md](CONTRIBUTING.md) pour proposer une modification.
-
-## Licence et soutien
-
-WattsUp Energy est un logiciel libre sous licence [GPL-3.0](LICENSE).
-
-Le projet vous rend service ? Vous pouvez soutenir son développement :
-[Buy me a coffee](https://www.buymeacoffee.com/kraftpunk) ☕
+- En-têtes de sécurité et politique de contenu stricte sur toutes les pages.
+- Changement d'adresse email protégé par le mot de passe et confirmé par un lien.
+- Limitation des tentatives sur la connexion et sur les envois de Home Assistant.

@@ -10,9 +10,25 @@ Ouvrez une [issue](https://github.com/bonnoa/wattsup-energy/issues) en précisan
 données ou une faille de sécurité, n'ouvrez pas d'issue publique : utilisez
 [l'onglet Security](https://github.com/bonnoa/wattsup-energy/security/advisories/new).
 
+## Environnement de développement
+
+Node.js 22, pnpm 9 (`corepack enable`), Docker pour PostgreSQL.
+
+```bash
+docker compose up -d db          # PostgreSQL local (bases wattsup et wattsup_test)
+cp .env.example .env.local
+pnpm install
+pnpm db:migrate && pnpm db:seed  # compte de démo : voir .env.example
+pnpm dev                         # http://localhost:3000
+pnpm lint && pnpm test           # lint, types, tests unitaires et d'intégration
+pnpm test:e2e                    # parcours Playwright sur un build de production
+```
+
+Next.js (App Router), TypeScript, PostgreSQL avec Drizzle, Better Auth, Tailwind CSS.
+
 ## Proposer une modification
 
-1. Installez l'environnement de développement (voir le [README](README.md#développement)).
+1. Installez l'environnement de développement (ci-dessous).
 2. Créez une branche depuis `main`.
 3. Gardez les changements ciblés et testés :
    - logique métier pure dans `src/domain` (sans accès à la base), avec ses tests unitaires ;

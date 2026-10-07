@@ -215,10 +215,14 @@ export function priceTimeline(
         energyCents: 0,
         subscriptionCents: 0,
         kwh: 0,
+        slotKwh: {},
       };
       acc.energyCents += m.energyCents;
       acc.subscriptionCents += m.subscriptionCents;
       acc.kwh += m.kwh;
+      for (const [slot, k] of Object.entries(m.slotKwh)) {
+        acc.slotKwh[slot] = (acc.slotKwh[slot] ?? 0) + k;
+      }
       result.byMonth[month] = acc;
     }
     for (const [slot, s] of Object.entries(r.bySlot)) {

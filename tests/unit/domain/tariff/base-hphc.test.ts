@@ -81,6 +81,10 @@ describe("contrat HP/HC", () => {
     expect(r.energyCents).toBe(218066);
     expect(r.subscriptionCents).toBe(23640);
     expect(r.totalCents).toBe(241706);
+    // Créneaux par mois : janvier, 31 jours × 8 h creuses et 16 h pleines.
+    expect(r.byMonth["2026-01"]?.slotKwh).toEqual({ hc: 248, hp: 496 });
+    const months = Object.values(r.byMonth);
+    expect(months.reduce((a, m) => a + (m.slotKwh.hc ?? 0), 0)).toBe(2920);
   });
 
   it("jour du passage à l'heure d'hiver : 25 h dont 9 creuses", () => {

@@ -10,6 +10,7 @@ import {
 import { BatteryGapNotices } from "@/components/battery-gap-notice";
 import { MarkersStrip } from "@/components/cards/markers-strip";
 import { MonthlyCostCard } from "@/components/cards/monthly-cost-card";
+import { MonthlyTable } from "@/components/cards/monthly-table";
 import { PageHeader } from "@/components/page-header";
 import { EmptyState } from "@/components/empty-state";
 import { visibleModules } from "@/domain/profile";
@@ -62,6 +63,12 @@ export default async function OverviewPage({
             <CategoriesOverviewCard overview={overview} />
           </div>
           <SolarCard overview={overview} />
+          <MonthlyTable
+            months={overview.months}
+            year={overview.period.key.slice(0, 4)}
+            currentMonth={localParts(new Date(), ctx.timezone).date.slice(0, 7)}
+            solar={modules.solar}
+          />
         </>
       )}
     </>

@@ -223,3 +223,37 @@ export function peakSplit(
   }
   return split.hp.kwh + split.hc.kwh > 0 ? split : null;
 }
+
+/** kWh HP et HC d'une ventilation par créneau (Tempo compris), le reste à part. */
+export function slotHpHc(slotKwh: Record<string, number>): {
+  hp: number;
+  hc: number;
+  other: number;
+} {
+  const r = { hp: 0, hc: 0, other: 0 };
+  for (const [key, kwh] of Object.entries(slotKwh)) {
+    if (key === "hp" || key.endsWith("_hp")) r.hp += kwh;
+    else if (key === "hc" || key.endsWith("_hc")) r.hc += kwh;
+    else r.other += kwh;
+  }
+  return r;
+}
+
+/**
+ * Économie solaire estimée d'un mois, en centimes : autoconsommation directe (production −
+ * export − charge solaire de la batterie) au prix moyen du kWh soutiré ce mois-là, plus la
+ * revente si elle est activée. Estimation du tableau mensuel ; le calcul exact, au créneau,
+ * est celui de Rentabilité. null sans prix moyen.
+ */
+export function solarSavingEstimate(
+  month: { solar: number; gridExport: number; batteryCharge: number; batteryChargeGrid: number },
+  o: { avgPriceCents: number | null; gridCharging: boolean; exportPriceCents: number | null },
+): number | null {
+  if (o.avgPriceCents === null) return null;
+  const chargeFromGrid = o.gridCharging
+    ? Math.min(month.batteryCharge, month.batteryChargeGrid)
+    : 0;
+  const self = Math.max(0, month.solar - month.gridExport - (month.batteryCharge - chargeFromGrid));
+  const resale = o.exportPriceCents === null ? 0 : month.gridExport * o.exportPriceCents;
+  return Math.round(self * o.avgPriceCents + resale);
+}

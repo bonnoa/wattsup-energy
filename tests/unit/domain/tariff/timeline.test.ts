@@ -163,6 +163,7 @@ describe("priceTimeline", () => {
     expect(r.totalCents).toBe(july.totalCents + august.totalCents);
     expect(r.byMonth["2025-07"]?.energyCents).toBe(july.energyCents);
     expect(r.byMonth["2025-08"]?.energyCents).toBe(august.energyCents);
+    expect(r.byMonth["2025-08"]?.slotKwh).toEqual(august.byMonth["2025-08"]?.slotKwh);
     expect(r.kwh).toBe(hours.length);
     expect(r.unknownContractDays).toBe(0);
   });

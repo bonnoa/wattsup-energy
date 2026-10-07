@@ -21,6 +21,8 @@ import {
   parsePeriod,
   peakSplit,
   periodNav,
+  slotHpHc,
+  solarSavingEstimate,
   solarYield,
   yearMonths,
   type EnergyBalance,
@@ -50,14 +52,23 @@ import { tempoColorsFor } from "../tempo/sync";
 // mensuel, bilan et origine de la consommation, postes, production et ensoleillement.
 // Tous les jours, mois et bornes sont ceux du fuseau du foyer.
 
-export interface MonthCost {
-  key: string;
+/** Chiffres d'un mois pour l'histogramme et le tableau mensuel. */
+export interface MonthFigures {
   energyCents: number;
   subscriptionCents: number;
-  /** kWh soutirés au réseau. */
+  /** kWh soutirés au réseau, dont heures pleines et heures creuses (0 sans créneau). */
   kwh: number;
+  hpKwh: number;
+  hcKwh: number;
+  /** Production solaire (kWh), et économie estimée au prix moyen du mois (null sans prix). */
+  solarKwh: number;
+  solarSavingCents: number | null;
+}
+
+export interface MonthCost extends MonthFigures {
+  key: string;
   /** Même mois de l'année précédente (mois entier), null sans donnée. */
-  previous: { energyCents: number; subscriptionCents: number; kwh: number } | null;
+  previous: MonthFigures | null;
 }
 
 export interface SolarPoint {
@@ -165,6 +176,32 @@ async function totalsByMetric(ctx: HouseholdContext, from: string, to: string) {
     )
     .groupBy(energyInterval.metric);
   return Object.fromEntries(rows.map((r) => [r.metric, r.kwh]));
+}
+
+const SOLAR_METRICS = ["solar_production", "grid_export", "battery_charge", "battery_charge_grid"];
+
+/** Production solaire, export et charge de la batterie par mois local et par compteur. */
+async function solarMonths(ctx: HouseholdContext, from: string, to: string) {
+  const local = sql`(${energyInterval.start} at time zone ${ctx.timezone})`;
+  const rows = await db
+    .select({
+      month: sql<string>`to_char(${local}, 'YYYY-MM')`,
+      metric: energyInterval.metric,
+      kwh: sum(energyInterval.kwh).mapWith(Number),
+    })
+    .from(energyInterval)
+    .where(
+      and(
+        eq(energyInterval.householdId, ctx.householdId),
+        inArray(energyInterval.metric, SOLAR_METRICS),
+        gte(energyInterval.start, zonedInstant(from, 0, ctx.timezone)),
+        lt(energyInterval.start, zonedInstant(to, 0, ctx.timezone)),
+      ),
+    )
+    .groupBy(sql`1`, energyInterval.metric);
+  const months = new Map<string, Record<string, number>>();
+  for (const r of rows) months.set(r.month, { ...months.get(r.month), [r.metric]: r.kwh });
+  return months;
 }
 
 /** Charge et décharge de la batterie par mois local. */
@@ -314,6 +351,7 @@ export async function getOverview(
     battery,
     savedMarkers,
     equipment,
+    solarByMonth,
   ] = await Promise.all([
     listContracts(ctx),
     gridIntervals(ctx, yearFrom, yearTo),
@@ -328,6 +366,9 @@ export async function getOverview(
     modules.battery ? batteryMonths(ctx, period.from, period.to) : [],
     listMarkers(ctx, yearFrom, yearTo),
     listEquipment(ctx),
+    modules.solar
+      ? solarMonths(ctx, previousYearFrom, yearTo)
+      : new Map<string, Record<string, number>>(),
   ]);
   const colors = await tempoColorsFor(ctx.householdId, addDays(previousYearFrom, -1), yearTo);
   const pricing = { timezone: tz, tempoColor: (d: string) => colors.get(d) };
@@ -355,16 +396,44 @@ export async function getOverview(
     previousIntervals.length > 0 ? price(previousIntervals, previous.from, previous.to) : null;
   const previousYearCost = price(previousYearIntervals, previousYearFrom, yearFrom);
 
-  const previousMonth = (key: string): MonthCost["previous"] => {
-    const k = `${Number(key.slice(0, 4)) - 1}${key.slice(4)}`;
-    const kwh = kwhByMonth.get(k);
-    if (kwh === undefined) return null;
-    const cost = previousYearCost.byMonth[k];
+  /** Chiffres d'un mois « AAAA-MM » de l'année de la période ou de la précédente. */
+  const figuresOf = (
+    key: string,
+    cost: TimelineResult["byMonth"][string] | undefined,
+  ): MonthFigures => {
+    const slots = slotHpHc(cost?.slotKwh ?? {});
+    const solar = solarByMonth.get(key) ?? {};
+    const pricedKwh = cost?.kwh ?? 0;
     return {
       energyCents: cost?.energyCents ?? 0,
       subscriptionCents: cost?.subscriptionCents ?? 0,
-      kwh,
+      kwh: kwhByMonth.get(key) ?? 0,
+      hpKwh: slots.hp,
+      hcKwh: slots.hc,
+      solarKwh: solar.solar_production ?? 0,
+      solarSavingCents: modules.solar
+        ? solarSavingEstimate(
+            {
+              solar: solar.solar_production ?? 0,
+              gridExport: solar.grid_export ?? 0,
+              batteryCharge: solar.battery_charge ?? 0,
+              batteryChargeGrid: solar.battery_charge_grid ?? 0,
+            },
+            {
+              avgPriceCents: priced && pricedKwh > 0 ? (cost?.energyCents ?? 0) / pricedKwh : null,
+              gridCharging: ctx.settings.batteryGridCharging,
+              exportPriceCents: ctx.settings.exportEnabled
+                ? ctx.settings.exportPriceEurKwh * 100
+                : null,
+            },
+          )
+        : null,
     };
+  };
+  const previousMonth = (key: string): MonthCost["previous"] => {
+    const k = `${Number(key.slice(0, 4)) - 1}${key.slice(4)}`;
+    if (!kwhByMonth.has(k) && !solarByMonth.has(k)) return null;
+    return figuresOf(k, previousYearCost.byMonth[k]);
   };
   const peakOf = () => {
     const id = currentContract(contracts, today)?.id;
@@ -416,9 +485,7 @@ export async function getOverview(
     },
     months: yearMonths(year, today).map((key) => ({
       key,
-      energyCents: yearCost.byMonth[key]?.energyCents ?? 0,
-      subscriptionCents: yearCost.byMonth[key]?.subscriptionCents ?? 0,
-      kwh: kwhByMonth.get(key) ?? 0,
+      ...figuresOf(key, yearCost.byMonth[key]),
       previous: previousMonth(key),
     })),
     batteryGaps: batteryGaps(battery),

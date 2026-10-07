@@ -31,6 +31,7 @@ interface Acc {
   energyEur: number;
   subscriptionEur: number;
   kwh: number;
+  slotKwh: Record<string, number>;
 }
 
 const cents = (eur: number) => Math.round(eur * 100);
@@ -47,7 +48,7 @@ export function priceIntervals(
 
   const month = (key: string) => {
     let m = months.get(key);
-    if (!m) months.set(key, (m = { energyEur: 0, subscriptionEur: 0, kwh: 0 }));
+    if (!m) months.set(key, (m = { energyEur: 0, subscriptionEur: 0, kwh: 0, slotKwh: {} }));
     return m;
   };
 
@@ -71,6 +72,7 @@ export function priceIntervals(
       const kwh = interval.kwh * share.fraction;
       const eur = kwh * share.price;
       m.energyEur += eur;
+      m.slotKwh[share.key] = (m.slotKwh[share.key] ?? 0) + kwh;
       const s = slots.get(share.key) ?? { kwh: 0, eur: 0 };
       s.kwh += kwh;
       s.eur += eur;
@@ -96,6 +98,7 @@ export function priceIntervals(
       energyCents: cents(m.energyEur),
       subscriptionCents: cents(m.subscriptionEur),
       kwh: m.kwh,
+      slotKwh: m.slotKwh,
     };
   }
 

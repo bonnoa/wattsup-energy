@@ -65,6 +65,8 @@ export interface MonthBreakdown {
   energyCents: number;
   subscriptionCents: number;
   kwh: number;
+  /** kWh du mois par créneau (mêmes clés que `bySlot` : « hp », « hc », « blue_hp »…). */
+  slotKwh: Record<string, number>;
 }
 
 export interface PricedResult {

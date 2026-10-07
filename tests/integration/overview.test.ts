@@ -60,6 +60,11 @@ describe("vue d'ensemble sur le foyer de démo", () => {
 
     const grid = await kwhOf(householdId, "grid_import", "2026-09-01", "2026-10-01");
     expect(sept?.kwh).toBeCloseTo(grid, 3);
+    // Tableau mensuel : HP + HC = soutiré (contrat de démo en heures creuses) ; production.
+    expect((sept?.hpKwh ?? 0) + (sept?.hcKwh ?? 0)).toBeCloseTo(grid, 3);
+    const solarSept = await kwhOf(householdId, "solar_production", "2026-09-01", "2026-10-01");
+    expect(sept?.solarKwh).toBeCloseTo(solarSept, 3);
+    expect(sept?.solarSavingCents).toBeGreaterThan(0);
     // N-1 : septembre 2025 entier, chiffré avec le contrat de l'époque.
     const gridSept2025 = await kwhOf(householdId, "grid_import", "2025-09-01", "2025-10-01");
     expect(sept?.previous?.kwh).toBeCloseTo(gridSept2025, 3);

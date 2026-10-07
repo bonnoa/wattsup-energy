@@ -5,6 +5,8 @@ import {
   expectedSlots,
   parsePeriod,
   peakSplit,
+  slotHpHc,
+  solarSavingEstimate,
   periodNav,
   shortMonth,
   solarYield,
@@ -33,6 +35,45 @@ describe("peakSplit", () => {
   it("aucun kWh en HP ni en HC : null", () => {
     expect(peakSplit({ base: { kwh: 5, energyCents: 100 } })).toBeNull();
     expect(peakSplit({})).toBeNull();
+  });
+});
+
+describe("slotHpHc", () => {
+  it("additionne HP et HC, Tempo compris ; le reste à part", () => {
+    expect(slotHpHc({ hp: 10, hc: 5, blue_hp: 2, red_hc: 1, base: 3 })).toEqual({
+      hp: 12,
+      hc: 6,
+      other: 3,
+    });
+  });
+});
+
+describe("solarSavingEstimate", () => {
+  const month = { solar: 400, gridExport: 50, batteryCharge: 100, batteryChargeGrid: 20 };
+  it("autoconsommation directe au prix moyen du kWh du mois", () => {
+    // 400 − 50 − 100 = 250 kWh × 20 c
+    expect(
+      solarSavingEstimate(month, {
+        avgPriceCents: 20,
+        gridCharging: false,
+        exportPriceCents: null,
+      }),
+    ).toBe(5000);
+  });
+  it("charge réseau déduite de la charge solaire ; revente ajoutée", () => {
+    // 400 − 50 − (100 − 20) = 270 kWh × 20 c + 50 × 10 c
+    expect(
+      solarSavingEstimate(month, { avgPriceCents: 20, gridCharging: true, exportPriceCents: 10 }),
+    ).toBe(5900);
+  });
+  it("prix inconnu (aucun soutirage chiffré) : null", () => {
+    expect(
+      solarSavingEstimate(month, {
+        avgPriceCents: null,
+        gridCharging: false,
+        exportPriceCents: null,
+      }),
+    ).toBeNull();
   });
 });
 

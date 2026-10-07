@@ -1,7 +1,10 @@
-import { eq } from "drizzle-orm";
+import { eq, is } from "drizzle-orm";
+import { PgTable, type PgColumn } from "drizzle-orm/pg-core";
 import { describe, expect, it } from "vitest";
 import { db } from "@/db";
-import { household, session, user } from "@/db/schema";
+import * as schema from "@/db/schema";
+import { account, household, session, user } from "@/db/schema";
+import { CONTRACT_PRESETS } from "@/domain/tariff/schema";
 import {
   AdminError,
   deleteUserAsAdmin,
@@ -12,6 +15,10 @@ import {
 import { auth } from "@/server/auth";
 import { createCategory } from "@/server/categories";
 import type { HouseholdContext } from "@/server/context";
+import { createContract } from "@/server/contracts";
+import { saveEquipment } from "@/server/equipment";
+import { addPurchase } from "@/server/fuel";
+import { createMarker } from "@/server/markers";
 import { ingest } from "@/server/ingest/persist";
 import { createIngestToken, verifyIngestToken } from "@/server/ingest/token";
 import { createTestHousehold, describeTenantIsolation } from "../helpers/tenancy";
@@ -31,16 +38,70 @@ const emailOf = async (userId: string) =>
 const signIn = async (userId: string) =>
   auth.api.signInEmail({ body: { email: await emailOf(userId), password: PASSWORD } });
 
+/** Tables du schéma qui portent household_id. */
+type HouseholdTable = PgTable & { householdId: PgColumn };
+function householdTables(): [string, HouseholdTable][] {
+  return (Object.entries(schema) as [string, unknown][])
+    .filter(([, t]) => is(t, PgTable) && "householdId" in t)
+    .map(([name, t]) => [name, t as HouseholdTable]);
+}
+
+/** Une ligne au moins dans chaque table du foyer. */
+async function seedEverything(ctx: HouseholdContext) {
+  await createIngestToken(ctx);
+  await createCategory(ctx, {
+    name: "Eau",
+    slug: "eau",
+    icon: "droplet",
+    color: "grid",
+    isHeating: false,
+  });
+  await createContract(ctx, { ...preset, subscription: null });
+  await addPurchase(ctx, { fuel: "pellet", qty: 1, unit: "bag", priceEur: 7, date: "2026-01-01" });
+  await saveEquipment(ctx, "solar", {
+    label: "P",
+    capacity: 1,
+    installedOn: "2025-01-01",
+    costEur: 1,
+  });
+  await createMarker(ctx, {
+    kind: "other",
+    text: "Repère",
+    startDate: "2026-01-01",
+    endDate: null,
+  });
+  await ingest(
+    ctx.householdId,
+    JSON.stringify({
+      version: 1,
+      ts: "2026-10-01T10:00:00Z",
+      energy: { grid_import_kwh: 10 },
+      tempo_color: "bleu",
+    }),
+  );
+  await ingest(
+    ctx.householdId,
+    JSON.stringify({ version: 1, ts: "2026-10-01T11:00:00Z", energy: { grid_import_kwh: 11 } }),
+  );
+}
+
+const preset = CONTRACT_PRESETS[0] ?? {
+  name: "Base",
+  contract: { kind: "base" as const, subscriptionEurYear: 200, priceEurKwh: 0.25 },
+};
+
 describe("compte administrateur", () => {
   it("le statut n'est pas saisissable à l'inscription", async () => {
-    const res = await auth.api.signUpEmail({
-      body: {
-        email: `intrus-${Date.now()}@wattsup.test`,
-        password: PASSWORD,
-        name: "Intrus",
-        isAdmin: true,
-      } as never,
-    }).catch(() => null);
+    const res = await auth.api
+      .signUpEmail({
+        body: {
+          email: `intrus-${Date.now()}@wattsup.test`,
+          password: PASSWORD,
+          name: "Intrus",
+          isAdmin: true,
+        } as never,
+      })
+      .catch(() => null);
     if (res) {
       const [row] = await db.select().from(user).where(eq(user.id, res.user.id));
       expect(row?.isAdmin).toBe(false);
@@ -91,12 +152,39 @@ describe("compte administrateur", () => {
     expect(await verifyIngestToken(`Bearer ${token}`)).not.toBeNull();
   });
 
-  it("supprimer : compte, foyer et données partent en cascade", async () => {
+  it("supprimer : compte, foyer et toutes les tables du foyer vidés (aucune ligne restante)", async () => {
     const admin = await createAdmin();
     const b = await createTestHousehold("b");
+    const keep = await createTestHousehold("voisin");
+    for (const ctx of [b, keep]) await seedEverything(ctx);
+    await signIn(b.userId);
+
+    // Toutes les tables qui portent household_id, découvertes dans le schéma : une table
+    // ajoutée plus tard sans être alimentée ici fait échouer le test (à compléter).
+    const tables = householdTables();
+    expect(tables.map(([name]) => name)).toEqual(
+      expect.arrayContaining(["energyInterval", "contractPeriod", "marker", "fuelEvent"]),
+    );
+    const count = (hid: string) =>
+      Promise.all(
+        tables.map(async ([name, t]) => [name, await db.$count(t, eq(t.householdId, hid))]),
+      );
+    const before = Object.fromEntries(await count(b.householdId));
+    expect(Object.entries(before).filter(([, n]) => n === 0)).toEqual([]);
+
     expect(await deleteUserAsAdmin(admin, b.userId)).toBe(true);
+
+    const after = Object.fromEntries(await count(b.householdId));
+    expect(
+      Object.values(after).every((n) => n === 0),
+      JSON.stringify(after),
+    ).toBe(true);
     expect(await db.$count(user, eq(user.id, b.userId))).toBe(0);
+    expect(await db.$count(session, eq(session.userId, b.userId))).toBe(0);
+    expect(await db.$count(account, eq(account.userId, b.userId))).toBe(0);
     expect(await db.$count(household, eq(household.id, b.householdId))).toBe(0);
+    // Le foyer voisin n'a rien perdu.
+    expect(Object.fromEntries(await count(keep.householdId))).toEqual(before);
     expect(await deleteUserAsAdmin(admin, b.userId)).toBe(false);
   });
 

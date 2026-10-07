@@ -4,7 +4,12 @@ import { NextResponse, type NextRequest } from "next/server";
 // Garde légère : présence du cookie de session. La vérification complète de la
 // session se fait côté serveur dans getHouseholdContext() (T3).
 
-const PUBLIC_PATHS = ["/connexion", "/inscription"];
+const PUBLIC_PATHS = [
+  "/connexion",
+  "/inscription",
+  "/mot-de-passe-oublie",
+  "/nouveau-mot-de-passe",
+];
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;

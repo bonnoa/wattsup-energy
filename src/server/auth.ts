@@ -5,7 +5,9 @@ import { nextCookies } from "better-auth/next-js";
 import { db } from "@/db";
 import * as schema from "@/db/schema";
 import { parseInviteCodes, parseSignupMode, signupAllowed } from "@/domain/signup";
+import { resetPasswordEmail } from "@/domain/mail";
 import { ensureHousehold } from "./household";
+import { mailConfigured, sendMail } from "./mail";
 
 /** Mode d'inscription de l'instance (SIGNUP_MODE, INVITE_CODES). */
 export const signupMode = () => parseSignupMode(process.env.SIGNUP_MODE);
@@ -15,6 +17,23 @@ export const auth = betterAuth({
   emailAndPassword: {
     enabled: true,
     minPasswordLength: 10,
+    // Mot de passe oublié (si l'envoi d'emails est configuré) : lien valable une heure ;
+    // les sessions ouvertes sont fermées après le changement.
+    ...(mailConfigured()
+      ? {
+          resetPasswordTokenExpiresIn: 3600,
+          revokeSessionsOnPasswordReset: true,
+          sendResetPassword: async ({
+            user,
+            url,
+          }: {
+            user: { email: string; name: string };
+            url: string;
+          }) => {
+            await sendMail(user.email, resetPasswordEmail(user.name, url));
+          },
+        }
+      : {}),
   },
   user: {
     // Suppression du compte depuis la page Compte (mot de passe exigé) : le foyer et toutes

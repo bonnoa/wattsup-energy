@@ -56,6 +56,8 @@ pnpm build                     # écrase le cache du serveur de dev : relancer w
   surcharges par foyer (`tempo_override`). Appels sortants : api-couleur-tempo.fr et
   Open-Meteo uniquement (`src/server/http.ts`), désactivables par `TEMPO_SYNC=off`,
   `WEATHER_SYNC=off`. Planificateur intégré au serveur (`src/server/scheduler.ts`).
+  L'envoi d'emails (mot de passe oublié) passe par useSend (`src/server/mail.ts`), actif
+  seulement si `USESEND_URL`, `USESEND_API_KEY` et `MAIL_FROM` sont renseignés.
 - Migrations appliquées au démarrage en production (`src/instrumentation.ts`).
 
 ## Pièges déjà rencontrés

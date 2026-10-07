@@ -53,16 +53,21 @@ export function AuthForm({
   mode,
   inviteRequired = false,
   signupOpen = true,
+  passwordReset = false,
 }: {
   mode: Mode;
   /** Inscription sur invitation (SIGNUP_MODE=invite) : un code est demandé. */
   inviteRequired?: boolean;
   /** Lien « Créer un compte » masqué si les inscriptions sont fermées. */
   signupOpen?: boolean;
+  /** Lien « Mot de passe oublié ? » (si l'envoi d'emails est configuré). */
+  passwordReset?: boolean;
 }) {
   const copy = COPY[mode];
   const router = useRouter();
-  const next = useSearchParams().get("suite") ?? "/";
+  const params = useSearchParams();
+  const next = params.get("suite") ?? "/";
+  const reset = mode === "connexion" && params.get("reinitialise") === "1";
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
 
@@ -103,6 +108,11 @@ export function AuthForm({
       className="flex flex-col gap-4 rounded-card border border-border bg-surface p-6"
     >
       <h1 className="text-2xl font-semibold tracking-tight">{copy.title}</h1>
+      {reset && (
+        <p role="status" className="text-sm text-positive">
+          Mot de passe changé : connectez-vous avec le nouveau.
+        </p>
+      )}
       {mode === "inscription" && (
         <label className="flex flex-col gap-1.5 text-sm">
           <span className="text-muted">Prénom</span>
@@ -127,7 +137,14 @@ export function AuthForm({
         />
       </label>
       <label className="flex flex-col gap-1.5 text-sm">
-        <span className="text-muted">Mot de passe</span>
+        <span className="flex items-baseline justify-between gap-2">
+          <span className="text-muted">Mot de passe</span>
+          {mode === "connexion" && passwordReset && (
+            <Link href="/mot-de-passe-oublie" className="text-xs underline underline-offset-2">
+              Mot de passe oublié ?
+            </Link>
+          )}
+        </span>
         <input
           name="password"
           type="password"

@@ -372,6 +372,23 @@ export const alertNotification = pgTable(
   (t) => [primaryKey({ columns: [t.householdId, t.key, t.channel] })],
 );
 
+/** Appareils abonnés aux notifications push (T49) : un abonnement par navigateur. */
+export const pushSubscription = pgTable(
+  "push_subscription",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    householdId: householdRef(),
+    /** Adresse du service push du navigateur : identifie l'appareil. */
+    endpoint: text("endpoint").notNull().unique(),
+    p256dh: text("p256dh").notNull(),
+    auth: text("auth").notNull(),
+    /** Nom lisible de l'appareil (« Chrome sur Android »), pour la liste dans Mon compte. */
+    label: text("label").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("push_subscription_household_idx").on(t.householdId)],
+);
+
 export const signupModeEnum = pgEnum("signup_mode", ["open", "invite", "closed"]);
 
 /**

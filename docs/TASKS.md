@@ -459,13 +459,13 @@ Légende des tailles : **S** = 1–2 fichiers · **M** = 3–5 fichiers (hors te
   - Vérifier : `tests/unit/domain/advice.test.ts` (TDD), `tests/integration/advice.test.ts` (isolation)
   - Fichiers : `src/domain/advice.ts`, `src/components/cards/*`
 
-- [ ] **T49 — Notifications push** · M · Dépend de : T44
+- [x] **T49 — Notifications push** · M · Dépend de : T44
   - Acceptation :
     - Service worker minimal ; Mon compte : « Recevoir les alertes sur cet appareil » (abonnement par appareil, table `push_subscription`), désabonnement
     - Planificateur horaire : envoie une alerte nouvelle ou aggravée, une seule fois ; abonnement expiré supprimé
     - Clés VAPID en variables d'environnement ; sans elles, l'option n'apparaît pas
   - Vérifier : `tests/integration/push.test.ts` (envoi simulé, dédoublonnage) ; manuel sur Android et iPhone (appli installée)
-  - Fichiers : `public/sw.js`, `src/server/push.ts`, `src/app/(app)/compte/*`
+  - Fichiers : `public/sw.js`, `src/domain/push.ts`, `src/server/push.ts`, `src/server/actions/push.ts`, `src/app/(app)/compte/push-card.tsx`
 
 ### Ensuite (à voir ensemble)
 

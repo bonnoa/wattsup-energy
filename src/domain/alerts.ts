@@ -213,16 +213,18 @@ export function activeAlerts(
 }
 
 /**
- * Alertes à envoyer par email : celles dont l'envoi est demandé, jamais envoyées ou passées à
- * un niveau supérieur depuis le dernier envoi (une alerte qui dure n'est pas répétée).
+ * Alertes à envoyer hors de l'appli, jamais envoyées ou passées à un niveau supérieur depuis
+ * le dernier envoi (une alerte qui dure n'est pas répétée). Par email : seulement celles dont
+ * la case est cochée ; en push : toutes (abonner un appareil vaut accord).
  */
 export function alertsToSend(
   alerts: readonly Alert[],
   settings: AlertSettings,
   sent: readonly { key: string; level: number }[],
+  channel: "email" | "push" = "email",
 ): Alert[] {
   return alerts.filter((a) => {
-    if (!settings[SETTINGS_OF[a.kind]].email) return false;
+    if (channel === "email" && !settings[SETTINGS_OF[a.kind]].email) return false;
     const previous = sent.find((s) => s.key === a.key);
     return !previous || a.level > previous.level;
   });

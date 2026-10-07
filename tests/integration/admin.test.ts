@@ -69,6 +69,13 @@ async function seedEverything(ctx: HouseholdContext) {
   await db
     .insert(schema.alertNotification)
     .values({ householdId: ctx.householdId, key: "ha_silent", channel: "email", level: 1 });
+  await db.insert(schema.pushSubscription).values({
+    householdId: ctx.householdId,
+    endpoint: `https://push.example.test/${ctx.householdId}`,
+    p256dh: "cle",
+    auth: "secret",
+    label: "Chrome sur Android",
+  });
   await createMarker(ctx, {
     kind: "other",
     text: "Repère",

@@ -61,7 +61,9 @@ pnpm build                     # écrase le cache du serveur de dev : relancer w
   Open-Meteo uniquement (`src/server/http.ts`), désactivables par `TEMPO_SYNC=off`,
   `WEATHER_SYNC=off`. Planificateur intégré au serveur (`src/server/scheduler.ts`).
   L'envoi d'emails (mot de passe oublié) passe par l'API Resend (`src/server/mail.ts`),
-  actif seulement si `RESEND_API_KEY` et `MAIL_FROM` sont renseignés.
+  actif seulement si `RESEND_API_KEY` et `MAIL_FROM` sont renseignés. Notifications push par Web Push
+  (`src/server/push.ts`, dépendance `web-push`, service worker `public/sw.js`), actives
+  seulement si `VAPID_PUBLIC_KEY` et `VAPID_PRIVATE_KEY` sont renseignées.
 - Migrations appliquées au démarrage en production (`src/instrumentation.ts`).
 
 ## Pièges déjà rencontrés

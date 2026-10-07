@@ -228,10 +228,42 @@ export async function updateAlertSettings(ctx: HouseholdContext, input: AlertSet
 }
 
 /**
- * Envoie par email les alertes nouvelles ou aggravées d'un foyer (cases « par email » de
- * Réglages › Alertes). Une alerte réglée efface sa trace : si elle revient, elle repart.
- * Renvoie le nombre d'alertes envoyées.
+ * Alertes nouvelles ou aggravées d'un foyer pour un canal (email, push), remises à `deliver`
+ * puis notées comme envoyées. Une alerte réglée efface sa trace : si elle revient, elle
+ * repart. Renvoie le nombre d'alertes remises (0 si `deliver` n'a rien pu remettre).
  */
+export async function sendNewAlerts(
+  ctx: HouseholdContext,
+  channel: "email" | "push",
+  deliver: (alerts: Alert[]) => Promise<boolean>,
+  now = new Date(),
+): Promise<number> {
+  const settings = alertSettings(ctx);
+  const alerts = evaluateAlerts(await alertFacts(ctx, now), settings);
+  const mine = and(
+    eq(alertNotification.householdId, ctx.householdId),
+    eq(alertNotification.channel, channel),
+  );
+  const keys = alerts.map((a) => a.key);
+  await db
+    .delete(alertNotification)
+    .where(and(mine, keys.length > 0 ? notInArray(alertNotification.key, keys) : undefined));
+  const sent = await db.select().from(alertNotification).where(mine);
+  const toSend = alertsToSend(alerts, settings, sent, channel);
+  if (toSend.length === 0 || !(await deliver(toSend))) return 0;
+  for (const a of toSend) {
+    await db
+      .insert(alertNotification)
+      .values({ householdId: ctx.householdId, key: a.key, channel, level: a.level, sentAt: now })
+      .onConflictDoUpdate({
+        target: [alertNotification.householdId, alertNotification.key, alertNotification.channel],
+        set: { level: a.level, sentAt: now },
+      });
+  }
+  return toSend.length;
+}
+
+/** Alertes par email (cases « Recevoir aussi par email »), à l'adresse du compte. */
 export async function emailAlerts(
   ctx: HouseholdContext,
   options: {
@@ -240,40 +272,17 @@ export async function emailAlerts(
     send?: (to: string, content: MailContent) => Promise<void>;
   },
 ): Promise<number> {
-  const now = options.now ?? new Date();
-  const settings = alertSettings(ctx);
-  const alerts = evaluateAlerts(await alertFacts(ctx, now), settings);
-  const mine = and(
-    eq(alertNotification.householdId, ctx.householdId),
-    eq(alertNotification.channel, "email"),
+  if (!ctx.userEmail) return 0;
+  const send = options.send ?? ((to, c) => sendMail(to, c));
+  return sendNewAlerts(
+    ctx,
+    "email",
+    async (alerts) => {
+      await send(ctx.userEmail, alertsEmail(alerts, options.origin));
+      return true;
+    },
+    options.now,
   );
-  const keys = alerts.map((a) => a.key);
-  await db
-    .delete(alertNotification)
-    .where(and(mine, keys.length > 0 ? notInArray(alertNotification.key, keys) : undefined));
-  const sent = await db.select().from(alertNotification).where(mine);
-  const toSend = alertsToSend(alerts, settings, sent);
-  if (toSend.length === 0 || !ctx.userEmail) return 0;
-  await (options.send ?? ((to, c) => sendMail(to, c)))(
-    ctx.userEmail,
-    alertsEmail(toSend, options.origin),
-  );
-  for (const a of toSend) {
-    await db
-      .insert(alertNotification)
-      .values({
-        householdId: ctx.householdId,
-        key: a.key,
-        channel: "email",
-        level: a.level,
-        sentAt: now,
-      })
-      .onConflictDoUpdate({
-        target: [alertNotification.householdId, alertNotification.key, alertNotification.channel],
-        set: { level: a.level, sentAt: now },
-      });
-  }
-  return toSend.length;
 }
 
 /**

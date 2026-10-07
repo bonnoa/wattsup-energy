@@ -2,6 +2,7 @@ import { localParts } from "@/lib/time";
 import { emailAlertsForAll } from "./alerts";
 import { pruneIngestLog } from "./ingest/persist";
 import { mailConfigured } from "./mail";
+import { pushAlertsForAll, pushConfigured } from "./push";
 import { CommunityTempoSource } from "./tempo/community";
 import { loadTempoSeed, syncTempo, tempoSyncEnabled } from "./tempo/sync";
 import { OpenMeteoSource } from "./weather/open-meteo";
@@ -47,13 +48,21 @@ const JOBS: Job[] = [
     },
   },
   {
-    // Alertes par email : toutes les heures (une alerte n'est envoyée qu'une fois par niveau).
+    // Alertes par email et en push : toutes les heures (une alerte n'est envoyée qu'une fois
+    // par niveau et par canal).
     name: "alertes",
     at: Array.from({ length: 24 }, (_, h) => `${String(h).padStart(2, "0")}:20`),
-    enabled: () => mailConfigured() && Boolean(process.env.BETTER_AUTH_URL),
+    enabled: () => (mailConfigured() && Boolean(process.env.BETTER_AUTH_URL)) || pushConfigured(),
     run: async () => {
-      const r = await emailAlertsForAll(process.env.BETTER_AUTH_URL ?? "");
-      return `${r.sent} alerte(s) envoyée(s), ${r.households} foyer(s) abonné(s)`;
+      const origin = process.env.BETTER_AUTH_URL;
+      const email = mailConfigured() && origin ? await emailAlertsForAll(origin) : null;
+      const push = await pushAlertsForAll();
+      return [
+        email && `email : ${email.sent} alerte(s), ${email.households} foyer(s)`,
+        `push : ${push.sent} alerte(s), ${push.households} foyer(s)`,
+      ]
+        .filter(Boolean)
+        .join(" ; ");
     },
   },
 ];

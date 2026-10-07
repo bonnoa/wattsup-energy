@@ -168,4 +168,11 @@ describe("alertes par email", () => {
     const worse = run({ ha: { lastPushMs: NOW - 30 * H, granularity: "hourly" } });
     expect(alertsToSend(worse, settings, [{ key: "ha_silent", level: 1 }])).toHaveLength(1);
   });
+
+  it("en push : toutes les alertes, une fois par niveau", () => {
+    expect(alertsToSend(alerts, DEFAULT_ALERT_SETTINGS, [], "push")).toHaveLength(2);
+    expect(
+      alertsToSend(alerts, DEFAULT_ALERT_SETTINGS, [{ key: "ha_silent", level: 1 }], "push"),
+    ).toHaveLength(1);
+  });
 });

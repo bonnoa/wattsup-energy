@@ -3,6 +3,7 @@ import { serveBlueprint } from "../serve";
 // Blueprint de décompte d'un combustible (script « sac versé »).
 
 export const runtime = "nodejs";
-export const dynamic = "force-static";
+// Dépend de l'adresse de la requête (source_url) : rendu à chaque appel.
+export const dynamic = "force-dynamic";
 
-export const GET = () => serveBlueprint("wattsup_fuel.yaml");
+export const GET = (request: Request) => serveBlueprint(request, "wattsup_fuel.yaml");

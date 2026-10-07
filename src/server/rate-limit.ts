@@ -62,3 +62,9 @@ export const ingestRateLimiter: RateLimiter = new MemoryRateLimiter({
   limit: 120,
   windowMs: 60_000,
 });
+
+/** Résumé pour Home Assistant (T47) : calculs plus lourds qu'un envoi, 30 lectures par minute. */
+export const summaryRateLimiter: RateLimiter = new MemoryRateLimiter({
+  limit: 30,
+  windowMs: 60_000,
+});

@@ -304,6 +304,19 @@ Même endpoint, même token, même `rest_command` : `{ "version": 1, "fuel_event
 - `409` si le combustible n'est pas activé dans le profil du foyer ; `400` pour une forme invalide.
 - Journal : mode `fuel` (« combustible ») ; ne compte pas comme dernier envoi pour l'état de la liaison.
 
+### 6.6 Résumé pour Home Assistant (`GET /api/v1/summary`, lecture seule)
+
+Même token que l'ingestion (`Authorization: Bearer wu_…`) ; 401 si absent, inconnu, révoqué ou si le compte est désactivé ; 30 lectures par minute par token (429 au-delà) ; `Cache-Control: no-store`. Réponse `200` :
+
+```json
+{ "version": 1, "generated_at": "…",
+  "cost": { "today_eur": 1.84, "month_eur": 12.6, "year_projection_eur": 843, "previous_year_eur": 824 },
+  "fuel": { "pellet": { "stock": 9, "unit": "sacs", "days_left": 9 } },
+  "alerts": [{ "key": "fuel_stock:pellet", "level": 1, "title": "…", "text": "…" }] }
+```
+
+Coûts abonnement compris, calculés comme dans l'appli (contrat et grille de chaque jour ; `null` sans contrat) ; projection et total N-1 de la Vue d'ensemble (§9) ; combustibles du profil, stock en sacs ou stères et jours restants au rythme des 21 derniers jours (`null` sans consommation récente) ; alertes en cours selon les réglages, y compris celles masquées dans l'appli. Exemple de capteurs REST : `homeassistant/README.md` §6.
+
 ---
 
 ## 7. Règles métier

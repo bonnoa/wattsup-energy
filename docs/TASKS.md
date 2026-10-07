@@ -449,8 +449,8 @@ Légende des tailles : **S** = 1–2 fichiers · **M** = 3–5 fichiers (hors te
   - Vérifier : `tests/integration/export.test.ts` (aller-retour export → import identique ; isolation)
   - Fichiers : `src/domain/export.ts`, `src/server/export.ts`, `src/app/api/export/*`, `src/app/(app)/compte/export-card.tsx`
 
-- [ ] **T47 — Résumé lisible par Home Assistant** · M · Dépend de : T20, T27
-  - Acceptation : `GET /api/v1/summary` (même token que l'ingestion, lecture seule) : coût du jour et du mois, projection annuelle, stock en jours, alertes actives ; documenté avec un exemple de capteur REST pour HA ; limité comme l'ingestion
+- [x] **T47 — Résumé lisible par Home Assistant** · M · Dépend de : T20, T27
+  - Acceptation : `GET /api/v1/summary` (même token que l'ingestion, lecture seule) : coût du jour et du mois, projection annuelle, stock en jours, alertes actives ; documenté avec un exemple de capteur REST pour HA ; 30 lectures par minute et par token
   - Vérifier : `tests/integration/summary-route.test.ts` (token révoqué, compte désactivé : 401)
   - Fichiers : `src/app/api/v1/summary/route.ts`, `homeassistant/README.md`
 

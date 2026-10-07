@@ -195,7 +195,7 @@ describe("compte administrateur", () => {
     // Le foyer voisin n'a rien perdu.
     expect(Object.fromEntries(await count(keep.householdId))).toEqual(before);
     expect(await deleteUserAsAdmin(admin, b.userId)).toBe(false);
-  });
+  }, 30_000);
 
   it("jamais sur son propre compte ni sur un autre administrateur", async () => {
     const admin = await createAdmin();

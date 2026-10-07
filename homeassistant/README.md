@@ -118,7 +118,64 @@ physique près du poêle, automatisation) : importez le blueprint `wattsup_fuel.
 (WattsUp › Réglages › Équipements, bouton « Importer “sac versé” »), créez un script à partir
 de lui, puis appelez ce script où vous voulez. Une notification donne le stock restant.
 
-## 6. Vérifier
+## 6. Afficher les chiffres de WattsUp dans Home Assistant (facultatif)
+
+WattsUp expose un résumé en lecture seule, avec le même token : `GET /api/v1/summary`
+(coût du jour et du mois, projection de l'année, stock de combustible en jours, alertes en
+cours ; 30 lectures par minute au plus). Ajoutez dans `configuration.yaml` des capteurs REST,
+en mettant `Bearer wu_…` dans `secrets.yaml` (clé `wattsup_authorization`) :
+
+```yaml
+rest:
+  - resource: https://wattsup.example.fr/api/v1/summary
+    headers:
+      Authorization: !secret wattsup_authorization
+    scan_interval: 900 # toutes les 15 minutes
+    sensor:
+      - name: WattsUp coût du jour
+        value_template: "{{ value_json.cost.today_eur }}"
+        unit_of_measurement: "€"
+        device_class: monetary
+      - name: WattsUp coût du mois
+        value_template: "{{ value_json.cost.month_eur }}"
+        unit_of_measurement: "€"
+        device_class: monetary
+      - name: WattsUp projection de l'année
+        value_template: "{{ value_json.cost.year_projection_eur }}"
+        unit_of_measurement: "€"
+        device_class: monetary
+      - name: WattsUp granulés jours restants
+        value_template: "{{ value_json.fuel.pellet.days_left if value_json.fuel.pellet is defined else none }}"
+        unit_of_measurement: "j"
+      - name: WattsUp alertes
+        value_template: "{{ value_json.alerts | length }}"
+        json_attributes:
+          - alerts
+```
+
+Réponse :
+
+```json
+{
+  "version": 1,
+  "generated_at": "2026-10-07T12:00:00.000Z",
+  "cost": {
+    "today_eur": 1.84,
+    "month_eur": 12.6,
+    "year_projection_eur": 843,
+    "previous_year_eur": 824
+  },
+  "fuel": { "pellet": { "stock": 9, "unit": "sacs", "days_left": 9 } },
+  "alerts": [
+    { "key": "fuel_stock:pellet", "level": 1, "title": "Stock de granulés bas", "text": "…" }
+  ]
+}
+```
+
+Une valeur inconnue vaut `null` (pas de contrat, pas encore d'historique, combustible sans
+consommation récente). Le résumé est celui de WattsUp à l'instant de la lecture.
+
+## 7. Vérifier
 
 - WattsUp : « Home Assistant connecté · Dernier push il y a X min » dans la navigation.
 - Home Assistant : en cas de refus (token, mode, format), une notification persistante

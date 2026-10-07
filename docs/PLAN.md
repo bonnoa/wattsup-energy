@@ -158,6 +158,23 @@ Taille : **S** = 1–2 fichiers · **M** = 3–5 fichiers. Aucune tâche L/XL.
 | T37 | Boîte à idées : proposition, votes, filtre, recherche ; statut et suppression par l'administrateur ; email à chaque nouvelle idée | M | T36 | un vote par compte ; seul l'administrateur change un statut (test) |
 | T38 | Contact (prendre contact, signaler un bug) par email à l'administrateur | S | T36 | réponse directe à l'expéditeur (`reply_to`) |
 
+### Jalon 8 : Comprendre et anticiper (validé le 2026-10-07)
+
+| # | Tâche | Taille | Dépend de | Critère d'acceptation clé |
+|---|---|---|---|---|
+| T40 | Admin : dernier envoi HA par compte | XS | T36 | envois d'historique et de combustible exclus |
+| T41 | Talon de consommation (W, kWh/an, €/an, évolution) | S | T20 | TDD sur un profil horaire connu |
+| T42 | Projection de fin d'année (corrigée des degrés-jours) | S | T20, T16b | TDD ; fourchette sous 3 mois de données |
+| T43 | Thème sombre (Clair par défaut / Sombre / Automatique, sur le compte) | M | T35 | aucun flash au chargement ; contraste AA |
+| T44 | Alertes dans l'appli (stock, HA muet, solaire, budget), Réglages › Alertes | M | T27, T29, T20 | une alerte masquée revient si elle s'aggrave |
+| T45 | Simulateur « Et si… » batterie / panneaux ; contrat moins cher | L | T29 | bilan énergétique conservé heure par heure |
+| T46 | Export de mes données (CSV réimportable + JSON) | S | T22 | aller-retour export → import identique |
+| T47 | `GET /api/v1/summary` pour Home Assistant | M | T20, T27 | 401 pour un token révoqué ou un compte désactivé |
+| T48 | Heures conseillées (surplus, HC, Tempo de demain) | M | T20, T15 | seulement ce qui s'applique au foyer |
+| T49 | Notifications push (service worker, VAPID, `web-push`) | M | T44 | une alerte n'est poussée qu'une fois |
+
+**Ensuite** : passe de sécurisation, puis T34 (GitHub : README, image, `v1.0.0`), puis wiki. Bilan mensuel par email et foyer partagé écartés pour l'instant.
+
 ## Parallélisation
 
 | Peut avancer en parallèle | Doit rester séquentiel |

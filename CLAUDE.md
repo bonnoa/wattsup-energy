@@ -26,6 +26,10 @@ Assistant et calcule budget, contrats, chauffage et rentabilité. Interface et �
   Instrument Sans tabulaire, statut explicite, encart `Notice` avec correction en un clic).
 - Vérifier dans le navigateur intégré (serveur `wattsup-dev`, `.claude/launch.json`) tout
   changement visible, compte de démo local : identifiants dans `.env.example`.
+- Version (`package.json`, affichée en bas du menu) : chaque push sur `main` est une
+  livraison, Claude augmente lui-même la version dans le dernier commit poussé, en
+  semver : mineure (`0.x.0`) si le lot contient au moins un `feat`, correctif (`0.x.y`)
+  sinon. `1.0.0` est réservé à la release de T34.
 - « Demander d'abord » : changement de schéma DB hors tâche, nouvelle dépendance runtime,
   rupture du contrat d'ingestion v1, changement Docker/Coolify. Pas de code mort.
 

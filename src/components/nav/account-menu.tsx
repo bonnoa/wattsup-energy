@@ -203,8 +203,8 @@ export function AccountMenu({
             Se déconnecter
           </button>
           {variant === "header" && (
-            <p className="px-3 pt-1 pb-1.5 text-[11px] text-subtle tabular-nums">
-              Version {version}
+            <p className="pt-1 pb-1 text-center text-[10px] text-subtle tabular-nums">
+              {version}
             </p>
           )}
         </div>

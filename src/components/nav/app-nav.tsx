@@ -107,7 +107,7 @@ export function AppNav({ items, userName, householdName, ingest, version, contac
             contact={contact}
             variant="sidebar"
           />
-          <p className="px-2 pt-2 text-[11px] text-[#A9ADA6] tabular-nums">Version {version}</p>
+          <p className="pt-2 text-center text-[10px] text-[#A9ADA6] tabular-nums">{version}</p>
         </div>
       </aside>
 

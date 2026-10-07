@@ -15,7 +15,7 @@ blueprint:
     Mode **quotidien** : à 00:05, les totaux de la veille lus dans l'attribut
     `last_period` de vos `utility_meter` quotidiens.
   domain: automation
-  source_url: https://github.com/bonnoa/wattsup-energy/blob/main/homeassistant/blueprints/wattsup_push.yaml
+  source_url: https://github.com/kraftpunkapp/wattsup-energy/blob/main/homeassistant/blueprints/wattsup_push.yaml
   homeassistant:
     min_version: "2024.10.0"
   input:

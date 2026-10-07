@@ -9,6 +9,7 @@ import type { NavId, NavItem } from "@/domain/profile";
 import { HaStatus } from "./ha-status";
 import { NavIcon } from "./icons";
 import { AccountMenu } from "./account-menu";
+import { VersionLine } from "./version-line";
 
 interface Props {
   items: NavItem[];
@@ -158,7 +159,7 @@ export function AppNav({
             contact={contact}
             variant="sidebar"
           />
-          <p className="pt-2 text-center text-[10px] text-panel-muted tabular-nums">{version}</p>
+          <VersionLine version={version} className="pt-2 text-panel-muted" />
         </div>
       </aside>
 

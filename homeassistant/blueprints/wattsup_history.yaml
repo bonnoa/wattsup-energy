@@ -17,7 +17,7 @@ blueprint:
     Lancez le script, choisissez les dates : il rend la main tout de suite, l'envoi
     continue en arrière-plan (environ une seconde par jour).
   domain: script
-  source_url: https://github.com/bonnoa/wattsup-energy/blob/main/homeassistant/blueprints/wattsup_history.yaml
+  source_url: https://github.com/kraftpunkapp/wattsup-energy/blob/main/homeassistant/blueprints/wattsup_history.yaml
 
 fields:
   start:

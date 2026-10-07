@@ -43,7 +43,7 @@ rest_command:
 **Paramètres › Automatisations et scènes › Blueprints › Importer un blueprint**, URL :
 
 ```
-https://github.com/bonnoa/wattsup-energy/blob/main/homeassistant/blueprints/wattsup_push.yaml
+https://github.com/kraftpunkapp/wattsup-energy/blob/main/homeassistant/blueprints/wattsup_push.yaml
 ```
 
 > Le blueprint est aussi servi par WattsUp : `https://wattsup-energy.kraftpunk.app/api/blueprint/wattsup_push.yaml`

@@ -91,6 +91,11 @@ WattsUp vous rend service ? Vous pouvez soutenir son développement :
 
 ## Notes de version
 
+### 1.1.0 — 7 octobre 2026
+
+- Lien **Aide** en bas du menu, à côté du numéro de version : il ouvre le
+  [guide d'utilisation](https://github.com/kraftpunkapp/wattsup-energy/wiki).
+
 ### 1.0.0 — 7 octobre 2026
 
 Première version publique.

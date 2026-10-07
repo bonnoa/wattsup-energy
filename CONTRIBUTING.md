@@ -5,10 +5,10 @@ bienvenus.
 
 ## Signaler un bug ou proposer une idée
 
-Ouvrez une [issue](https://github.com/bonnoa/wattsup-energy/issues) en précisant la version
+Ouvrez une [issue](https://github.com/kraftpunkapp/wattsup-energy/issues) en précisant la version
 (affichée en bas du menu), ce que vous attendiez et ce qui s'est passé. Pour une fuite de
 données ou une faille de sécurité, n'ouvrez pas d'issue publique : utilisez
-[l'onglet Security](https://github.com/bonnoa/wattsup-energy/security/advisories/new).
+[l'onglet Security](https://github.com/kraftpunkapp/wattsup-energy/security/advisories/new).
 
 ## Environnement de développement
 

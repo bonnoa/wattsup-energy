@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 import { Icon } from "@/components/ui";
 import { authClient } from "@/lib/auth-client";
+import { VersionLine } from "./version-line";
 
 // Menu du profil : le bloc nom (barre latérale) ou l'initiale (mobile) l'ouvrent. « Mon
 // compte », « Boîte à idées », l'entrée Contact (si l'instance envoie des emails ; intitulé réglable), puis un trait, puis « Se déconnecter ». Au clavier : focus sur le premier
@@ -203,7 +204,7 @@ export function AccountMenu({
             Se déconnecter
           </button>
           {variant === "header" && (
-            <p className="pt-1 pb-1 text-center text-[10px] text-subtle tabular-nums">{version}</p>
+            <VersionLine version={version} className="pt-1 pb-1 text-subtle" />
           )}
         </div>
       )}

@@ -454,9 +454,9 @@ Légende des tailles : **S** = 1–2 fichiers · **M** = 3–5 fichiers (hors te
   - Vérifier : `tests/integration/summary-route.test.ts` (token révoqué, compte désactivé : 401)
   - Fichiers : `src/app/api/v1/summary/route.ts`, `homeassistant/README.md`
 
-- [ ] **T48 — Heures conseillées** · M · Dépend de : T20, T15
+- [x] **T48 — Heures conseillées** · M · Dépend de : T20, T15
   - Acceptation : carte « Quand consommer » : heures habituelles de surplus solaire (profil horaire des 30 derniers jours), heures creuses du contrat en cours, couleur Tempo de demain (rouge : décaler) ; seulement ce qui s'applique au foyer
-  - Vérifier : `tests/unit/domain/advice.test.ts` (TDD)
+  - Vérifier : `tests/unit/domain/advice.test.ts` (TDD), `tests/integration/advice.test.ts` (isolation)
   - Fichiers : `src/domain/advice.ts`, `src/components/cards/*`
 
 - [ ] **T49 — Notifications push** · M · Dépend de : T44

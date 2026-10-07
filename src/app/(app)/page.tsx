@@ -9,6 +9,7 @@ import {
   SolarCard,
 } from "@/components/cards/overview-cards";
 import { BatteryGapNotices } from "@/components/battery-gap-notice";
+import { AdviceCard } from "@/components/cards/advice-card";
 import { AlertsCard } from "@/components/cards/alerts-card";
 import { BaseloadCard } from "@/components/cards/baseload-card";
 import { MarkersStrip } from "@/components/cards/markers-strip";
@@ -18,6 +19,7 @@ import { PageHeader } from "@/components/page-header";
 import { EmptyState } from "@/components/empty-state";
 import { visibleModules } from "@/domain/profile";
 import { localParts } from "@/lib/time";
+import { getAdvice } from "@/server/advice";
 import { getAlerts } from "@/server/alerts";
 import { pageContext } from "@/server/page";
 import { getContractComparison } from "@/server/queries/contracts";
@@ -30,10 +32,11 @@ export default async function OverviewPage({
 }) {
   const ctx = await pageContext("/");
   const { p } = await searchParams;
-  const [overview, alerts, comparison] = await Promise.all([
+  const [overview, alerts, comparison, advice] = await Promise.all([
     getOverview(ctx, typeof p === "string" ? p : undefined),
     getAlerts(ctx),
     getContractComparison(ctx),
+    getAdvice(ctx),
   ]);
   const modules = visibleModules(ctx.profile);
 
@@ -63,6 +66,7 @@ export default async function OverviewPage({
             <KpiTiles overview={overview} solar={modules.solar} battery={modules.battery} />
           </div>
           <CheaperContractNotice comparison={comparison} />
+          <AdviceCard advice={advice} />
           <MonthlyCostCard
             months={overview.months}
             period={overview.period}

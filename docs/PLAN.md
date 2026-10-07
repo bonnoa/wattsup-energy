@@ -172,6 +172,7 @@ Taille : **S** = 1–2 fichiers · **M** = 3–5 fichiers. Aucune tâche L/XL.
 | T47 | `GET /api/v1/summary` pour Home Assistant | M | T20, T27 | 401 pour un token révoqué ou un compte désactivé |
 | T48 | Heures conseillées (surplus, HC, Tempo de demain) | M | T20, T15 | seulement ce qui s'applique au foyer |
 | T49 | Notifications push (service worker, VAPID, `web-push`) | M | T44 | une alerte n'est poussée qu'une fois |
+| T50 | Vue d'ensemble personnalisable : blocs masquables depuis la Vue d'ensemble ou Réglages › Vue d'ensemble | S | T41, T45, T48 | un bloc masqué laisse un message avec le lien pour le réafficher |
 
 **Ensuite** : passe de sécurisation, puis T34 (GitHub : README, image, `v1.0.0`), puis wiki. Bilan mensuel par email et foyer partagé écartés pour l'instant.
 

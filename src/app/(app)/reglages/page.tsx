@@ -10,8 +10,10 @@ import { dayValues, storedMetrics, suspectValues, type StoredValue } from "@/ser
 import { addDays, localParts } from "@/lib/time";
 import { pageContext } from "@/server/page";
 import { alertSettings } from "@/server/alerts";
+import { overviewBlocksFor, overviewHidden } from "@/server/overview-prefs";
 import { mailConfigured } from "@/server/mail";
 import { AlertsSettingsCard } from "./alerts-card";
+import { OverviewBlocksCard } from "./overview-blocks-card";
 import { CategoriesCard } from "./categories-card";
 import { CsvCard } from "./csv-card";
 import { DayCard, RangeCard, SuspectCard } from "./data-cards";
@@ -208,6 +210,14 @@ async function SettingsSection({
       {tab === "equipements" && <EquipmentTab ctx={ctx} />}
       {tab === "home-assistant" && <HomeAssistantTab ctx={ctx} />}
       {tab === "postes" && <CategoriesTab ctx={ctx} />}
+      {tab === "vue-ensemble" && (
+        <div className={panel}>
+          <OverviewBlocksCard
+            hidden={overviewHidden(ctx)}
+            applicable={await overviewBlocksFor(ctx)}
+          />
+        </div>
+      )}
       {tab === "alertes" && (
         <div className={panel}>
           <AlertsSettingsCard

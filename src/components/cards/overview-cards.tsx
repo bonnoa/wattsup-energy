@@ -256,7 +256,7 @@ export function KpiTiles({
 const HC_COLOR = "bg-hc";
 
 /** Part de l'électricité soutirée en heures creuses et en heures pleines (contrat HP/HC ou Tempo). */
-export function PeakCard({ overview }: { overview: Ok }) {
+export function PeakCard({ overview, actions }: { overview: Ok; actions?: ReactNode }) {
   const { peak, period } = overview;
   if (!peak) return null;
   const total = peak.hp.kwh + peak.hc.kwh;
@@ -267,6 +267,7 @@ export function PeakCard({ overview }: { overview: Ok }) {
   return (
     <Card
       title="Heures pleines et heures creuses"
+      actions={actions}
       badges={<Badge tone="soft">{formatPercent(peak.hc.kwh / total)} en HC</Badge>}
       description={<span className="capitalize">{period.label}</span>}
     >
@@ -594,7 +595,14 @@ const SWITCH_MIN_DAYS = 90;
  * Un contrat simulé (ou de référence) aurait coûté nettement moins cher que l'actuel sur
  * la consommation réelle des 12 derniers mois (T45) : encart vers Contrats.
  */
-export function CheaperContractNotice({ comparison }: { comparison: ContractComparison }) {
+export function CheaperContractNotice({
+  comparison,
+  hide,
+}: {
+  comparison: ContractComparison;
+  /** Bouton « Masquer » (Vue d'ensemble personnalisable). */
+  hide?: ReactNode;
+}) {
   if (comparison.status !== "ok" || comparison.periodDays < SWITCH_MIN_DAYS) return null;
   const best = comparison.rows[0];
   const current = comparison.rows.find((r) => r.isCurrent);
@@ -607,9 +615,12 @@ export function CheaperContractNotice({ comparison }: { comparison: ContractComp
       tone="info"
       title={`« ${best.name} » vous aurait coûté ${eur(saving)} de moins`}
       action={
-        <Link href="/contrats" className={`${button.secondary} bg-surface text-ink no-underline`}>
-          Comparer les contrats
-        </Link>
+        <>
+          <Link href="/contrats" className={`${button.secondary} bg-surface text-ink no-underline`}>
+            Comparer les contrats
+          </Link>
+          {hide}
+        </>
       }
     >
       {partial

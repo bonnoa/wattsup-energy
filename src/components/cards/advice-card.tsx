@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { Card } from "@/components/ui";
 import type { Advice } from "@/domain/advice";
 
@@ -9,12 +10,13 @@ const DOT: Record<Advice["tone"], string> = {
   info: "bg-hc",
 };
 
-export function AdviceCard({ advice }: { advice: Advice[] }) {
+export function AdviceCard({ advice, actions }: { advice: Advice[]; actions?: ReactNode }) {
   if (advice.length === 0) return null;
   return (
     <Card
       icon="sun"
       title="Quand consommer"
+      actions={actions}
       description="Les heures où votre électricité coûte le moins, d'après vos données et votre contrat."
     >
       <ul className="flex flex-col">

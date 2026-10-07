@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { StackedBars } from "@/components/charts/stacked-bars";
 import { Card } from "@/components/ui";
 import { yearlyKwh } from "@/domain/baseload";
@@ -11,7 +12,7 @@ import type { Overview } from "@/server/queries/overview";
 
 type Ok = Extract<Overview, { status: "ok" }>;
 
-export function BaseloadCard({ overview }: { overview: Ok }) {
+export function BaseloadCard({ overview, actions }: { overview: Ok; actions?: ReactNode }) {
   const b = overview.baseload;
   if (!b) return null;
   const { period } = overview;
@@ -21,6 +22,7 @@ export function BaseloadCard({ overview }: { overview: Ok }) {
     <Card
       icon="plug"
       title="Talon de consommation"
+      actions={actions}
       description="Ce que la maison consomme en permanence, même quand personne n'utilise rien : box, réfrigérateur, VMC, veilles. Mesuré chaque nuit entre minuit et 6 h."
     >
       {b.watts === null ? (

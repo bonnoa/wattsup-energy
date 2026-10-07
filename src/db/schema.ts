@@ -40,6 +40,8 @@ export interface HouseholdSettings {
   kwhFactors: { pelletPerKg: number; woodPerStere: number };
   /** Alertes (T44) : activation et seuils ; absent, les valeurs par défaut s'appliquent. */
   alerts?: unknown;
+  /** Vue d'ensemble (T50) : `{ hidden: [...] }`, blocs masqués ; absent, tout est affiché. */
+  overview?: unknown;
 }
 
 /** Commune du foyer pour la météo ; coordonnées arrondies à 0,01° (SPEC §7.9). */

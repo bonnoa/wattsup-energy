@@ -7,7 +7,7 @@ import type { IconName } from "@/components/ui/icon";
 export const SETTINGS_GROUPS = [
   { id: "foyer", label: "Mon foyer" },
   { id: "donnees", label: "Home Assistant et données" },
-  { id: "suivi", label: "Suivi" },
+  { id: "suivi", label: "Affichage et suivi" },
 ] as const;
 
 export const SETTINGS_TABS = [
@@ -59,6 +59,13 @@ export const SETTINGS_TABS = [
     icon: "edit",
     label: "Données",
     description: "Contrôler et corriger les valeurs enregistrées.",
+  },
+  {
+    id: "vue-ensemble",
+    group: "suivi",
+    icon: "layout",
+    label: "Vue d'ensemble",
+    description: "Les blocs affichés sur la Vue d'ensemble : masquez ceux qui ne vous servent pas.",
   },
   {
     id: "alertes",

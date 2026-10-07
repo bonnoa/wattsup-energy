@@ -17,10 +17,13 @@ import { MonthlyCostCard } from "@/components/cards/monthly-cost-card";
 import { MonthlyTable } from "@/components/cards/monthly-table";
 import { PageHeader } from "@/components/page-header";
 import { EmptyState } from "@/components/empty-state";
+import { HideButton, Hideable } from "@/components/overview/hideable";
+import { OVERVIEW_BLOCKS, type OverviewBlock } from "@/domain/overview-blocks";
 import { visibleModules } from "@/domain/profile";
 import { localParts } from "@/lib/time";
 import { getAdvice } from "@/server/advice";
 import { getAlerts } from "@/server/alerts";
+import { overviewHidden } from "@/server/overview-prefs";
 import { pageContext } from "@/server/page";
 import { getContractComparison } from "@/server/queries/contracts";
 import { getOverview } from "@/server/queries/overview";
@@ -32,12 +35,22 @@ export default async function OverviewPage({
 }) {
   const ctx = await pageContext("/");
   const { p } = await searchParams;
+  // Blocs masqués par l'utilisateur (Réglages › Vue d'ensemble) : ni calculés ni affichés.
+  const hidden = overviewHidden(ctx);
+  const shown = (b: OverviewBlock) => !hidden.includes(b);
   const [overview, alerts, comparison, advice] = await Promise.all([
     getOverview(ctx, typeof p === "string" ? p : undefined),
     getAlerts(ctx),
-    getContractComparison(ctx),
-    getAdvice(ctx),
+    shown("contract") ? getContractComparison(ctx) : null,
+    shown("advice") ? getAdvice(ctx) : [],
   ]);
+  const label = (b: OverviewBlock) => OVERVIEW_BLOCKS.find((x) => x.id === b)?.label ?? b;
+  const block = (b: OverviewBlock, render: (hide: React.ReactNode) => React.ReactNode) =>
+    shown(b) ? (
+      <Hideable block={b} label={label(b)}>
+        {render(<HideButton label={label(b)} />)}
+      </Hideable>
+    ) : null;
   const modules = visibleModules(ctx.profile);
 
   return (
@@ -65,19 +78,28 @@ export default async function OverviewPage({
             <BudgetCard overview={overview} />
             <KpiTiles overview={overview} solar={modules.solar} battery={modules.battery} />
           </div>
-          <CheaperContractNotice comparison={comparison} />
-          <AdviceCard advice={advice} />
+          {comparison &&
+            block("contract", (hide) => (
+              <CheaperContractNotice comparison={comparison} hide={hide} />
+            ))}
+          {block("advice", (hide) => (
+            <AdviceCard advice={advice} actions={hide} />
+          ))}
           <MonthlyCostCard
             months={overview.months}
             period={overview.period}
             markers={overview.markers}
           />
-          <PeakCard overview={overview} />
+          {block("peak", (hide) => (
+            <PeakCard overview={overview} actions={hide} />
+          ))}
           <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,340px),1fr))] items-start gap-4">
             <OriginCard overview={overview} solar={modules.solar} battery={modules.battery} />
             <CategoriesOverviewCard overview={overview} />
           </div>
-          <BaseloadCard overview={overview} />
+          {block("baseload", (hide) => (
+            <BaseloadCard overview={overview} actions={hide} />
+          ))}
           <SolarCard overview={overview} />
           <MonthlyTable
             months={overview.months}

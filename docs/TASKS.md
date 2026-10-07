@@ -467,6 +467,14 @@ Légende des tailles : **S** = 1–2 fichiers · **M** = 3–5 fichiers (hors te
   - Vérifier : `tests/integration/push.test.ts` (envoi simulé, dédoublonnage) ; manuel sur Android et iPhone (appli installée)
   - Fichiers : `public/sw.js`, `src/domain/push.ts`, `src/server/push.ts`, `src/server/actions/push.ts`, `src/app/(app)/compte/push-card.tsx`
 
+- [x] **T50 — Vue d'ensemble personnalisable** · S · Dépend de : T41, T45, T48 (demandé le 2026-10-07)
+  - Acceptation :
+    - Blocs masquables : Quand consommer, Contrat moins cher, Heures pleines et heures creuses, Talon de consommation ; choix dans `household.settings.overview.hidden`
+    - Sur la Vue d'ensemble, bouton « Masquer » dans l'en-tête de chaque bloc : le bloc laisse place à un message avec un lien direct vers Réglages › Vue d'ensemble et « Annuler »
+    - Réglages › Vue d'ensemble (groupe « Affichage et suivi ») : un interrupteur par bloc, seulement pour ceux qui s'appliquent (solaire ou heures creuses ; deux contrats au moins ; contrat HP/HC ou Tempo ; envois horaires)
+  - Vérifier : `tests/unit/domain/overview-blocks.test.ts`, `tests/integration/overview-prefs.test.ts` (isolation) ; manuel
+  - Fichiers : `src/domain/overview-blocks.ts`, `src/server/overview-prefs.ts`, `src/components/overview/hideable.tsx`, `src/app/(app)/reglages/overview-blocks-card.tsx`
+
 ### Ensuite (à voir ensemble)
 
 - Passe de sécurisation de l'ensemble (revue, en-têtes, limites, dépendances)

@@ -3,6 +3,7 @@ import { parseTheme } from "@/domain/theme";
 import { pageContext } from "@/server/page";
 import { getSession } from "@/server/session";
 import { AccountCard, DeleteAccountCard } from "./account-card";
+import { ExportCard } from "./export-card";
 import { OnboardingCard } from "./onboarding-card";
 import { ThemeCard } from "./theme-card";
 
@@ -22,6 +23,7 @@ export default async function AccountPage() {
         <AccountCard name={ctx.userName} email={ctx.userEmail} />
         <ThemeCard theme={theme} />
         <OnboardingCard />
+        <ExportCard />
         <DeleteAccountCard />
       </div>
     </>

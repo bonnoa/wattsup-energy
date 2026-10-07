@@ -444,10 +444,10 @@ Légende des tailles : **S** = 1–2 fichiers · **M** = 3–5 fichiers (hors te
   - Vérifier : `tests/unit/domain/roi/simulate.test.ts` (TDD, bilan énergétique conservé), `tests/integration/simulation.test.ts` (isolation) ; manuel
   - Fichiers : `src/domain/roi/simulate.ts`, `src/app/(app)/rentabilite/*`
 
-- [ ] **T46 — Export de mes données** · S · Dépend de : T22
+- [x] **T46 — Export de mes données** · S · Dépend de : T22
   - Acceptation : Mon compte › « Exporter mes données » : un CSV de l'énergie au format de l'import (réimportable) et un JSON de tout le reste (foyer, réglages, postes, contrats et grilles, combustibles, équipements, repères) ; jamais de token ni de hash
   - Vérifier : `tests/integration/export.test.ts` (aller-retour export → import identique ; isolation)
-  - Fichiers : `src/server/export.ts`, `src/app/api/export/*`
+  - Fichiers : `src/domain/export.ts`, `src/server/export.ts`, `src/app/api/export/*`, `src/app/(app)/compte/export-card.tsx`
 
 - [ ] **T47 — Résumé lisible par Home Assistant** · M · Dépend de : T20, T27
   - Acceptation : `GET /api/v1/summary` (même token que l'ingestion, lecture seule) : coût du jour et du mois, projection annuelle, stock en jours, alertes actives ; documenté avec un exemple de capteur REST pour HA ; limité comme l'ingestion

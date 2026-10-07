@@ -5,7 +5,7 @@ const key = (m: number) => `2026-${String(m).padStart(2, "0")}`;
 /** N-1 : 100 € par mois ; cette année : `actual` € pour les mois jusqu'à `upTo`. */
 const year = (
   actual: (m: number) => number | null,
-  previous = (_m: number) => 10_000 as number | null,
+  previous: (m: number) => number | null = () => 10_000,
 ) =>
   Array.from({ length: 12 }, (_, i): ProjectionMonth => ({
     key: key(i + 1),

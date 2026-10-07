@@ -52,3 +52,6 @@ next-env.d.ts
 /docs/
 /CLAUDE.md
 /.claude/
+
+# Clone local du wiki GitHub (dépôt séparé : wattsup-energy.wiki.git)
+/wiki/

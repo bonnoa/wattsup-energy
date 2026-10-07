@@ -54,6 +54,17 @@ WattsUp n'accède jamais à votre installation.
 
 Le [guide d'utilisation](https://github.com/bonnoa/wattsup-energy/wiki) détaille chaque écran.
 
+## Configurer Home Assistant
+
+C'est l'étape la plus technique : il faut déclarer une commande REST dans la configuration
+de Home Assistant, puis créer une automatisation à partir du blueprint fourni en y
+choisissant vos capteurs d'énergie (réseau, solaire, batterie, postes). Le parcours de
+bienvenue vous accompagne, et tout est détaillé, avec les cas particuliers (mode quotidien,
+reprise de l'historique, bouton « sac versé », capteurs REST pour afficher vos chiffres dans
+Home Assistant, messages d'erreur), dans la
+[documentation Home Assistant](https://github.com/bonnoa/wattsup-energy/tree/main/homeassistant)
+et dans le [wiki](https://github.com/bonnoa/wattsup-energy/wiki/Connecter-Home-Assistant).
+
 ## 🔒 Vos données restent en France
 
 Les données sont stockées sur des serveurs hébergés en France (Strasbourg et Gravelines) par
@@ -107,3 +118,5 @@ Première version publique.
 - Limitation des tentatives sur la connexion et sur les envois de Home Assistant.
 
 **1.0.1** : maintenance du dépôt (intégration continue), sans changement dans l'application.
+
+**1.0.2** : section « Configurer Home Assistant » dans ce README, guide d'utilisation complet dans le [wiki](https://github.com/bonnoa/wattsup-energy/wiki).

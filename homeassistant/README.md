@@ -6,7 +6,7 @@ récupère lui-même (Open-Meteo) pour la commune indiquée dans Réglages.
 
 ## 1. Récupérer l'endpoint et le token
 
-Dans WattsUp : **Réglages › API d'ingestion**.
+Dans WattsUp : **Réglages › Home Assistant**, carte « API d'ingestion » (l'adresse exacte de l'endpoint y est affichée).
 
 1. Choisissez la granularité :
    - **Horaire** (recommandé) : HA envoie ses index cumulés chaque heure. Toutes les
@@ -20,7 +20,7 @@ Dans WattsUp : **Réglages › API d'ingestion**.
 Dans `secrets.yaml` :
 
 ```yaml
-wattsup_url: https://wattsup.exemple.fr/api/v1/ingest
+wattsup_url: https://wattsup-energy.kraftpunk.app/api/v1/ingest
 wattsup_token: "Bearer wu_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
 ```
 
@@ -46,8 +46,8 @@ rest_command:
 https://github.com/bonnoa/wattsup-energy/blob/main/homeassistant/blueprints/wattsup_push.yaml
 ```
 
-> Le blueprint est aussi servi par votre instance : `https://wattsup.exemple.fr/api/blueprint/wattsup_push.yaml`
-> (lien direct dans Réglages).
+> Le blueprint est aussi servi par WattsUp : `https://wattsup-energy.kraftpunk.app/api/blueprint/wattsup_push.yaml`
+> (bouton « Importer dans Home Assistant » du parcours de bienvenue, ou « Mettre à jour le blueprint d'envoi » dans Réglages › Historique).
 
 Créez ensuite une automatisation à partir du blueprint.
 
@@ -126,7 +126,7 @@ en mettant `Bearer wu_…` dans `secrets.yaml` (clé `wattsup_authorization`) :
 
 ```yaml
 rest:
-  - resource: https://wattsup.example.fr/api/v1/summary
+  - resource: https://wattsup-energy.kraftpunk.app/api/v1/summary
     headers:
       Authorization: !secret wattsup_authorization
     scan_interval: 900 # toutes les 15 minutes

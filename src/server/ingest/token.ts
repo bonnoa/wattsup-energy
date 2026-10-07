@@ -1,7 +1,7 @@
 import { createHash, randomBytes } from "node:crypto";
 import { and, eq, isNull } from "drizzle-orm";
 import { db } from "@/db";
-import { ingestToken } from "@/db/schema";
+import { household, ingestToken, user } from "@/db/schema";
 import type { HouseholdContext } from "../context";
 
 // Token d'ingestion : "wu_" + 32 octets aléatoires en base62. Seul son sha-256 est
@@ -71,7 +71,10 @@ const TOKEN_PATTERN = new RegExp(`^Bearer (${PREFIX}[0-9A-Za-z]{${BODY_LENGTH}})
 /** Dernier usage réécrit au plus toutes les 10 minutes : un push horaire ne paie pas un commit de plus. */
 const LAST_USED_REFRESH_MS = 10 * 60_000;
 
-/** Authentifie un en-tête Authorization ; null si absent, mal formé, inconnu ou révoqué. */
+/**
+ * Authentifie un en-tête Authorization ; null si absent, mal formé, inconnu, révoqué ou si le
+ * compte est désactivé.
+ */
 export async function verifyIngestToken(
   header: string | null,
   now = new Date(),
@@ -85,7 +88,16 @@ export async function verifyIngestToken(
       lastUsedAt: ingestToken.lastUsedAt,
     })
     .from(ingestToken)
-    .where(and(eq(ingestToken.hash, sha256(token)), isNull(ingestToken.revokedAt)));
+    // Compte désactivé par l'administrateur : ses envois sont refusés comme un token révoqué.
+    .innerJoin(household, eq(household.id, ingestToken.householdId))
+    .innerJoin(user, eq(user.id, household.ownerId))
+    .where(
+      and(
+        eq(ingestToken.hash, sha256(token)),
+        isNull(ingestToken.revokedAt),
+        isNull(user.disabledAt),
+      ),
+    );
   if (!row) return null;
   if (!row.lastUsedAt || now.getTime() - row.lastUsedAt.getTime() > LAST_USED_REFRESH_MS) {
     await db.update(ingestToken).set({ lastUsedAt: now }).where(eq(ingestToken.id, row.tokenId));

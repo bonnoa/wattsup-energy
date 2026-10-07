@@ -15,6 +15,8 @@ export interface HouseholdContext {
   userName: string;
   /** Email du compte ; vide hors requête web. */
   userEmail: string;
+  /** Administrateur de l'instance (SPEC §5, `user.is_admin`). */
+  isAdmin: boolean;
   householdName: string;
   householdId: string;
   timezone: string;
@@ -36,12 +38,14 @@ export async function householdContextFor(
   userId: string,
   userName = "",
   userEmail = "",
+  isAdmin = false,
 ): Promise<HouseholdContext> {
   const home = await ensureHousehold(userId);
   return {
     userId,
     userName,
     userEmail,
+    isAdmin,
     householdName: home.name,
     householdId: home.id,
     timezone: home.timezone,
@@ -59,5 +63,10 @@ export async function householdContextFor(
 export const getHouseholdContext = cache(async (): Promise<HouseholdContext> => {
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session) throw new UnauthorizedError();
-  return householdContextFor(session.user.id, session.user.name, session.user.email);
+  return householdContextFor(
+    session.user.id,
+    session.user.name,
+    session.user.email,
+    session.user.isAdmin === true,
+  );
 });

@@ -363,7 +363,7 @@ Légende des tailles : **S** = 1–2 fichiers · **M** = 3–5 fichiers (hors te
   - Vérifier : manuel (navigateur intégré)
   - Fichiers : `src/app/(app)/compte/account-card.tsx`, `src/lib/version.ts`, `src/components/nav/*`
 
-- [ ] **T36 — Compte administrateur et page Utilisateurs** · M · Dépend de : T35
+- [x] **T36 — Compte administrateur et page Utilisateurs** · M · Dépend de : T35
   - Acceptation :
     - Colonnes `user.is_admin` (défaut faux) et `user.disabled_at` ; la migration désigne `alexandre@bonno.xyz` comme administrateur, aucun écran ne permet de changer ce statut
     - Barre latérale (desktop seulement) : entrée « Utilisateurs » sous un intitulé « Administration », d'aspect distinct, visible du seul administrateur ; `/admin/utilisateurs` renvoie les autres vers l'accueil

@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { NAV_ITEMS, parseProfile, visibleModules, type EnergyProfile } from "@/domain/profile";
+import {
+  activeProfileLabels,
+  NAV_ITEMS,
+  parseProfile,
+  visibleModules,
+  type EnergyProfile,
+} from "@/domain/profile";
 
 const none: EnergyProfile = {
   solar: false,
@@ -83,5 +89,28 @@ describe("parseProfile", () => {
 
   it.each([null, "x", { ...all, wood: "oui" }, { solar: true }])("rejette %j", (input) => {
     expect(parseProfile(input)).toBeNull();
+  });
+});
+
+describe("activeProfileLabels", () => {
+  it("profils activés, dans l'ordre fixe", () => {
+    expect(
+      activeProfileLabels({
+        solar: true,
+        battery: false,
+        pellet: true,
+        wood: false,
+        electricHeating: true,
+      }),
+    ).toEqual(["Solaire", "Granulés", "Chauffage électrique"]);
+    expect(
+      activeProfileLabels({
+        solar: false,
+        battery: false,
+        pellet: false,
+        wood: false,
+        electricHeating: false,
+      }),
+    ).toEqual([]);
   });
 });

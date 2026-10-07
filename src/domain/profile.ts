@@ -64,6 +64,19 @@ export function visibleModules(profile: EnergyProfile): VisibleModules {
 
 export const PROFILE_KEYS = ["solar", "battery", "pellet", "wood", "electricHeating"] as const;
 
+/** Libellés courts des profils (liste des utilisateurs de l'administrateur). */
+export const PROFILE_LABELS: Record<keyof EnergyProfile, string> = {
+  solar: "Solaire",
+  battery: "Batterie",
+  pellet: "Granulés",
+  wood: "Bois",
+  electricHeating: "Chauffage électrique",
+};
+
+/** Libellés des profils activés, dans l'ordre de PROFILE_KEYS. */
+export const activeProfileLabels = (profile: EnergyProfile): string[] =>
+  PROFILE_KEYS.filter((k) => profile[k]).map((k) => PROFILE_LABELS[k]);
+
 /** Validation d'un profil reçu du client (formulaire Réglages). */
 export function parseProfile(input: unknown): EnergyProfile | null {
   if (typeof input !== "object" || input === null) return null;

@@ -1,7 +1,8 @@
 import { boolean, index, pgTable, text, timestamp } from "drizzle-orm/pg-core";
 
 // Tables du cœur de Better Auth (user, session, account, verification).
-// À garder alignées sur `pnpm dlx @better-auth/cli generate` lors des montées de version.
+// À garder alignées sur `pnpm dlx @better-auth/cli generate` lors des montées de version
+// (les colonnes propres à WattsUp de `user` sont à reporter).
 
 export const user = pgTable("user", {
   id: text("id").primaryKey(),
@@ -14,6 +15,10 @@ export const user = pgTable("user", {
     .defaultNow()
     .$onUpdate(() => new Date())
     .notNull(),
+  // Hors Better Auth (SPEC §5) : administrateur de l'instance, désigné par migration et
+  // jamais modifiable depuis l'interface ; compte désactivé par l'administrateur.
+  isAdmin: boolean("is_admin").default(false).notNull(),
+  disabledAt: timestamp("disabled_at", { withTimezone: true }),
 });
 
 export const session = pgTable(

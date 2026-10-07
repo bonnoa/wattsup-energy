@@ -1,3 +1,4 @@
+import { eq } from "drizzle-orm";
 import { betterAuth } from "better-auth";
 import { APIError, createAuthMiddleware } from "better-auth/api";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
@@ -42,6 +43,11 @@ export const auth = betterAuth({
       : {}),
   },
   user: {
+    // Administrateur de l'instance (SPEC §5) : lu dans la session, jamais saisissable
+    // (input: false, refusé à l'inscription comme dans updateUser).
+    additionalFields: {
+      isAdmin: { type: "boolean", required: false, defaultValue: false, input: false },
+    },
     // Suppression du compte depuis la page Compte (mot de passe exigé) : le foyer et toutes
     // ses données partent en cascade.
     deleteUser: { enabled: true },
@@ -72,6 +78,23 @@ export const auth = betterAuth({
     }),
   },
   databaseHooks: {
+    session: {
+      create: {
+        // Compte désactivé par l'administrateur : connexion refusée, mot de passe juste ou non
+        // vérifié avant (le message ne révèle donc rien à qui ne connaît pas le mot de passe).
+        before: async (s) => {
+          const [row] = await db
+            .select({ disabledAt: schema.user.disabledAt })
+            .from(schema.user)
+            .where(eq(schema.user.id, s.userId));
+          if (row?.disabledAt) {
+            throw new APIError("FORBIDDEN", {
+              message: "Ce compte est désactivé. Contactez l'administrateur de l'instance.",
+            });
+          }
+        },
+      },
+    },
     user: {
       create: {
         // Chaque compte a son foyer (1 par utilisateur en V1). ensureHousehold est

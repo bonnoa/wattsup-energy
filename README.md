@@ -105,3 +105,5 @@ Première version publique.
 - En-têtes de sécurité et politique de contenu stricte sur toutes les pages.
 - Changement d'adresse email protégé par le mot de passe et confirmé par un lien.
 - Limitation des tentatives sur la connexion et sur les envois de Home Assistant.
+
+**1.0.1** : maintenance du dépôt (intégration continue), sans changement dans l'application.

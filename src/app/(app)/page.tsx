@@ -1,6 +1,7 @@
 import {
   BudgetCard,
   CategoriesOverviewCard,
+  CheaperContractNotice,
   KpiTiles,
   OriginCard,
   PeakCard,
@@ -19,6 +20,7 @@ import { visibleModules } from "@/domain/profile";
 import { localParts } from "@/lib/time";
 import { getAlerts } from "@/server/alerts";
 import { pageContext } from "@/server/page";
+import { getContractComparison } from "@/server/queries/contracts";
 import { getOverview } from "@/server/queries/overview";
 
 export default async function OverviewPage({
@@ -28,9 +30,10 @@ export default async function OverviewPage({
 }) {
   const ctx = await pageContext("/");
   const { p } = await searchParams;
-  const [overview, alerts] = await Promise.all([
+  const [overview, alerts, comparison] = await Promise.all([
     getOverview(ctx, typeof p === "string" ? p : undefined),
     getAlerts(ctx),
+    getContractComparison(ctx),
   ]);
   const modules = visibleModules(ctx.profile);
 
@@ -59,6 +62,7 @@ export default async function OverviewPage({
             <BudgetCard overview={overview} />
             <KpiTiles overview={overview} solar={modules.solar} battery={modules.battery} />
           </div>
+          <CheaperContractNotice comparison={comparison} />
           <MonthlyCostCard
             months={overview.months}
             period={overview.period}

@@ -7,6 +7,7 @@ import { CATEGORY_SWATCH, CategoryTile, categoryColor } from "@/components/ui/ca
 import { monthLabel } from "@/domain/overview";
 import { addDays } from "@/lib/time";
 import { formatEurFromCents, formatKwh, formatNumber, formatPercent } from "@/lib/format";
+import type { ContractComparison } from "@/server/queries/contracts";
 import type { Overview } from "@/server/queries/overview";
 import { settingsHref } from "@/lib/settings-tabs";
 
@@ -582,5 +583,38 @@ export function SolarCard({ overview }: { overview: Ok }) {
         />
       )}
     </Card>
+  );
+}
+
+/** Économie minimale (par an) pour suggérer un autre contrat, et historique minimal. */
+const SWITCH_MIN_CENTS = 3000;
+const SWITCH_MIN_DAYS = 90;
+
+/**
+ * Un contrat simulé (ou de référence) aurait coûté nettement moins cher que l'actuel sur
+ * la consommation réelle des 12 derniers mois (T45) : encart vers Contrats.
+ */
+export function CheaperContractNotice({ comparison }: { comparison: ContractComparison }) {
+  if (comparison.status !== "ok" || comparison.periodDays < SWITCH_MIN_DAYS) return null;
+  const best = comparison.rows[0];
+  const current = comparison.rows.find((r) => r.isCurrent);
+  if (!best || !current || best.id === current.id) return null;
+  const saving = current.annualCents - best.annualCents;
+  if (saving < SWITCH_MIN_CENTS) return null;
+  const partial = comparison.periodDays < 365;
+  return (
+    <Notice
+      tone="info"
+      title={`« ${best.name} » vous aurait coûté ${eur(saving)} de moins`}
+      action={
+        <Link href="/contrats" className={`${button.secondary} bg-surface text-ink no-underline`}>
+          Comparer les contrats
+        </Link>
+      }
+    >
+      {partial
+        ? `par an que votre contrat actuel, d'après vos ${comparison.periodDays} derniers jours de consommation.`
+        : "sur les 12 derniers mois, par rapport à votre contrat actuel, avec la même consommation."}
+    </Notice>
   );
 }

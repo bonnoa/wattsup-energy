@@ -436,11 +436,11 @@ Légende des tailles : **S** = 1–2 fichiers · **M** = 3–5 fichiers (hors te
   - Vérifier : `tests/unit/domain/alerts.test.ts` (TDD), `tests/integration/alerts.test.ts` (isolation) ; manuel
   - Fichiers : `src/domain/alerts.ts`, `src/server/alerts.ts`, `src/components/cards/alerts-card.tsx`, `src/app/(app)/reglages/*`
 
-- [ ] **T45 — Simulateur « Et si… »** · L · Dépend de : T29
+- [x] **T45 — Simulateur « Et si… »** · L · Dépend de : T29
   - Acceptation :
     - Rentabilité : batterie de X kWh (puissance, rendement) et/ou +Y kWc de panneaux, rejoués heure par heure sur les 12 derniers mois réels : autoconsommation, économie annuelle, coût saisi → amortissement
-    - Vue d'ensemble : si un contrat simulé ou de référence aurait coûté moins cher sur 12 mois, encart « Sur 12 mois, X vous aurait coûté Y € de moins » vers Contrats
-  - Vérifier : `tests/unit/domain/roi/simulate.test.ts` (TDD, bilan énergétique conservé) ; manuel
+    - Vue d'ensemble : si un contrat simulé ou de référence aurait coûté au moins 30 €/an de moins (90 jours de données au moins), encart « X vous aurait coûté Y € de moins » vers Contrats
+  - Vérifier : `tests/unit/domain/roi/simulate.test.ts` (TDD, bilan énergétique conservé), `tests/integration/simulation.test.ts` (isolation) ; manuel
   - Fichiers : `src/domain/roi/simulate.ts`, `src/app/(app)/rentabilite/*`
 
 - [ ] **T46 — Export de mes données** · S · Dépend de : T22

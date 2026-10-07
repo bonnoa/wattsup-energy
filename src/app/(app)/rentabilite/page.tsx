@@ -5,6 +5,7 @@ import { pageContext } from "@/server/page";
 import { getRoi } from "@/server/queries/roi";
 import { EquipmentCard } from "./equipment-sheet";
 import { RoiDetails } from "./roi-details";
+import { SimulatorCard } from "./simulator-card";
 
 export const metadata = { title: "Rentabilité · WattsUp Energy" };
 
@@ -28,6 +29,13 @@ export default async function RoiPage() {
             {roi.items[kind] && <RoiDetails roi={roi.items[kind]} view={roi} />}
           </EquipmentCard>
         ))}
+      </div>
+      <div className="max-w-3xl">
+        <SimulatorCard
+          hasBattery={Boolean(roi.items.battery)}
+          solarKwc={roi.items.solar?.equipment.capacity ?? null}
+          exportEnabled={ctx.settings.exportEnabled}
+        />
       </div>
     </>
   );

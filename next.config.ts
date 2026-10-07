@@ -6,6 +6,10 @@ const nextConfig: NextConfig = {
   // Build séparé pour les tests de bout en bout (ne touche pas au cache du serveur de dev).
   distDir: process.env.NEXT_DIST_DIR ?? ".next",
   poweredByHeader: false,
+  // Pages déjà affichées gardées 30 s dans le navigateur : revenir sur une période ou une
+  // page vue à l'instant ne refait ni requête ni calcul. Les actions qui modifient des
+  // données (revalidatePath) vident ce cache.
+  experimental: { staleTimes: { dynamic: 30 } },
   // En-têtes de sécurité sur toutes les réponses ; la CSP des pages (nonce) est posée par le
   // middleware, l'API reçoit une CSP fermée.
   async headers() {

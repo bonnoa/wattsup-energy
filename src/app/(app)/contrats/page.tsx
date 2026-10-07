@@ -2,6 +2,7 @@ import { PageHeader } from "@/components/page-header";
 import { tempoSeasonOf } from "@/domain/tempo-calendar";
 import { addDays, eachDay, localParts } from "@/lib/time";
 import { listContracts } from "@/server/contracts";
+import { shareInFlight } from "@/server/inflight";
 import { pageContext } from "@/server/page";
 import { getContractComparison } from "@/server/queries/contracts";
 import { tempoCalendarView } from "@/server/tempo/sync";
@@ -16,7 +17,7 @@ export default async function ContractsPage() {
   const ctx = await pageContext("/contrats");
   const [contracts, comparison] = await Promise.all([
     listContracts(ctx),
-    getContractComparison(ctx),
+    shareInFlight(`comparison:${ctx.householdId}`, () => getContractComparison(ctx)),
   ]);
 
   // Calendrier Tempo de la saison en cours, jusqu'au lendemain (couleur publiée vers 11 h).

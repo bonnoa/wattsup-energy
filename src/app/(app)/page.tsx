@@ -24,6 +24,7 @@ import { visibleModules } from "@/domain/profile";
 import { localParts } from "@/lib/time";
 import { getAdvice } from "@/server/advice";
 import { getAlerts } from "@/server/alerts";
+import { shareInFlight } from "@/server/inflight";
 import { overviewHidden } from "@/server/overview-prefs";
 import { pageContext } from "@/server/page";
 import { getContractComparison } from "@/server/queries/contracts";
@@ -36,13 +37,17 @@ export default async function OverviewPage({
 }) {
   const ctx = await pageContext("/");
   const { p } = await searchParams;
+  const period = typeof p === "string" ? p : undefined;
   // Blocs masqués par l'utilisateur (Réglages › Vue d'ensemble) : ni calculés ni affichés.
   const hidden = overviewHidden(ctx);
   const shown = (b: OverviewBlock) => !hidden.includes(b);
   const [overview, alerts, comparison, advice] = await Promise.all([
-    getOverview(ctx, typeof p === "string" ? p : undefined),
+    // Calculs partagés entre requêtes simultanées (clics rapides Mois / Année).
+    shareInFlight(`overview:${ctx.householdId}:${period ?? ""}`, () => getOverview(ctx, period)),
     getAlerts(ctx),
-    shown("contract") ? getContractComparison(ctx) : null,
+    shown("contract")
+      ? shareInFlight(`comparison:${ctx.householdId}`, () => getContractComparison(ctx))
+      : null,
     shown("advice") ? getAdvice(ctx) : [],
   ]);
   const label = (b: OverviewBlock) => OVERVIEW_BLOCKS.find((x) => x.id === b)?.label ?? b;

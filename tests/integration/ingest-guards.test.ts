@@ -12,12 +12,13 @@ import { createTestHousehold, describeTenantIsolation } from "../helpers/tenancy
 async function setup() {
   const ctx = await createTestHousehold("guards");
   const { token } = await createIngestToken(ctx);
-  const push = (body: string, headers: Record<string, string> = {}) =>
+  const push = (body: string, headers: Record<string, string> = {}, init: object = {}) =>
     POST(
       new Request("http://localhost/api/v1/ingest", {
         method: "POST",
         headers: { authorization: `Bearer ${token}`, ...headers },
         body,
+        ...init,
       }),
     );
   return { ctx, push };
@@ -44,6 +45,21 @@ describe("taille du corps", () => {
     const { push } = await setup();
     const big = JSON.stringify({ version: 1, ts: "2026-10-02T12:00:00Z", pad: "x".repeat(70_000) });
     expect((await push(big)).status).toBe(413);
+  });
+
+  it("413 sur un corps envoyé en flux sans content-length, lu sans aller au bout", async () => {
+    const { push } = await setup();
+    let pulled = 0;
+    const endless = new ReadableStream<Uint8Array>({
+      pull(controller) {
+        pulled += 1;
+        if (pulled > 1000) controller.close();
+        else controller.enqueue(new Uint8Array(16 * 1024).fill(32));
+      },
+    });
+    const res = await push(endless as unknown as string, {}, { duplex: "half" });
+    expect(res.status).toBe(413);
+    expect(pulled).toBeLessThan(10);
   });
 
   it("413 sur un content-length annoncé trop grand", async () => {

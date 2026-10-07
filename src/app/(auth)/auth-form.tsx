@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState, type FormEvent } from "react";
+import { safeNextPath } from "@/domain/redirect";
 import { authClient } from "@/lib/auth-client";
 
 type Mode = "connexion" | "inscription";
@@ -66,7 +67,7 @@ export function AuthForm({
   const copy = COPY[mode];
   const router = useRouter();
   const params = useSearchParams();
-  const next = params.get("suite") ?? "/";
+  const next = safeNextPath(params.get("suite"));
   const reset = mode === "connexion" && params.get("reinitialise") === "1";
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
@@ -98,7 +99,7 @@ export function AuthForm({
       );
       return;
     }
-    router.replace(next.startsWith("/") ? next : "/");
+    router.replace(next);
     router.refresh();
   }
 

@@ -568,6 +568,12 @@ Les tests d'intégration démarrent sur une base vide migrée (`pnpm db:migrate`
 - Le choix d'une librairie de graphiques si le SVG maison ne suffit pas.
 - Les changements Docker ou Coolify.
 
+**Sécurité (T51)**
+- En-têtes sur toutes les réponses (`src/lib/security-headers.ts`) : HSTS un an, `nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: strict-origin-when-cross-origin`, `Permissions-Policy` fermée (caméra, micro, géolocalisation, paiement, USB).
+- CSP des pages posée par le middleware avec un nonce par requête : scripts de Next.js seulement (`'strict-dynamic'`), styles en ligne permis, aucune ressource externe, pas de cadre. API : `default-src 'none'`. Toute ressource externe ajoutée plus tard doit être inscrite dans la CSP.
+- Liens absolus des emails construits sur `BETTER_AUTH_URL`, jamais sur `Host` ou `X-Forwarded-Host`. Retour après connexion : chemin interne seulement (`src/domain/redirect.ts`).
+- Limites de débit : Better Auth (actif en production, par IP lue dans `X-Forwarded-For` posé par le proxy), ingestion 120/min et résumé 30/min par token, contact et idées 5/h par compte, import CSV 10/h par foyer. Corps d'ingestion borné à 64 Ko en lecture.
+
 **Jamais**
 - Committer un secret ou un token, ou logguer un token en clair (préfixe seulement).
 - Stocker un token non haché.

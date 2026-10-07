@@ -1,8 +1,10 @@
 import { getSessionCookie } from "better-auth/cookies";
 import { NextResponse, type NextRequest } from "next/server";
+import { pageCsp } from "@/lib/security-headers";
 
 // Garde légère : présence du cookie de session. La vérification complète de la
-// session se fait côté serveur dans getHouseholdContext() (T3).
+// session se fait côté serveur dans getHouseholdContext() (T3). Pose aussi la CSP des
+// pages avec un nonce par requête, que Next.js reprend sur ses propres scripts.
 
 const PUBLIC_PATHS = [
   "/connexion",
@@ -24,7 +26,13 @@ export function middleware(request: NextRequest) {
   if (hasSession && isPublic) {
     return NextResponse.redirect(new URL("/", request.url));
   }
-  return NextResponse.next();
+
+  const csp = pageCsp(btoa(crypto.randomUUID()), process.env.NODE_ENV === "development");
+  const headers = new Headers(request.headers);
+  headers.set("content-security-policy", csp);
+  const response = NextResponse.next({ request: { headers } });
+  response.headers.set("content-security-policy", csp);
+  return response;
 }
 
 export const config = {

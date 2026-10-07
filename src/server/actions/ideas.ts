@@ -1,9 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { headers } from "next/headers";
 import { z } from "zod";
-import { publicOrigin } from "@/domain/blueprint";
 import { IDEA_STATUSES, parseIdeaInput, parseVersion, type IdeaStatus } from "@/domain/ideas";
 import { ForbiddenError } from "../admin";
 import { getHouseholdContext } from "../context";
@@ -45,8 +43,9 @@ export async function proposeIdeaAction(raw: {
       ],
     };
   }
-  const h = await headers();
-  const url = `${publicOrigin(process.env.BETTER_AUTH_URL ?? "http://localhost:3000", h)}/idees`;
+  // Adresse de l'instance (BETTER_AUTH_URL), jamais tirée des en-têtes de la requête : un
+  // en-tête forgé enverrait l'administrateur vers un autre site.
+  const url = new URL("/idees", process.env.BETTER_AUTH_URL ?? "http://localhost:3000").href;
   return run(async () => {
     await createIdea(ctx, parsed.value, { url });
     return true;

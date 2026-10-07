@@ -174,7 +174,13 @@ Taille : **S** = 1–2 fichiers · **M** = 3–5 fichiers. Aucune tâche L/XL.
 | T49 | Notifications push (service worker, VAPID, `web-push`) | M | T44 | une alerte n'est poussée qu'une fois |
 | T50 | Vue d'ensemble personnalisable : blocs masquables depuis la Vue d'ensemble ou Réglages › Vue d'ensemble | S | T41, T45, T48 | un bloc masqué laisse un message avec le lien pour le réafficher |
 
-**Ensuite** : passe de sécurisation, puis T34 (GitHub : README, image, `v1.0.0`), puis wiki. Bilan mensuel par email et foyer partagé écartés pour l'instant.
+### Jalon 9 : Sécurisation (2026-10-07)
+
+| # | Tâche | Taille | Dépend de | Critère d'acceptation clé |
+|---|---|---|---|---|
+| T51 | Passe de sécurisation : en-têtes (CSP à nonce, HSTS…), redirection après connexion, liens des emails, corps de l'ingestion borné, audit des dépendances | S | T50 | aucune violation CSP sur les pages ; `?suite=//autre-site` ramène à l'accueil (test) |
+
+**Ensuite** : T34 (GitHub : README, image, `v1.0.0`), puis wiki. Bilan mensuel par email et foyer partagé écartés pour l'instant.
 
 ## Parallélisation
 

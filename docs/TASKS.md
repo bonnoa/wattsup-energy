@@ -475,9 +475,20 @@ Légende des tailles : **S** = 1–2 fichiers · **M** = 3–5 fichiers (hors te
   - Vérifier : `tests/unit/domain/overview-blocks.test.ts`, `tests/integration/overview-prefs.test.ts` (isolation) ; manuel
   - Fichiers : `src/domain/overview-blocks.ts`, `src/server/overview-prefs.ts`, `src/components/overview/hideable.tsx`, `src/app/(app)/reglages/overview-blocks-card.tsx`
 
+## Jalon 9 : Sécurisation (demandé le 2026-10-07)
+
+- [x] **T51 — Passe de sécurisation** · S · Dépend de : T50
+  - Acceptation :
+    - En-têtes sur toutes les réponses : HSTS, `nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy`, `Permissions-Policy` ; CSP des pages avec un nonce par requête (middleware), CSP fermée sur l'API
+    - Retour après connexion (`?suite=`) limité aux chemins de l'application : `//autre-site`, `/\autre-site` ou une adresse complète ramènent à l'accueil
+    - Lien de l'email « nouvelle idée » construit sur `BETTER_AUTH_URL`, jamais sur les en-têtes de la requête
+    - Ingestion : corps lu en flux et coupé au-delà de 64 Ko, même sans `content-length`
+    - Audit : actions serveur (session, validation Zod, droits d'administrateur), limites de débit (Better Auth en production, ingestion, résumé, contact, idées, import CSV), secrets absents de l'historique git ; alertes `pnpm audit` limitées aux outils de build et de test (vitest, esbuild, postcss de Next au build)
+  - Vérifier : `tests/unit/domain/redirect.test.ts`, `tests/unit/lib/security-headers.test.ts`, `tests/integration/ingest-guards.test.ts`, `e2e/security.spec.ts` (build de production) ; navigateur : aucune violation CSP (pages, navigation, action serveur)
+  - Fichiers : `src/lib/security-headers.ts`, `next.config.ts`, `src/middleware.ts`, `src/domain/redirect.ts`, `src/app/(auth)/auth-form.tsx`, `src/server/actions/ideas.ts`, `src/app/api/v1/ingest/route.ts`
+
 ### Ensuite (à voir ensemble)
 
-- Passe de sécurisation de l'ensemble (revue, en-têtes, limites, dépendances)
 - T34 : mise à jour GitHub (README, image Docker GHCR, tag `v1.0.0`)
 - Wiki (dont une page « Nouveautés » tirée des idées terminées)
 

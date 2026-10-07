@@ -15,7 +15,7 @@ const fmtTime = (t: string) => {
 
 const TEMPO_ROWS: { color: TempoColor; label: string; dot: string }[] = [
   { color: "bleu", label: "Bleu", dot: "bg-grid" },
-  { color: "blanc", label: "Blanc", dot: "bg-[#CFC9BB]" },
+  { color: "blanc", label: "Blanc", dot: "bg-dash" },
   { color: "rouge", label: "Rouge", dot: "bg-eheat" },
 ];
 

@@ -21,7 +21,7 @@ export function PeriodSwitcher({ overview }: { overview: Ok }) {
   const { period, nav } = overview;
   const segment = (active: boolean) =>
     `rounded-[8px] px-3.5 py-1.5 text-[13px] font-medium ${
-      active ? "bg-surface shadow-[0_1px_2px_rgba(0,0,0,0.08)]" : "text-[#5E625C]"
+      active ? "bg-surface shadow-[0_1px_2px_rgba(0,0,0,0.08)]" : "text-ink-soft"
     }`;
   const arrow = (key: string | null, label: string, path: string) =>
     key ? (
@@ -103,14 +103,14 @@ export function BudgetCard({ overview }: { overview: Ok }) {
       ? monthLabel(`${previousYear}${period.key.slice(4)}`)
       : String(previousYear);
   return (
-    <section className="flex flex-col gap-4 rounded-card bg-ink p-5 text-bg sm:p-6">
+    <section className="flex flex-col gap-4 rounded-card border border-panel-edge bg-panel p-5 text-panel-ink sm:p-6">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <h2 className="text-[13px] text-[#A9ADA6]">
+        <h2 className="text-[13px] text-panel-muted">
           Budget énergie · <span className="capitalize">{period.label}</span>
         </h2>
         {delta !== null && (
           <span
-            className={`text-xs font-medium tabular-nums ${delta <= 0 ? "text-[#7FD1B0]" : "text-[#F2A091]"}`}
+            className={`text-xs font-medium tabular-nums ${delta <= 0 ? "text-panel-positive" : "text-panel-negative"}`}
           >
             {delta <= 0 ? "−" : "+"}
             {formatEurFromCents(gap, gap < 1000 ? 2 : 0)} · {delta <= 0 ? "−" : "+"}
@@ -121,16 +121,18 @@ export function BudgetCard({ overview }: { overview: Ok }) {
       <p className="text-[40px] leading-none font-semibold tracking-tight tabular-nums">
         {eur(budget.totalCents)}
       </p>
-      <div className="flex flex-wrap gap-x-5 gap-y-1.5 text-xs text-[#C9CCC5]">
+      <div className="flex flex-wrap gap-x-5 gap-y-1.5 text-xs text-panel-soft">
         <span className="flex items-center gap-1.5">
-          <span className="size-2 rounded-[2px] bg-[#7E9CC4]" />
+          <span className="size-2 rounded-[2px] bg-hc" />
           Électricité consommée
-          <span className="font-semibold text-bg tabular-nums">{eur(budget.energyCents)}</span>
+          <span className="font-semibold text-panel-ink tabular-nums">
+            {eur(budget.energyCents)}
+          </span>
         </span>
         <span className="flex items-center gap-1.5">
-          <span className="size-2 rounded-[2px] bg-[#8A8E86]" />
+          <span className="size-2 rounded-[2px] bg-neutral-bar" />
           Abonnement
-          <span className="font-semibold text-bg tabular-nums">
+          <span className="font-semibold text-panel-ink tabular-nums">
             {eur(budget.subscriptionCents)}
           </span>
         </span>
@@ -139,7 +141,7 @@ export function BudgetCard({ overview }: { overview: Ok }) {
         <Projection projection={overview.projection} year={period.key.slice(0, 4)} />
       )}
       {budget.unknownContractDays > 0 && (
-        <p className="text-[11px] text-[#A9ADA6]">
+        <p className="text-[11px] text-panel-muted">
           {budget.unknownContractDays} jour{budget.unknownContractDays > 1 ? "s" : ""} sans contrat
           souscrit, estimé{budget.unknownContractDays > 1 ? "s" : ""} au tarif de votre contrat
           actuel.
@@ -160,10 +162,13 @@ function Projection({
   const previousYear = Number(year) - 1;
   const trend = p.trend - 1;
   return (
-    <div className="flex flex-col gap-1 border-t border-bg/10 pt-3">
-      <p className="text-[13px] text-[#C9CCC5]">
+    <div className="flex flex-col gap-1 border-t border-panel-ink/10 pt-3">
+      <p className="text-[13px] text-panel-soft">
         À ce rythme :{" "}
-        <span className="font-semibold whitespace-nowrap text-bg tabular-nums">≈ {eur(p.totalCents)}</span> sur {year}
+        <span className="font-semibold whitespace-nowrap text-panel-ink tabular-nums">
+          ≈ {eur(p.totalCents)}
+        </span>{" "}
+        sur {year}
         {p.lowCents !== null && p.highCents !== null && (
           <span className="whitespace-nowrap tabular-nums">
             {" "}
@@ -177,7 +182,7 @@ function Projection({
           </span>
         )}
       </p>
-      <p className="text-[11px] text-[#A9ADA6] text-pretty">
+      <p className="text-[11px] text-panel-muted text-pretty">
         Mois restants estimés sur {previousYear}
         {Math.abs(trend) >= 0.005
           ? `, ${trend > 0 ? "+" : "−"}${formatPercent(Math.abs(trend))} comme depuis janvier`
@@ -247,7 +252,7 @@ export function KpiTiles({
   );
 }
 
-const HC_COLOR = "bg-[#7E9CC4]";
+const HC_COLOR = "bg-hc";
 
 /** Part de l'électricité soutirée en heures creuses et en heures pleines (contrat HP/HC ou Tempo). */
 export function PeakCard({ overview }: { overview: Ok }) {
@@ -282,7 +287,7 @@ export function PeakCard({ overview }: { overview: Ok }) {
             key={p.label}
             className="flex flex-wrap items-center justify-between gap-x-3 gap-y-0.5"
           >
-            <span className="flex items-center gap-2 text-[#5E625C]">
+            <span className="flex items-center gap-2 text-ink-soft">
               <span className={`size-2 rounded-[2px] ${p.color}`} />
               {p.label}
             </span>
@@ -349,7 +354,7 @@ export function OriginCard({
           <ul className="flex flex-col gap-2.5 text-[13px]">
             {parts.map((p) => (
               <li key={p.label} className="flex items-center justify-between gap-2">
-                <span className="flex items-center gap-2 text-[#5E625C]">
+                <span className="flex items-center gap-2 text-ink-soft">
                   <span className={`size-2 rounded-[2px] ${p.color}`} />
                   {p.label}
                 </span>
@@ -509,7 +514,7 @@ export function CategoriesOverviewCard({ overview }: { overview: Ok }) {
 const fmtYield = (y: number) => y.toLocaleString("fr-FR", { maximumFractionDigits: 2 });
 
 // Repère de la tuile Ensoleillement : couleur de la courbe du graphique.
-const SUNSHINE_DOT = "bg-[#5E625C]";
+const SUNSHINE_DOT = "bg-ink-soft";
 
 /**
  * Production et ensoleillement : barres de production et courbe d'ensoleillement superposée

@@ -81,7 +81,7 @@ export function SignupCard({
                 setMessage(null);
               }}
               className={`rounded-[8px] px-3 py-1.5 text-[13px] font-medium whitespace-nowrap ${
-                mode === m.id ? "bg-surface shadow-[0_1px_2px_rgba(0,0,0,0.08)]" : "text-[#5E625C]"
+                mode === m.id ? "bg-surface shadow-[0_1px_2px_rgba(0,0,0,0.08)]" : "text-ink-soft"
               }`}
             >
               {m.label}

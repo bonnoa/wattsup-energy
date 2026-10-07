@@ -10,11 +10,7 @@ export default async function ConnexionPage() {
   const { mode } = await getSignupPolicy();
   return (
     <Suspense>
-      <AuthForm
-        mode="connexion"
-        signupOpen={mode !== "closed"}
-        passwordReset={mailConfigured()}
-      />
+      <AuthForm mode="connexion" signupOpen={mode !== "closed"} passwordReset={mailConfigured()} />
     </Suspense>
   );
 }

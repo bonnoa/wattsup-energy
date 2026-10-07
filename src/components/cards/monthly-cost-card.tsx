@@ -15,7 +15,7 @@ import type { MonthCost } from "@/server/queries/overview";
 type Unit = "eur" | "kwh";
 const STORAGE_KEY = "wattsup:monthly-unit";
 const COMPARE_KEY = "wattsup:monthly-compare";
-const SUBSCRIPTION = "bg-[#C9C2B4]";
+const SUBSCRIPTION = "bg-subscription";
 
 const eur = (cents: number) => formatEurFromCents(cents, 0);
 const kwh = (value: number) => formatKwh(value);
@@ -40,7 +40,7 @@ function UnitSwitch({ unit, onChange }: { unit: Unit; onChange: (u: Unit) => voi
           aria-checked={unit === o.id}
           onClick={() => onChange(o.id)}
           className={`rounded-[8px] px-3 py-1 text-[13px] font-medium ${
-            unit === o.id ? "bg-surface shadow-[0_1px_2px_rgba(0,0,0,0.08)]" : "text-[#5E625C]"
+            unit === o.id ? "bg-surface shadow-[0_1px_2px_rgba(0,0,0,0.08)]" : "text-ink-soft"
           }`}
         >
           {o.label}
@@ -53,7 +53,7 @@ function UnitSwitch({ unit, onChange }: { unit: Unit; onChange: (u: Unit) => voi
 function Row({ color, label, value }: { color: string; label: string; value: string }) {
   return (
     <div className="flex items-center justify-between gap-2">
-      <span className="flex items-center gap-2 text-[#5E625C]">
+      <span className="flex items-center gap-2 text-ink-soft">
         <span className={`size-2 rounded-[2px] ${color}`} />
         {label}
       </span>
@@ -125,7 +125,7 @@ export function MonthlyCostCard({
     ? monthLabel(`${previousYear}${selected.key.slice(4)}`)
     : `mêmes mois ${previousYear}`;
   const comparison = comparing && previousTotal !== null && (
-    <div className="flex items-center justify-between gap-2 text-[#5E625C]">
+    <div className="flex items-center justify-between gap-2 text-ink-soft">
       <span>{prevLabel.charAt(0).toUpperCase() + prevLabel.slice(1)}</span>
       <span className="whitespace-nowrap tabular-nums">
         {fmt(previousTotal)}
@@ -229,7 +229,7 @@ export function MonthlyCostCard({
               {comparison}
               {totals.kwh > 0 && totals.energy > 0 && (
                 <div className="mt-auto flex justify-between gap-3 border-t border-border-strong pt-2.5">
-                  <span className="text-[#5E625C]">Prix moyen du kWh, hors abonnement</span>
+                  <span className="text-ink-soft">Prix moyen du kWh, hors abonnement</span>
                   <span className="font-semibold whitespace-nowrap tabular-nums">
                     {formatEurFromCents(totals.energy / totals.kwh, 3)}
                   </span>

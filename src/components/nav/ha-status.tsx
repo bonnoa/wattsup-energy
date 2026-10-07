@@ -27,15 +27,15 @@ export function HaStatus({ lastPushAt, granularity, renderedAt, compact }: Props
 
   if (compact) {
     return (
-      <div className="flex items-center gap-1.5 rounded-full border border-border bg-surface px-2.5 py-1.5 text-xs text-[#5E625C]">
+      <div className="flex items-center gap-1.5 rounded-full border border-border bg-surface px-2.5 py-1.5 text-xs text-ink-soft">
         <span className={`size-[7px] rounded-full ${dot}`} />
         {state === "never" ? "HA · en attente" : `HA · ${since.replace("il y a ", "")}`}
       </div>
     );
   }
   return (
-    <div className="flex flex-col gap-1.5 rounded-[10px] bg-bg/[0.06] px-3 py-3.5">
-      <div className="flex items-center gap-2 text-xs text-[#A9ADA6]">
+    <div className="flex flex-col gap-1.5 rounded-[10px] bg-panel-ink/[0.06] px-3 py-3.5">
+      <div className="flex items-center gap-2 text-xs text-panel-muted">
         <span className={`size-[7px] rounded-full ${dot}`} />
         {state === "never"
           ? "Home Assistant non connecté"
@@ -43,7 +43,7 @@ export function HaStatus({ lastPushAt, granularity, renderedAt, compact }: Props
             ? "Home Assistant silencieux"
             : "Home Assistant connecté"}
       </div>
-      <div className="text-[11px] text-[#A9ADA6] tabular-nums">
+      <div className="text-[11px] text-panel-muted tabular-nums">
         {state === "never" ? "En attente du premier push" : `Dernier push ${since}`}
       </div>
     </div>

@@ -122,23 +122,23 @@ export function AccountMenu({
         aria-haspopup="menu"
         aria-expanded={open}
         onClick={() => setOpen(!open)}
-        className={`flex w-full min-w-0 items-center gap-2.5 rounded-[9px] px-2 py-1.5 text-left text-bg hover:bg-bg/[0.08] ${
-          open || onAccount ? "bg-bg/[0.12]" : ""
+        className={`flex w-full min-w-0 items-center gap-2.5 rounded-[9px] px-2 py-1.5 text-left text-panel-ink hover:bg-panel-ink/[0.08] ${
+          open || onAccount ? "bg-panel-ink/[0.12]" : ""
         }`}
       >
-        <span className="flex size-8 flex-none items-center justify-center rounded-full bg-grid text-[13px] font-semibold">
+        <span className="flex size-8 flex-none items-center justify-center rounded-full bg-grid text-[13px] font-semibold text-on-grid">
           {initial}
         </span>
         <span className="flex min-w-0 flex-1 flex-col">
           <span className="truncate text-[13px] font-semibold">{userName}</span>
-          <span className="truncate text-xs text-[#A9ADA6]">{householdName}</span>
+          <span className="truncate text-xs text-panel-muted">{householdName}</span>
         </span>
         <svg
           width="14"
           height="14"
           viewBox="0 0 24 24"
           fill="none"
-          stroke="#A9ADA6"
+          stroke="currentColor"
           strokeWidth={1.8}
           aria-hidden
         >
@@ -153,7 +153,7 @@ export function AccountMenu({
         aria-expanded={open}
         aria-label={`Menu du compte (${userName})`}
         onClick={() => setOpen(!open)}
-        className={`flex size-9 items-center justify-center rounded-full bg-grid text-[13px] font-semibold text-white ${
+        className={`flex size-9 items-center justify-center rounded-full bg-grid text-[13px] font-semibold text-on-grid ${
           open || onAccount ? "ring-2 ring-ink ring-offset-2 ring-offset-bg" : ""
         }`}
       >
@@ -203,9 +203,7 @@ export function AccountMenu({
             Se déconnecter
           </button>
           {variant === "header" && (
-            <p className="pt-1 pb-1 text-center text-[10px] text-subtle tabular-nums">
-              {version}
-            </p>
+            <p className="pt-1 pb-1 text-center text-[10px] text-subtle tabular-nums">{version}</p>
           )}
         </div>
       )}

@@ -11,7 +11,7 @@ import { Icon } from "./icon";
 
 export const CATEGORY_SWATCH: Record<CategoryColor, { bg: string; tile: string; label: string }> = {
   grid: { bg: "bg-grid", tile: "bg-grid/12 text-grid", label: "Bleu" },
-  solar: { bg: "bg-solar", tile: "bg-solar/15 text-[#9A6E0C]", label: "Jaune" },
+  solar: { bg: "bg-solar", tile: "bg-solar/15 text-solar-ink", label: "Jaune" },
   battery: { bg: "bg-battery", tile: "bg-battery/15 text-positive", label: "Vert" },
   pellet: { bg: "bg-pellet", tile: "bg-pellet/15 text-pellet", label: "Orange" },
   wood: { bg: "bg-wood", tile: "bg-wood/15 text-wood", label: "Brun" },

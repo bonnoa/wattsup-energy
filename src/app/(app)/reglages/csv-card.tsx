@@ -219,7 +219,7 @@ export function CsvCard({
               void choose(e.dataTransfer.files[0]);
             }}
             className={`flex cursor-pointer flex-col items-center gap-2 rounded-control border border-dashed px-4 py-6 text-center text-[13px] ${
-              dragging ? "border-grid bg-grid/[0.05]" : "border-[#CFC9BB] hover:bg-bg"
+              dragging ? "border-grid bg-grid/[0.05]" : "border-dash hover:bg-bg"
             }`}
           >
             <Icon name="upload" size={20} />

@@ -19,6 +19,10 @@ export const user = pgTable("user", {
   // jamais modifiable depuis l'interface ; compte désactivé par l'administrateur.
   isAdmin: boolean("is_admin").default(false).notNull(),
   disabledAt: timestamp("disabled_at", { withTimezone: true }),
+  /** Thème de l'interface (T43) : clair par défaut, sombre ou celui de l'appareil. */
+  theme: text("theme", { enum: ["light", "dark", "auto"] })
+    .default("light")
+    .notNull(),
 });
 
 export const session = pgTable(

@@ -5,8 +5,8 @@
   --color-bg: #f4f2ec;
   --color-surface: #ffffff;
   --color-ink: #16181a;
-  --color-muted: #6b6f68;
-  --color-subtle: #6f736b;
+  --color-muted: #676b63;
+  --color-subtle: #686c64;
   --color-border: #e4e0d6;
   --color-border-strong: #ddd8cc;
   --color-track: #efece4;
@@ -22,11 +22,106 @@
   --color-positive: #1f7a59;
   --color-negative: #c8442f;
 
+  /* Texte secondaire plus marqué que muted (légendes, onglets inactifs). */
+  --color-ink-soft: #5e625c;
+  /* Panneaux sombres dans les deux thèmes : barre latérale, carte Budget, toasts. */
+  --color-panel: #16181a;
+  --color-panel-edge: transparent;
+  --color-panel-ink: #f4f2ec;
+  --color-panel-muted: #a9ada6;
+  --color-panel-soft: #c9ccc5;
+  --color-panel-positive: #7fd1b0;
+  --color-panel-negative: #f2a091;
+  /* Heures creuses (bleu clair), abonnement et degrés-jours dans les graphiques. */
+  --color-hc: #7e9cc4;
+  --color-subscription: #c9c2b4;
+  --color-neutral-bar: #8a8e86;
+  /* Pointillés des emplacements vides, jour Tempo blanc, interrupteur éteint. */
+  --color-dash: #cfc9bb;
+  --color-tempo-white: #e4e0d6;
+  --color-switch-off: #d6d1c5;
+  /* Fonds d'encarts et textes teintés lisibles sur ces fonds. */
+  --color-warning-bg: #fbf3ea;
+  --color-danger-bg: #fbeae7;
+  --color-warning-ink: #9a5322;
+  --color-solar-ink: #8a6210;
+  /* Texte posé sur le bleu grid (pastille active, avatar). */
+  --color-on-grid: #ffffff;
+
   --font-sans: var(--font-instrument-sans), system-ui, sans-serif;
   --font-mono: var(--font-jetbrains-mono), ui-monospace, monospace;
 
   --radius-card: 14px;
   --radius-control: 10px;
+}
+
+/* Thème sombre (T43) : mêmes tokens, autres valeurs. « dark » : choisi dans Mon compte ;
+   « auto » : suit le réglage de l'appareil. Clair par défaut. */
+:root[data-theme="dark"] {
+  --color-bg: #121416;
+  --color-surface: #1b1e21;
+  --color-ink: #ecebe6;
+  --color-muted: #a3a79f;
+  --color-subtle: #9a9e96;
+  --color-border: #2c3034;
+  --color-border-strong: #3a3f44;
+  --color-track: #25292c;
+  --color-chip: #0f1113;
+  --color-grid: #6f8fb8;
+  --color-solar: #e3a92a;
+  --color-battery: #34b388;
+  --color-pellet: #cf8148;
+  --color-wood: #a9805d;
+  --color-eheat: #e3664f;
+  --color-positive: #52c79d;
+  --color-negative: #f07d69;
+  --color-ink-soft: #b9bcb4;
+  --color-panel: #0b0c0d;
+  --color-panel-edge: #2c3034;
+  --color-subscription: #656963;
+  --color-dash: #4b5056;
+  --color-tempo-white: #d6d1c5;
+  --color-switch-off: #3d4247;
+  --color-warning-bg: #2b2219;
+  --color-danger-bg: #301c19;
+  --color-warning-ink: #e9a670;
+  --color-solar-ink: #e9bd57;
+  --color-on-grid: #0b0c0d;
+  color-scheme: dark;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root[data-theme="auto"] {
+    --color-bg: #121416;
+    --color-surface: #1b1e21;
+    --color-ink: #ecebe6;
+    --color-muted: #a3a79f;
+    --color-subtle: #9a9e96;
+    --color-border: #2c3034;
+    --color-border-strong: #3a3f44;
+    --color-track: #25292c;
+    --color-chip: #0f1113;
+    --color-grid: #6f8fb8;
+    --color-solar: #e3a92a;
+    --color-battery: #34b388;
+    --color-pellet: #cf8148;
+    --color-wood: #a9805d;
+    --color-eheat: #e3664f;
+    --color-positive: #52c79d;
+    --color-negative: #f07d69;
+    --color-ink-soft: #b9bcb4;
+    --color-panel: #0b0c0d;
+    --color-panel-edge: #2c3034;
+    --color-subscription: #656963;
+    --color-dash: #4b5056;
+    --color-tempo-white: #d6d1c5;
+    --color-switch-off: #3d4247;
+    --color-warning-bg: #2b2219;
+    --color-danger-bg: #301c19;
+    --color-warning-ink: #e9a670;
+    --color-solar-ink: #e9bd57;
+    color-scheme: dark;
+  }
 }
 
 /* Styles de base dans @layer base : les utilitaires Tailwind doivent pouvoir les surcharger. */
@@ -36,8 +131,8 @@
     height: 100%;
   }
 
-  /* Thème clair seulement : contrôles natifs (sélecteurs, dates) clairs même si le système
-     est en sombre. */
+  /* Contrôles natifs (sélecteurs, dates) au thème de l'appli, pas à celui du système ; le
+     thème sombre redéfinit color-scheme avec ses couleurs. */
   html {
     color-scheme: light;
   }

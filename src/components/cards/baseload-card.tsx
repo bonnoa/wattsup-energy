@@ -36,7 +36,7 @@ export function BaseloadCard({ overview }: { overview: Ok }) {
             </span>
             <span className="text-[13px] text-muted">en permanence · {period.label}</span>
           </p>
-          <p className="text-[13px] text-[#5E625C] tabular-nums">
+          <p className="text-[13px] text-ink-soft tabular-nums">
             ≈ {formatKwh(yearlyKwh(b.watts))} par an
             {b.centsPerKwh !== null &&
               ` · ≈ ${formatEurFromCents(yearlyKwh(b.watts) * b.centsPerKwh, 0)} par an`}

@@ -10,7 +10,7 @@ const DAYS = ["L", "M", "M", "J", "V", "S", "D"];
 const DAY_NAMES = ["lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi", "dimanche"];
 const COLORS: { id: TempoColor; label: string; dot: string }[] = [
   { id: "bleu", label: "Bleu", dot: "bg-grid" },
-  { id: "blanc", label: "Blanc", dot: "bg-[#CFC9BB]" },
+  { id: "blanc", label: "Blanc", dot: "bg-dash" },
   { id: "rouge", label: "Rouge", dot: "bg-eheat" },
 ];
 
@@ -18,7 +18,7 @@ const inputClass =
   "h-10 w-full rounded-[8px] border border-border-strong bg-surface px-3 text-[13px] outline-none focus:border-ink focus-visible:ring-2 focus-visible:ring-grid/30";
 const labelClass = "flex flex-col gap-1.5 text-xs text-muted";
 const smallButton =
-  "rounded-[8px] border border-border-strong px-2.5 py-1.5 text-xs text-[#5E625C] hover:bg-bg";
+  "rounded-[8px] border border-border-strong px-2.5 py-1.5 text-xs text-ink-soft hover:bg-bg";
 
 const presetFor = (kind: Contract["kind"]) =>
   structuredClone(CONTRACT_PRESETS.find((p) => p.contract.kind === kind) as ContractInput);
@@ -373,7 +373,7 @@ export function FormButtons({
       <button
         type="button"
         onClick={onCancel}
-        className="flex h-10 items-center rounded-[8px] border border-border-strong px-4 text-[13px] text-[#5E625C] hover:bg-bg"
+        className="flex h-10 items-center rounded-[8px] border border-border-strong px-4 text-[13px] text-ink-soft hover:bg-bg"
       >
         Annuler
       </button>

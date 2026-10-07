@@ -38,8 +38,8 @@ export function ComparisonBanner({ comparison }: { comparison: Ok }) {
   const saving = current && best.id !== current.id ? current.annualCents - best.annualCents : 0;
 
   return (
-    <section className="flex flex-col gap-1.5 rounded-card bg-ink p-5 text-bg">
-      <span className="text-[13px] text-[#A9ADA6]">
+    <section className="flex flex-col gap-1.5 rounded-card border border-panel-edge bg-panel p-5 text-panel-ink">
+      <span className="text-[13px] text-panel-muted">
         Contrat le plus économique sur{" "}
         {partial ? `${comparison.periodDays} jours de données` : "12 mois réels"}
       </span>
@@ -47,18 +47,19 @@ export function ComparisonBanner({ comparison }: { comparison: Ok }) {
         {!current ? (
           <>
             {best.name} :{" "}
-            <span className="text-[#7FD1B0] tabular-nums">{eur(best.annualCents)}/an</span>
+            <span className="text-panel-positive tabular-nums">{eur(best.annualCents)}/an</span>
           </>
         ) : saving > 0 ? (
           <>
-            {best.name} : <span className="text-[#7FD1B0] tabular-nums">−{eur(saving)}/an</span> par
-            rapport à votre contrat actuel
+            {best.name} :{" "}
+            <span className="text-panel-positive tabular-nums">−{eur(saving)}/an</span> par rapport
+            à votre contrat actuel
           </>
         ) : (
           <>Votre contrat actuel est déjà le moins cher des offres comparées</>
         )}
       </p>
-      <span className="text-xs text-[#A9ADA6] tabular-nums">
+      <span className="text-xs text-panel-muted tabular-nums">
         {fmtDate(comparison.from)} – {fmtDate(comparison.to)} ·{" "}
         {Math.round(comparison.kwh).toLocaleString("fr-FR")} kWh soutirés
         {comparison.redDays > 0 ? ` · ${comparison.redDays} jours rouges` : ""}
@@ -126,7 +127,7 @@ export function ComparisonList({ comparison }: { comparison: Ok }) {
               </div>
               <div className="h-1.5 rounded-full bg-track">
                 <div
-                  className={`h-1.5 rounded-full ${r.id === best?.id ? "bg-battery" : r.isCurrent ? "bg-grid" : "bg-[#CFC9BB]"}`}
+                  className={`h-1.5 rounded-full ${r.id === best?.id ? "bg-battery" : r.isCurrent ? "bg-grid" : "bg-dash"}`}
                   style={{ width: `${(r.annualCents / max) * 100}%` }}
                 />
               </div>

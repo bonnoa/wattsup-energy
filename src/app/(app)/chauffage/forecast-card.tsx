@@ -47,7 +47,7 @@ function Segmented<T extends string>({
           aria-checked={value === o.id}
           onClick={() => onChange(o.id)}
           className={`rounded-[7px] px-2.5 py-1 text-[12px] font-medium whitespace-nowrap ${
-            value === o.id ? "bg-surface shadow-[0_1px_2px_rgba(0,0,0,0.08)]" : "text-[#5E625C]"
+            value === o.id ? "bg-surface shadow-[0_1px_2px_rgba(0,0,0,0.08)]" : "text-ink-soft"
           }`}
         >
           {o.label}
@@ -224,7 +224,7 @@ export function ForecastCard({ view }: { view: RefillForecastView }) {
             ]}
           />
           <details className="text-xs text-muted">
-            <summary className="cursor-pointer text-[#5E625C] hover:text-ink">
+            <summary className="cursor-pointer text-ink-soft hover:text-ink">
               Base de calcul
             </summary>
             <p className="pt-2 text-pretty tabular-nums">

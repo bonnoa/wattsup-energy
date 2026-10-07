@@ -224,11 +224,11 @@ function UndoToast({
   return (
     <div
       role="status"
-      className="fixed inset-x-4 bottom-24 z-40 mx-auto flex max-w-sm items-center gap-3 rounded-control bg-ink px-4 py-3 text-[13px] text-bg shadow-lg lg:bottom-6"
+      className="fixed inset-x-4 bottom-24 z-40 mx-auto flex max-w-sm items-center gap-3 rounded-control border border-panel-edge bg-panel px-4 py-3 text-[13px] text-panel-ink shadow-lg lg:bottom-6"
     >
       <Icon name="check" size={16} />
       <span className="flex-1">{label}</span>
-      <button type="button" onClick={onUndo} className="font-semibold text-[#7FD1B0]">
+      <button type="button" onClick={onUndo} className="font-semibold text-panel-positive">
         Annuler ({left} s)
       </button>
     </div>

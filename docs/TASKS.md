@@ -420,11 +420,11 @@ Légende des tailles : **S** = 1–2 fichiers · **M** = 3–5 fichiers (hors te
   - Vérifier : `tests/unit/domain/projection.test.ts` (TDD)
   - Fichiers : `src/domain/projection.ts`, `src/components/cards/*`
 
-- [ ] **T43 — Thème sombre** · M · Dépend de : T35
+- [x] **T43 — Thème sombre** · M · Dépend de : T35
   - Acceptation :
     - Mon compte : Clair (défaut) / Sombre / Automatique (réglage de l'appareil), enregistré sur le compte (`user.theme`), appliqué dès le premier rendu (pas de flash)
     - Tous les tokens de couleur ont leur version sombre ; graphiques, encarts et pastilles lisibles (contraste AA)
-  - Vérifier : manuel sur les 8 écrans, clair et sombre, 390 et 1280 px
+  - Vérifier : `tests/integration/preferences.test.ts` ; audit de contraste (script dans le navigateur) sur les 9 écrans en sombre, 0 défaut ; en clair, `subtle` et `muted` assombris pour 4,5:1 sur les tuiles
   - Fichiers : `src/app/globals.css`, `src/app/layout.tsx`, `src/app/(app)/compte/*`
 
 - [ ] **T44 — Alertes dans l'appli** · M · Dépend de : T27, T29, T20

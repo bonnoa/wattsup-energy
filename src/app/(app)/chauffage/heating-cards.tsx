@@ -160,7 +160,7 @@ export function HeatingCostCard({ view }: { view: HeatingView }) {
       )}
       <ul className="flex flex-wrap gap-x-5 gap-y-1.5 text-[13px]">
         {sources.map((s) => (
-          <li key={s.key} className="flex items-center gap-2 text-[#5E625C]">
+          <li key={s.key} className="flex items-center gap-2 text-ink-soft">
             <span className={`size-2 rounded-[2px] ${s.color}`} />
             {s.label}
             <span className="font-semibold text-ink tabular-nums">
@@ -194,7 +194,7 @@ export function HeatingCostCard({ view }: { view: HeatingView }) {
               key: m.key,
               label: shortMonth(m.key),
               title: `${monthLabel(m.key)} : ${m.dju === null ? "météo inconnue" : `${formatNumber(m.dju)} degrés-jours, ${temp(m.tMean ?? 0)} en moyenne`}`,
-              segments: [{ value: m.dju ?? 0, color: "bg-[#8A8E86]", label: "Degrés-jours" }],
+              segments: [{ value: m.dju ?? 0, color: "bg-neutral-bar", label: "Degrés-jours" }],
             }))}
           />
         </div>

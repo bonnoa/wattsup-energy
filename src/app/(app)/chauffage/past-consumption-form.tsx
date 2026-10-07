@@ -89,7 +89,7 @@ export function PastConsumptionForm({
               aria-checked={fuel === f}
               onClick={() => chooseFuel(f)}
               className={`flex-1 rounded-[8px] px-3 py-1.5 text-[13px] font-medium ${
-                fuel === f ? "bg-surface shadow-[0_1px_2px_rgba(0,0,0,0.08)]" : "text-[#5E625C]"
+                fuel === f ? "bg-surface shadow-[0_1px_2px_rgba(0,0,0,0.08)]" : "text-ink-soft"
               }`}
             >
               {FUEL_LABELS[f]}

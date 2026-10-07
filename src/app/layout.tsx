@@ -1,5 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
+import { parseTheme } from "@/domain/theme";
+import { getSession } from "@/server/session";
 import "./globals.css";
 
 // Polices auto-hébergées (variables, sous-ensemble latin, licence OFL dans src/fonts) :
@@ -26,15 +28,33 @@ export const metadata: Metadata = {
   appleWebApp: { capable: true, title: "WattsUp", statusBarStyle: "default" },
 };
 
-// Barre du navigateur mobile : même couleur que le fond de page (en-tête mobile clair).
-export const viewport: Viewport = {
-  themeColor: "#F4F2EC",
-};
+const LIGHT_BG = "#F4F2EC";
+const DARK_BG = "#121416";
 
-export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+/** Barre du navigateur mobile : couleur du fond de page, selon le thème du compte. */
+export async function generateViewport(): Promise<Viewport> {
+  const theme = parseTheme((await getSession())?.user.theme);
+  if (theme === "auto") {
+    return {
+      themeColor: [
+        { media: "(prefers-color-scheme: light)", color: LIGHT_BG },
+        { media: "(prefers-color-scheme: dark)", color: DARK_BG },
+      ],
+    };
+  }
+  return { themeColor: theme === "dark" ? DARK_BG : LIGHT_BG };
+}
+
+export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+  // Thème du compte posé dès le rendu serveur : aucun flash au chargement (clair sans session).
+  const theme = parseTheme((await getSession())?.user.theme);
   return (
     // Variables de police sur <html> : --font-sans (défini sur :root) doit pouvoir les lire.
-    <html lang="fr" className={`${instrumentSans.variable} ${jetbrainsMono.variable}`}>
+    <html
+      lang="fr"
+      data-theme={theme}
+      className={`${instrumentSans.variable} ${jetbrainsMono.variable}`}
+    >
       <body>{children}</body>
     </html>
   );

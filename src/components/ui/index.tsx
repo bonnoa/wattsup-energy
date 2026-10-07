@@ -14,7 +14,7 @@ export const button = {
     "flex h-9 flex-none items-center justify-center gap-1.5 rounded-[8px] border border-border-strong px-3.5 text-[13px] font-medium hover:bg-bg disabled:opacity-60",
   icon: "flex size-8 flex-none items-center justify-center rounded-[8px] border border-border text-muted hover:bg-bg hover:text-ink disabled:opacity-60",
   iconDanger:
-    "flex size-8 flex-none items-center justify-center rounded-[8px] border border-border text-negative hover:bg-[#FBEDEA] disabled:opacity-60",
+    "flex size-8 flex-none items-center justify-center rounded-[8px] border border-border text-negative hover:bg-danger-bg disabled:opacity-60",
   /** Lien d'action discret dans un texte ou un pied de carte. */
   link: "text-xs text-muted hover:text-ink",
 };
@@ -22,12 +22,12 @@ export const button = {
 export type BadgeTone = "active" | "neutral" | "soft" | "positive" | "warning";
 
 const BADGE: Record<BadgeTone, string> = {
-  active: "bg-grid text-white",
-  neutral: "bg-track text-[#5E625C]",
+  active: "bg-grid text-on-grid",
+  neutral: "bg-track text-ink-soft",
   soft: "bg-grid/10 text-grid",
   positive: "bg-battery/15 text-positive",
   // Texte plus foncé que le token : 4,8:1 sur le fond teinté (texte de 11 px).
-  warning: "bg-pellet/15 text-[#9A5322]",
+  warning: "bg-pellet/15 text-warning-ink",
 };
 
 /** Pastille de type ou de statut (« En cours », « Terminé », « HP/HC »…). */
@@ -71,7 +71,7 @@ export function Card({
     <Tag
       className={`flex flex-col gap-4 rounded-card border p-4 sm:p-5 ${
         danger
-          ? "border-negative/40 bg-[#FBEAE7]"
+          ? "border-negative/40 bg-danger-bg"
           : highlight
             ? "border-grid bg-surface shadow-[0_0_0_3px_rgba(61,90,128,0.12)]"
             : "border-border bg-surface"
@@ -84,7 +84,7 @@ export function Card({
               danger
                 ? "bg-negative/10 text-negative"
                 : highlight
-                  ? "bg-grid text-white"
+                  ? "bg-grid text-on-grid"
                   : "bg-bg text-subtle"
             }`}
           >
@@ -221,7 +221,7 @@ export function Notice({
     <div
       role="status"
       className={`flex flex-col gap-3 rounded-card border p-4 text-[13px] text-pretty ${
-        tone === "warning" ? "border-pellet/40 bg-[#FBF3EA]" : "border-grid/25 bg-grid/[0.05]"
+        tone === "warning" ? "border-pellet/40 bg-warning-bg" : "border-grid/25 bg-grid/[0.05]"
       }`}
     >
       <p>
@@ -281,7 +281,7 @@ function SwitchTrack({ checked, small = false }: { checked: boolean; small?: boo
       aria-hidden
       className={`flex flex-none rounded-full transition-colors ${
         small ? "h-5 w-9 p-[3px]" : "h-6 w-[42px] p-[3px]"
-      } ${checked ? "justify-end bg-ink" : "justify-start bg-[#D6D1C5]"}`}
+      } ${checked ? "justify-end bg-ink" : "justify-start bg-switch-off"}`}
     >
       <span
         className={`${small ? "size-[14px]" : "size-[18px]"} rounded-full bg-surface shadow-[0_1px_2px_rgba(0,0,0,0.2)]`}

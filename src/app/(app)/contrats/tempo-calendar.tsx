@@ -13,7 +13,7 @@ export interface CalendarDay {
 
 const COLOR_CLASS: Record<TempoColor, string> = {
   bleu: "bg-grid",
-  blanc: "bg-[#E4E0D6]",
+  blanc: "bg-tempo-white",
   rouge: "bg-eheat",
 };
 const SOURCE_LABEL = {
@@ -81,7 +81,7 @@ export function TempoCalendar({ season, days }: { season: string; days: Calendar
                   onClick={() => setSelected(d)}
                   title={`${dayLabel(d.date)} : ${d.color ?? "inconnue"}${d.source ? ` (${SOURCE_LABEL[d.source]})` : ""}`}
                   aria-label={`${dayLabel(d.date)}, ${d.color ?? "couleur inconnue"}`}
-                  className={`size-3.5 rounded-[3px] ${d.color ? COLOR_CLASS[d.color] : "border border-dashed border-[#CFC9BB]"} ${
+                  className={`size-3.5 rounded-[3px] ${d.color ? COLOR_CLASS[d.color] : "border border-dashed border-dash"} ${
                     d.source === "manual" ? "ring-2 ring-ink ring-offset-1" : ""
                   } ${selected?.date === d.date ? "outline-2 outline-pellet" : ""}`}
                 />

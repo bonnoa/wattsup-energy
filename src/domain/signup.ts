@@ -29,7 +29,11 @@ export function resolveSignupPolicy(
   env: Record<string, string | undefined>,
 ): SignupPolicy {
   if (saved?.signupMode) {
-    return { mode: saved.signupMode, codes: parseInviteCodes(saved.inviteCodes ?? ""), source: "admin" };
+    return {
+      mode: saved.signupMode,
+      codes: parseInviteCodes(saved.inviteCodes ?? ""),
+      source: "admin",
+    };
   }
   return {
     mode: parseSignupMode(env.SIGNUP_MODE),

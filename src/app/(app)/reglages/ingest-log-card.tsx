@@ -81,7 +81,7 @@ export function IngestLogCard({
                     {lines.map((l) => (
                       <li
                         key={l.text}
-                        className={l.tone === "warning" ? "text-[#9A5322]" : "text-muted"}
+                        className={l.tone === "warning" ? "text-warning-ink" : "text-muted"}
                       >
                         {l.text}
                       </li>

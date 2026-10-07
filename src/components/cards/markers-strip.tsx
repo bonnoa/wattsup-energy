@@ -68,7 +68,7 @@ function MarkerForm({
             aria-checked={kind === k}
             onClick={() => setKind(k)}
             className={`flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[13px] ${
-              kind === k ? "border-ink bg-surface font-medium" : "border-border text-[#5E625C]"
+              kind === k ? "border-ink bg-surface font-medium" : "border-border text-ink-soft"
             }`}
           >
             <Icon name={KINDS[k].icon} size={14} />
@@ -190,7 +190,7 @@ export function MarkersStrip({
           <button
             type="button"
             onClick={() => setEditing("new")}
-            className="flex items-center gap-1 text-[13px] text-[#5E625C] hover:text-ink"
+            className="flex items-center gap-1 text-[13px] text-ink-soft hover:text-ink"
           >
             <Icon name="plus" size={14} />
             Repère

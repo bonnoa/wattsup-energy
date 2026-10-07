@@ -56,7 +56,7 @@ function Tabs({ tabs, active }: { tabs: readonly SettingsTab[]; active: Settings
               className={`flex-1 rounded-[8px] px-3.5 py-2 text-center text-[13px] font-medium whitespace-nowrap ${
                 t.id === active
                   ? "bg-surface shadow-[0_1px_2px_rgba(0,0,0,0.08)]"
-                  : "text-[#5E625C] hover:text-ink"
+                  : "text-ink-soft hover:text-ink"
               }`}
             >
               {t.label}

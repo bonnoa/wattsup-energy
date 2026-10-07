@@ -14,7 +14,7 @@ import type { SolarPoint } from "@/server/queries/overview";
 
 const COMPARE_KEY = "wattsup:solar-compare";
 /** Couleur de la courbe d'ensoleillement (et de son repère dans la tuile). */
-const SUNSHINE = "#5E625C";
+const SUNSHINE = "var(--color-ink-soft)";
 
 const fmtHours = (h: number) =>
   `${h.toLocaleString("fr-FR", { maximumFractionDigits: h < 10 ? 1 : 0 })} h`;

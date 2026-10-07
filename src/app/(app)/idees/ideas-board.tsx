@@ -83,7 +83,7 @@ function AdminBar({ idea, currentVersion }: { idea: IdeaCard; currentVersion: st
   return (
     <div className="flex flex-col gap-2 rounded-[10px] border border-dashed border-solar/60 bg-solar/[0.06] p-2.5">
       <div className="flex flex-col gap-0.5">
-        <span className="text-[10px] font-semibold tracking-[0.08em] text-[#8A6210] uppercase">
+        <span className="text-[10px] font-semibold tracking-[0.08em] text-solar-ink uppercase">
           Administrateur
         </span>
         <span className="text-xs break-words text-muted">
@@ -239,7 +239,7 @@ export function IdeasBoard({
               aria-checked={status === s}
               onClick={() => setStatus(s)}
               className={`flex flex-none items-center gap-1.5 rounded-[8px] px-2.5 py-1 text-[13px] font-medium whitespace-nowrap ${
-                status === s ? "bg-surface shadow-[0_1px_2px_rgba(0,0,0,0.08)]" : "text-[#5E625C]"
+                status === s ? "bg-surface shadow-[0_1px_2px_rgba(0,0,0,0.08)]" : "text-ink-soft"
               }`}
             >
               {PLURAL[s]}

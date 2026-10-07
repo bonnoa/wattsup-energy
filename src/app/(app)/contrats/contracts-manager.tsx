@@ -511,7 +511,7 @@ export function ContractsManager({
   return (
     <div className="flex flex-col gap-5">
       {contracts.length === 0 && editing?.mode !== "presets" && (
-        <p className="rounded-card border border-dashed border-[#CFC9BB] bg-surface p-5 text-sm text-muted">
+        <p className="rounded-card border border-dashed border-dash bg-surface p-5 text-sm text-muted">
           Ajoutez votre contrat actuel (avec sa date de début) pour commencer, puis les offres à
           comparer.
         </p>
@@ -568,7 +568,7 @@ export function ContractsManager({
         <button
           type="button"
           onClick={() => setEditing({ mode: "presets" })}
-          className="rounded-[10px] border border-dashed border-[#CFC9BB] p-3 text-center text-[13px] text-[#5E625C] hover:bg-surface"
+          className="rounded-[10px] border border-dashed border-dash p-3 text-center text-[13px] text-ink-soft hover:bg-surface"
         >
           + Ajouter un contrat
         </button>

@@ -39,6 +39,8 @@ export const auth = betterAuth({
     // (input: false, refusé à l'inscription comme dans updateUser).
     additionalFields: {
       isAdmin: { type: "boolean", required: false, defaultValue: false, input: false },
+      // Thème (T43) : changé par une action dédiée qui valide la valeur.
+      theme: { type: "string", required: false, defaultValue: "light", input: false },
     },
     // Suppression du compte depuis la page Compte (mot de passe exigé) : le foyer et toutes
     // ses données partent en cascade.

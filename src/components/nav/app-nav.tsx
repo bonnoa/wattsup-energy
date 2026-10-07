@@ -66,7 +66,7 @@ export function AppNav({ items, userName, householdName, ingest, version, contac
   return (
     <>
       {/* Desktop : barre latérale sombre (≥ 1024 px) */}
-      <aside className="sticky top-0 hidden h-dvh w-[232px] flex-none flex-col bg-ink px-4 py-6 text-bg lg:flex">
+      <aside className="sticky top-0 hidden h-dvh w-[232px] flex-none flex-col border-r border-panel-edge bg-panel px-4 py-6 text-panel-ink lg:flex">
         <div className="flex items-center gap-2.5 px-2 pb-7">
           <Image src="/wattsup.svg" alt="" width={30} height={30} priority />
           <span className="text-[17px] font-bold tracking-tight">
@@ -85,8 +85,8 @@ export function AppNav({ items, userName, householdName, ingest, version, contac
                 key={n.id}
                 href={n.href}
                 aria-current={active ? "page" : undefined}
-                className={`flex items-center gap-3 rounded-[9px] px-3 py-2.5 text-sm font-medium no-underline hover:bg-bg/[0.08] ${
-                  active ? "bg-bg/[0.12] text-bg" : "text-[#A9ADA6]"
+                className={`flex items-center gap-3 rounded-[9px] px-3 py-2.5 text-sm font-medium no-underline hover:bg-panel-ink/[0.08] ${
+                  active ? "bg-panel-ink/[0.12] text-panel-ink" : "text-panel-muted"
                 }`}
               >
                 <NavIcon id={n.id} size={18} />
@@ -107,7 +107,7 @@ export function AppNav({ items, userName, householdName, ingest, version, contac
             contact={contact}
             variant="sidebar"
           />
-          <p className="pt-2 text-center text-[10px] text-[#A9ADA6] tabular-nums">{version}</p>
+          <p className="pt-2 text-center text-[10px] text-panel-muted tabular-nums">{version}</p>
         </div>
       </aside>
 

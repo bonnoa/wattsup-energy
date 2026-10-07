@@ -126,7 +126,7 @@ export function RoiDetails({ roi, view }: { roi: EquipmentRoi; view: RoiView }) 
       <ul className="flex flex-col gap-1.5 text-[13px]">
         {lines.map((l) => (
           <li key={l.label} className="flex justify-between gap-2">
-            <span className="text-[#5E625C]">{l.label}</span>
+            <span className="text-ink-soft">{l.label}</span>
             <span className="whitespace-nowrap tabular-nums">{eur(l.cents)}</span>
           </li>
         ))}

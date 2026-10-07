@@ -1,8 +1,7 @@
-import { headers } from "next/headers";
 import { cache } from "react";
 import type { EnergyProfile, HouseholdSettings } from "@/db/schema";
-import { auth } from "./auth";
 import { ensureHousehold } from "./household";
+import { getSession } from "./session";
 
 // Seul point d'accès aux données métier (SPEC §5). Convention : chaque opération
 // serveur s'écrit `operation(ctx, input)` et filtre par ctx.householdId ; la Server
@@ -61,7 +60,7 @@ export async function householdContextFor(
  * Mis en cache pour la durée d'une requête (layout et page le partagent).
  */
 export const getHouseholdContext = cache(async (): Promise<HouseholdContext> => {
-  const session = await auth.api.getSession({ headers: await headers() });
+  const session = await getSession();
   if (!session) throw new UnauthorizedError();
   return householdContextFor(
     session.user.id,

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { contactEmail, newIdeaEmail, resetPasswordEmail } from "@/domain/mail";
+import type { Alert } from "@/domain/alerts";
+import { alertsEmail, contactEmail, newIdeaEmail, resetPasswordEmail } from "@/domain/mail";
 
 describe("resetPasswordEmail", () => {
   it("lien dans le texte et le HTML ; prénom échappé", () => {
@@ -60,5 +61,34 @@ describe("contactEmail", () => {
         version: "1",
       }).subject,
     ).toBe("[Contact] Bonjour");
+  });
+});
+
+describe("alertsEmail", () => {
+  const alert = (key: string, title: string): Alert => ({
+    key,
+    kind: "ha_silent",
+    level: 1,
+    title,
+    text: "Dernier envoi reçu il y a 9 h.",
+    href: "/reglages?onglet=home-assistant",
+    action: "Voir les derniers envois",
+    nav: null,
+  });
+
+  it("une alerte : son titre en objet ; liens absolus et lien pour arrêter", () => {
+    const m = alertsEmail([alert("ha_silent", "Home Assistant <silencieux>")], "https://w.test");
+    expect(m.subject).toBe("WattsUp : Home Assistant <silencieux>");
+    expect(m.text).toContain(
+      "Voir les derniers envois : https://w.test/reglages?onglet=home-assistant",
+    );
+    expect(m.text).toContain("https://w.test/reglages?onglet=alertes");
+    expect(m.html).toContain("Home Assistant &lt;silencieux&gt;");
+  });
+
+  it("plusieurs alertes : leur nombre en objet", () => {
+    expect(alertsEmail([alert("a", "A"), alert("b", "B")], "https://w.test").subject).toBe(
+      "WattsUp : 2 alertes",
+    );
   });
 });

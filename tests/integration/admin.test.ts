@@ -66,6 +66,9 @@ async function seedEverything(ctx: HouseholdContext) {
     costEur: 1,
   });
   await dismissAlert(ctx, "ha_silent", 1);
+  await db
+    .insert(schema.alertNotification)
+    .values({ householdId: ctx.householdId, key: "ha_silent", channel: "email", level: 1 });
   await createMarker(ctx, {
     kind: "other",
     text: "Repère",

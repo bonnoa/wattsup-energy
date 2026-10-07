@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { button, Card, SwitchRow } from "@/components/ui";
+import { button, Card, SwitchRow, Toggle } from "@/components/ui";
 import { ALERT_LIMITS, type AlertSettings } from "@/domain/alerts";
 import { saveAlertSettingsAction } from "@/server/actions/alerts";
 
@@ -47,8 +47,11 @@ const inputClass =
 export function AlertsSettingsCard({
   initial,
   visible,
+  email,
 }: {
   initial: AlertSettings;
+  /** L'instance envoie des emails : case « Recevoir par email » sur chaque alerte. */
+  email: boolean;
   /** Alertes proposées selon le profil. */
   visible: Name[];
 }) {
@@ -57,13 +60,20 @@ export function AlertsSettingsCard({
   const [pending, startTransition] = useTransition();
   const dirty = JSON.stringify(settings) !== JSON.stringify(initial);
 
-  const update = (name: Name, patch: Partial<{ enabled: boolean; value: number }>) => {
+  const update = (
+    name: Name,
+    patch: Partial<{ enabled: boolean; email: boolean; value: number }>,
+  ) => {
     const key = ALERT_LIMITS[name].key;
-    const current = settings[name] as unknown as { enabled: boolean } & Record<string, number>;
+    const current = settings[name] as unknown as { enabled: boolean; email: boolean } & Record<
+      string,
+      number
+    >;
     setSettings({
       ...settings,
       [name]: {
         enabled: patch.enabled ?? current.enabled,
+        email: patch.email ?? current.email,
         [key]: patch.value ?? current[key],
       },
     });
@@ -84,7 +94,11 @@ export function AlertsSettingsCard({
     <Card
       icon="bolt"
       title="Alertes"
-      description="Affichées en tête de la Vue d'ensemble, avec une pastille sur l'écran concerné."
+      description={
+        email
+          ? "Affichées en tête de la Vue d'ensemble, avec une pastille sur l'écran concerné ; par email si vous le demandez (une fois, puis de nouveau si l'alerte s'aggrave)."
+          : "Affichées en tête de la Vue d'ensemble, avec une pastille sur l'écran concerné."
+      }
     >
       <ul className="flex flex-col">
         {ROWS.filter((r) => visible.includes(r.name)).map((r) => {
@@ -115,6 +129,16 @@ export function AlertsSettingsCard({
                 />{" "}
                 {r.unit} {r.after}
               </p>
+              {email && entry.enabled && (
+                <div className="-mt-1 pb-3">
+                  <Toggle
+                    label="Recevoir aussi par email"
+                    ariaLabel={`${r.label} : recevoir par email`}
+                    checked={entry.email}
+                    onChange={() => update(r.name, { email: !entry.email })}
+                  />
+                </div>
+              )}
             </li>
           );
         })}

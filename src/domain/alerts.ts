@@ -12,18 +12,27 @@ import type { NavId } from "./profile";
 export const ALERT_KINDS = ["fuel_stock", "ha_silent", "solar_yield", "budget"] as const;
 export type AlertKind = (typeof ALERT_KINDS)[number];
 
+/** Chaque alerte : affichée ou non, seuil, et envoi par email (décoché par défaut). */
 export interface AlertSettings {
-  fuelStock: { enabled: boolean; weeks: number };
-  haSilent: { enabled: boolean; hours: number };
-  solarYield: { enabled: boolean; percent: number };
-  budget: { enabled: boolean; percent: number };
+  fuelStock: { enabled: boolean; email: boolean; weeks: number };
+  haSilent: { enabled: boolean; email: boolean; hours: number };
+  solarYield: { enabled: boolean; email: boolean; percent: number };
+  budget: { enabled: boolean; email: boolean; percent: number };
 }
 
 export const DEFAULT_ALERT_SETTINGS: AlertSettings = {
-  fuelStock: { enabled: true, weeks: 3 },
-  haSilent: { enabled: true, hours: 6 },
-  solarYield: { enabled: true, percent: 15 },
-  budget: { enabled: true, percent: 15 },
+  fuelStock: { enabled: true, email: false, weeks: 3 },
+  haSilent: { enabled: true, email: false, hours: 6 },
+  solarYield: { enabled: true, email: false, percent: 15 },
+  budget: { enabled: true, email: false, percent: 15 },
+};
+
+/** Réglage de chaque type d'alerte. */
+export const SETTINGS_OF: Record<AlertKind, keyof AlertSettings> = {
+  fuel_stock: "fuelStock",
+  ha_silent: "haSilent",
+  solar_yield: "solarYield",
+  budget: "budget",
 };
 
 /** Bornes des seuils réglables (Réglages › Alertes). */
@@ -34,7 +43,10 @@ export const ALERT_LIMITS = {
   budget: { key: "percent", min: 5, max: 100 },
 } as const;
 
-/** Réglages enregistrés (JSONB) : chaque entrée invalide reprend sa valeur par défaut. */
+/**
+ * Réglages enregistrés (JSONB) : chaque entrée invalide reprend sa valeur par défaut ; un
+ * réglage antérieur à l'envoi par email (sans `email`) n'envoie rien.
+ */
 export function parseAlertSettings(raw: unknown): AlertSettings {
   const src = (typeof raw === "object" && raw !== null ? raw : {}) as Record<string, unknown>;
   const out = structuredClone(DEFAULT_ALERT_SETTINGS) as unknown as Record<
@@ -46,12 +58,13 @@ export function parseAlertSettings(raw: unknown): AlertSettings {
     const value = entry?.[limit.key];
     if (
       typeof entry?.enabled === "boolean" &&
+      (entry.email === undefined || typeof entry.email === "boolean") &&
       typeof value === "number" &&
       Number.isInteger(value) &&
       value >= limit.min &&
       value <= limit.max
     ) {
-      out[name] = { enabled: entry.enabled, [limit.key]: value };
+      out[name] = { enabled: entry.enabled, email: entry.email === true, [limit.key]: value };
     }
   }
   return out as unknown as AlertSettings;
@@ -196,5 +209,21 @@ export function activeAlerts(
   return alerts.filter((a) => {
     const d = dismissals.find((x) => x.key === a.key);
     return !d || a.level > d.level || now - d.dismissedAt >= DISMISS_DAYS * DAY_MS;
+  });
+}
+
+/**
+ * Alertes à envoyer par email : celles dont l'envoi est demandé, jamais envoyées ou passées à
+ * un niveau supérieur depuis le dernier envoi (une alerte qui dure n'est pas répétée).
+ */
+export function alertsToSend(
+  alerts: readonly Alert[],
+  settings: AlertSettings,
+  sent: readonly { key: string; level: number }[],
+): Alert[] {
+  return alerts.filter((a) => {
+    if (!settings[SETTINGS_OF[a.kind]].email) return false;
+    const previous = sent.find((s) => s.key === a.key);
+    return !previous || a.level > previous.level;
   });
 }

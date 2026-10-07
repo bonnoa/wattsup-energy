@@ -1,5 +1,6 @@
 // Emails envoyés par l'instance (SPEC §14) : contenu, texte et HTML. Pur.
 
+import type { Alert } from "./alerts";
 import { CONTACT_KIND_LABELS, type ContactKind } from "./contact";
 
 export interface MailContent {
@@ -103,4 +104,27 @@ ${paragraphs(m.message)}
     html,
     replyTo: m.email,
   };
+}
+
+/**
+ * Alertes nouvelles ou aggravées (T44), pour qui a coché « par email » dans Réglages ›
+ * Alertes. Liens absolus vers l'instance (`origin`).
+ */
+export function alertsEmail(alerts: readonly Alert[], origin: string): MailContent {
+  const settings = `${origin}/reglages?onglet=alertes`;
+  const subject =
+    alerts.length === 1 ? `WattsUp : ${alerts[0]?.title}` : `WattsUp : ${alerts.length} alertes`;
+  const text = [
+    ...alerts.flatMap((a) => [`${a.title}`, a.text, `${a.action} : ${origin}${a.href}`, ""]),
+    `Vous recevez cet email parce que vous l'avez demandé. Pour l'arrêter : ${settings}`,
+  ].join("\n");
+  const html = layout(`${alerts
+    .map(
+      (a) => `<h2 style="font-size:16px;margin:16px 0 4px">${escapeHtml(a.title)}</h2>
+<p style="margin:0 0 8px">${escapeHtml(a.text)}</p>
+<p style="margin:0 0 12px"><a href="${escapeHtml(origin + a.href)}" style="color:#3d5a80">${escapeHtml(a.action)}</a></p>`,
+    )
+    .join("\n")}
+<p style="font-size:12px;color:#6b6f68;border-top:1px solid #e4e0d6;padding-top:12px">Vous recevez cet email parce que vous l'avez demandé. <a href="${escapeHtml(settings)}" style="color:#6b6f68">Régler les alertes</a></p>`);
+  return { subject, text, html };
 }

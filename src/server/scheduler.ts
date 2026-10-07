@@ -1,5 +1,7 @@
 import { localParts } from "@/lib/time";
+import { emailAlertsForAll } from "./alerts";
 import { pruneIngestLog } from "./ingest/persist";
+import { mailConfigured } from "./mail";
 import { CommunityTempoSource } from "./tempo/community";
 import { loadTempoSeed, syncTempo, tempoSyncEnabled } from "./tempo/sync";
 import { OpenMeteoSource } from "./weather/open-meteo";
@@ -42,6 +44,16 @@ const JOBS: Job[] = [
       await loadTempoSeed();
       const { days, failed } = await syncTempo(new CommunityTempoSource());
       return `${days} jours${failed.length ? `, saisons en échec : ${failed.join(", ")}` : ""}`;
+    },
+  },
+  {
+    // Alertes par email : toutes les heures (une alerte n'est envoyée qu'une fois par niveau).
+    name: "alertes",
+    at: Array.from({ length: 24 }, (_, h) => `${String(h).padStart(2, "0")}:20`),
+    enabled: () => mailConfigured() && Boolean(process.env.BETTER_AUTH_URL),
+    run: async () => {
+      const r = await emailAlertsForAll(process.env.BETTER_AUTH_URL ?? "");
+      return `${r.sent} alerte(s) envoyée(s), ${r.households} foyer(s) abonné(s)`;
     },
   },
 ];

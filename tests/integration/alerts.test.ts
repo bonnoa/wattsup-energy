@@ -1,9 +1,10 @@
 import { eq } from "drizzle-orm";
 import { describe, expect, it } from "vitest";
 import { db } from "@/db";
-import { alertDismissal, household } from "@/db/schema";
+import { alertDismissal, alertNotification, household } from "@/db/schema";
+import type { MailContent } from "@/domain/mail";
 import { DEFAULT_ALERT_SETTINGS } from "@/domain/alerts";
-import { dismissAlert, getAlerts, updateAlertSettings } from "@/server/alerts";
+import { dismissAlert, emailAlerts, getAlerts, updateAlertSettings } from "@/server/alerts";
 import { householdContextFor, type HouseholdContext } from "@/server/context";
 import { addPurchase, addQuickConsumption } from "@/server/fuel";
 import { updateProfile } from "@/server/profile";
@@ -62,12 +63,53 @@ describe("alertes", () => {
 
   it("réglages : alerte coupée ; module absent du profil : rien", async () => {
     const ctx = await pelletHousehold();
-    const off = { ...DEFAULT_ALERT_SETTINGS, fuelStock: { enabled: false, weeks: 3 } };
+    const off = {
+      ...DEFAULT_ALERT_SETTINGS,
+      fuelStock: { enabled: false, email: false, weeks: 3 },
+    };
     await updateAlertSettings(ctx, off);
     expect(await getAlerts(await householdContextFor(ctx.userId), NOW)).toEqual([]);
     await updateAlertSettings(ctx, DEFAULT_ALERT_SETTINGS);
     const noPellet = { ...ctx, profile: { ...ctx.profile, pellet: false } };
     expect(await getAlerts(noPellet, NOW)).toEqual([]);
+  });
+});
+
+describe("alertes par email", () => {
+  it("une fois par niveau, à l'adresse du compte ; rien sans la case cochée", async () => {
+    const base = await pelletHousehold();
+    const ctx = { ...base, userEmail: "foyer@x.test" };
+    const mails: { to: string; m: MailContent }[] = [];
+    const send = async (to: string, m: MailContent) => void mails.push({ to, m });
+    const opts = { origin: "https://w.test", now: NOW, send };
+
+    expect(await emailAlerts(ctx, opts)).toBe(0);
+    await updateAlertSettings(ctx, {
+      ...DEFAULT_ALERT_SETTINGS,
+      fuelStock: { enabled: true, email: true, weeks: 3 },
+    });
+    const fresh = { ...(await householdContextFor(ctx.userId)), userEmail: "foyer@x.test" };
+    expect(await emailAlerts(fresh, opts)).toBe(1);
+    expect(mails[0]).toMatchObject({
+      to: "foyer@x.test",
+      m: { subject: "WattsUp : Stock de granulés bas" },
+    });
+    expect(await emailAlerts(fresh, opts)).toBe(0);
+
+    for (let i = 0; i < 3; i++) await addQuickConsumption(fresh, "pellet", NOW);
+    expect(await emailAlerts(fresh, opts)).toBe(1);
+
+    await addPurchase(fresh, {
+      fuel: "pellet",
+      qty: 60,
+      unit: "bag",
+      priceEur: null,
+      date: "2026-10-19",
+    });
+    expect(await emailAlerts(fresh, opts)).toBe(0);
+    expect(
+      await db.$count(alertNotification, eq(alertNotification.householdId, fresh.householdId)),
+    ).toBe(0);
   });
 });
 
@@ -95,7 +137,7 @@ describeTenantIsolation("alertes : réglages", {
   attempt: async (a) => {
     await updateAlertSettings(a, {
       ...DEFAULT_ALERT_SETTINGS,
-      budget: { enabled: false, percent: 50 },
+      budget: { enabled: false, email: false, percent: 50 },
     });
     return null;
   },

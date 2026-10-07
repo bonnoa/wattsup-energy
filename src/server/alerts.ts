@@ -1,9 +1,17 @@
 import { and, eq, gte, inArray, lt, notInArray, sql, sum } from "drizzle-orm";
 import { cache } from "react";
 import { db } from "@/db";
-import { alertDismissal, energyInterval, household, weatherDaily } from "@/db/schema";
+import {
+  alertDismissal,
+  alertNotification,
+  energyInterval,
+  household,
+  user,
+  weatherDaily,
+} from "@/db/schema";
 import {
   activeAlerts,
+  alertsToSend,
   evaluateAlerts,
   parseAlertSettings,
   type Alert,
@@ -16,10 +24,12 @@ import { recentYieldDeviations } from "@/domain/roi/yield";
 import { buildTimeline, priceTimeline } from "@/domain/tariff/timeline";
 import { cellOf, radiationKwhM2 } from "@/domain/weather";
 import { addDays, eachDay, localParts, zonedInstant } from "@/lib/time";
-import type { HouseholdContext } from "./context";
+import { alertsEmail, type MailContent } from "@/domain/mail";
+import { householdContextFor, type HouseholdContext } from "./context";
 import { listContracts } from "./contracts";
 import { listFuelEvents } from "./fuel";
 import { getLastPushAt } from "./ingest/status";
+import { mailConfigured, sendMail } from "./mail";
 import { gridIntervals } from "./queries/overview";
 import { tempoColorsFor } from "./tempo/sync";
 
@@ -215,4 +225,86 @@ export async function updateAlertSettings(ctx: HouseholdContext, input: AlertSet
     .where(eq(household.id, ctx.householdId))
     .returning({ settings: household.settings });
   return row ? parseAlertSettings(row.settings.alerts) : null;
+}
+
+/**
+ * Envoie par email les alertes nouvelles ou aggravées d'un foyer (cases « par email » de
+ * Réglages › Alertes). Une alerte réglée efface sa trace : si elle revient, elle repart.
+ * Renvoie le nombre d'alertes envoyées.
+ */
+export async function emailAlerts(
+  ctx: HouseholdContext,
+  options: {
+    origin: string;
+    now?: Date;
+    send?: (to: string, content: MailContent) => Promise<void>;
+  },
+): Promise<number> {
+  const now = options.now ?? new Date();
+  const settings = alertSettings(ctx);
+  const alerts = evaluateAlerts(await alertFacts(ctx, now), settings);
+  const mine = and(
+    eq(alertNotification.householdId, ctx.householdId),
+    eq(alertNotification.channel, "email"),
+  );
+  const keys = alerts.map((a) => a.key);
+  await db
+    .delete(alertNotification)
+    .where(and(mine, keys.length > 0 ? notInArray(alertNotification.key, keys) : undefined));
+  const sent = await db.select().from(alertNotification).where(mine);
+  const toSend = alertsToSend(alerts, settings, sent);
+  if (toSend.length === 0 || !ctx.userEmail) return 0;
+  await (options.send ?? ((to, c) => sendMail(to, c)))(
+    ctx.userEmail,
+    alertsEmail(toSend, options.origin),
+  );
+  for (const a of toSend) {
+    await db
+      .insert(alertNotification)
+      .values({
+        householdId: ctx.householdId,
+        key: a.key,
+        channel: "email",
+        level: a.level,
+        sentAt: now,
+      })
+      .onConflictDoUpdate({
+        target: [alertNotification.householdId, alertNotification.key, alertNotification.channel],
+        set: { level: a.level, sentAt: now },
+      });
+  }
+  return toSend.length;
+}
+
+/**
+ * Tâche du planificateur (toutes les heures) : chaque foyer qui a coché au moins une alerte
+ * « par email », compte actif. Un foyer en échec n'arrête pas les autres.
+ */
+export async function emailAlertsForAll(
+  origin: string,
+): Promise<{ households: number; sent: number }> {
+  if (!mailConfigured()) return { households: 0, sent: 0 };
+  const rows = await db
+    .select({
+      ownerId: household.ownerId,
+      settings: household.settings,
+      name: user.name,
+      email: user.email,
+      disabledAt: user.disabledAt,
+    })
+    .from(household)
+    .innerJoin(user, eq(user.id, household.ownerId));
+  const wanted = rows.filter(
+    (r) =>
+      !r.disabledAt && Object.values(parseAlertSettings(r.settings.alerts)).some((s) => s.email),
+  );
+  let sent = 0;
+  for (const r of wanted) {
+    try {
+      sent += await emailAlerts(await householdContextFor(r.ownerId, r.name, r.email), { origin });
+    } catch (err) {
+      console.error("[alertes] envoi impossible pour un foyer :", err);
+    }
+  }
+  return { households: wanted.length, sent };
 }

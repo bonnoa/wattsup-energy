@@ -29,7 +29,11 @@ export async function saveAlertSettingsAction(
     .filter(([name, limit]) => {
       const sent = (raw as unknown as Record<string, Record<string, unknown>>)?.[name];
       const kept = (parsed as unknown as Record<string, Record<string, unknown>>)[name];
-      return sent?.[limit.key] !== kept?.[limit.key] || sent?.enabled !== kept?.enabled;
+      return (
+        sent?.[limit.key] !== kept?.[limit.key] ||
+        sent?.enabled !== kept?.enabled ||
+        sent?.email !== kept?.email
+      );
     })
     .map(([, limit]) => `valeur attendue entre ${limit.min} et ${limit.max}`);
   if (errors.length > 0) return { ok: false, errors };

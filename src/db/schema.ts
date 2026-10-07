@@ -356,6 +356,22 @@ export const alertDismissal = pgTable(
   (t) => [primaryKey({ columns: [t.householdId, t.key] })],
 );
 
+/**
+ * Alertes déjà envoyées hors de l'appli (T44 email, T49 push) : une alerte n'est renvoyée que
+ * si elle s'aggrave ; la ligne disparaît quand l'alerte n'a plus lieu d'être.
+ */
+export const alertNotification = pgTable(
+  "alert_notification",
+  {
+    householdId: householdRef(),
+    key: text("key").notNull(),
+    channel: text("channel", { enum: ["email", "push"] }).notNull(),
+    level: integer("level").notNull(),
+    sentAt: timestamp("sent_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [primaryKey({ columns: [t.householdId, t.key, t.channel] })],
+);
+
 export const signupModeEnum = pgEnum("signup_mode", ["open", "invite", "closed"]);
 
 /**

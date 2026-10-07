@@ -295,16 +295,20 @@ export function Toggle({
   label,
   checked,
   onChange,
+  ariaLabel,
 }: {
   label: string;
   checked: boolean;
   onChange: () => void;
+  /** Nom accessible plus précis que le libellé visible (plusieurs interrupteurs identiques). */
+  ariaLabel?: string;
 }) {
   return (
     <button
       type="button"
       role="switch"
       aria-checked={checked}
+      aria-label={ariaLabel}
       onClick={onChange}
       className="flex min-h-9 items-center gap-2 text-[13px] font-medium text-ink"
     >

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   activeAlerts,
+  alertsToSend,
   DEFAULT_ALERT_SETTINGS,
   evaluateAlerts,
   parseAlertSettings,
@@ -111,9 +112,9 @@ describe("budget du mois", () => {
 describe("réglages", () => {
   it("une alerte désactivée ou un seuil personnel", () => {
     const facts = { ha: { lastPushMs: NOW - 9 * H, granularity: "hourly" as const } };
-    const off = parseAlertSettings({ haSilent: { enabled: false, hours: 6 } });
+    const off = parseAlertSettings({ haSilent: { enabled: false, email: false, hours: 6 } });
     expect(run(facts, off)).toEqual([]);
-    const later = parseAlertSettings({ haSilent: { enabled: true, hours: 12 } });
+    const later = parseAlertSettings({ haSilent: { enabled: true, email: false, hours: 12 } });
     expect(run(facts, later)).toEqual([]);
   });
 
@@ -124,8 +125,12 @@ describe("réglages", () => {
     );
     expect(parseAlertSettings({ budget: { enabled: false, percent: 25 } }).budget).toEqual({
       enabled: false,
+      email: false,
       percent: 25,
     });
+    expect(
+      parseAlertSettings({ budget: { enabled: true, email: true, percent: 25 } }).budget.email,
+    ).toBe(true);
   });
 });
 
@@ -143,5 +148,24 @@ describe("alertes masquées", () => {
     expect(activeAlerts(alerts, old, NOW)).toHaveLength(2);
     const worse = run({ ha: { lastPushMs: NOW - 30 * H, granularity: "hourly" } });
     expect(activeAlerts(worse, dismissed, NOW)).toHaveLength(1);
+  });
+});
+
+describe("alertes par email", () => {
+  const alerts = run({
+    ha: { lastPushMs: NOW - 9 * H, granularity: "hourly" },
+    solar: { deviations: [-0.2, -0.2, -0.2] },
+  });
+  const settings = {
+    ...DEFAULT_ALERT_SETTINGS,
+    haSilent: { enabled: true, email: true, hours: 6 },
+  };
+
+  it("seulement les alertes cochées « par email », une fois par niveau", () => {
+    expect(alertsToSend(alerts, DEFAULT_ALERT_SETTINGS, []).map((a) => a.key)).toEqual([]);
+    expect(alertsToSend(alerts, settings, []).map((a) => a.key)).toEqual(["ha_silent"]);
+    expect(alertsToSend(alerts, settings, [{ key: "ha_silent", level: 1 }])).toEqual([]);
+    const worse = run({ ha: { lastPushMs: NOW - 30 * H, granularity: "hourly" } });
+    expect(alertsToSend(worse, settings, [{ key: "ha_silent", level: 1 }])).toHaveLength(1);
   });
 });

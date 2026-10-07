@@ -433,6 +433,7 @@ Légende des tailles : **S** = 1–2 fichiers · **M** = 3–5 fichiers (hors te
     - Vue d'ensemble : carte « À surveiller » (3 alertes au plus, action en un clic, « Masquer ») ; pastille sur l'entrée de menu concernée
     - Une alerte masquée revient si elle s'aggrave ou au bout de 7 jours ; disparaît d'elle-même quand la cause est réglée (table `alert_dismissal`)
     - Réglages › Alertes : chaque alerte activable, seuil réglable
+    - Ajout du 2026-10-07 : case « Recevoir aussi par email » par alerte (décochée par défaut) ; envoi horaire des alertes nouvelles ou aggravées, une fois par niveau (table `alert_notification`)
   - Vérifier : `tests/unit/domain/alerts.test.ts` (TDD), `tests/integration/alerts.test.ts` (isolation) ; manuel
   - Fichiers : `src/domain/alerts.ts`, `src/server/alerts.ts`, `src/components/cards/alerts-card.tsx`, `src/app/(app)/reglages/*`
 

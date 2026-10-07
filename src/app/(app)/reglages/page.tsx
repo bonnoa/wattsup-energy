@@ -10,6 +10,7 @@ import { dayValues, storedMetrics, suspectValues, type StoredValue } from "@/ser
 import { addDays, localParts } from "@/lib/time";
 import { pageContext } from "@/server/page";
 import { alertSettings } from "@/server/alerts";
+import { mailConfigured } from "@/server/mail";
 import { AlertsSettingsCard } from "./alerts-card";
 import { CategoriesCard } from "./categories-card";
 import { CsvCard } from "./csv-card";
@@ -211,6 +212,7 @@ async function SettingsSection({
         <div className={panel}>
           <AlertsSettingsCard
             initial={alertSettings(ctx)}
+            email={mailConfigured()}
             visible={[
               ...(p.pellet || p.wood ? (["fuelStock"] as const) : []),
               "haSilent",

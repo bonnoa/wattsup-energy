@@ -108,6 +108,18 @@ describe("vue d'ensemble sur le foyer de démo", () => {
     expect(o.solar?.points).toHaveLength(10);
   });
 
+  it("projection : année en cours seulement, au moins la dépense déjà connue", async () => {
+    const { ctx } = await demo();
+    const o = await getOverview(ctx, "2026", now);
+    if (o.status !== "ok") throw new Error(o.status);
+    const spent = o.months.reduce((a, m) => a + m.energyCents + m.subscriptionCents, 0);
+    expect(o.projection?.totalCents).toBeGreaterThan(spent);
+    // 2025 n'est pas complète dans les données de démo : pas de total N-1.
+    expect(o.projection?.previousTotalCents).toBeNull();
+    const past = await getOverview(ctx, "2025", now);
+    expect(past.status === "ok" && past.projection).toBeNull();
+  });
+
   it("sans contrat souscrit ni actuel, l'électricité n'est pas chiffrée", async () => {
     const ctx = await createTestHousehold();
     await db.insert(energyInterval).values({

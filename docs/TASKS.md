@@ -413,10 +413,10 @@ Légende des tailles : **S** = 1–2 fichiers · **M** = 3–5 fichiers (hors te
   - Vérifier : `tests/unit/domain/baseload.test.ts` (TDD) ; manuel
   - Fichiers : `src/domain/baseload.ts`, `src/server/queries/overview.ts`, `src/components/cards/*`
 
-- [ ] **T42 — Projection de fin d'année** · S · Dépend de : T20, T16b
+- [x] **T42 — Projection de fin d'année** · S · Dépend de : T20, T16b
   - Acceptation :
-    - Vue année en cours : « À ce rythme : X € sur l'année (N-1 : Y €) » ; mois restants estimés sur le même mois de N-1 corrigé de la tendance de l'année, chauffage corrigé des degrés-jours normaux
-    - Fourchette affichée si moins de 3 mois de données ; rien sans contrat
+    - Période en cours de l'année en cours : « À ce rythme : X € sur l'année (N-1 : Y €) » ; mois restants estimés sur le même mois de N-1 corrigé de la tendance de l'année (qui intègre l'écart de météo ; pas de normales climatiques en base, donc pas de correction par des degrés-jours normaux)
+    - Fourchette affichée si moins de 3 mois comparables ; rien sans contrat
   - Vérifier : `tests/unit/domain/projection.test.ts` (TDD)
   - Fichiers : `src/domain/projection.ts`, `src/components/cards/*`
 

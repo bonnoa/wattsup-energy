@@ -24,12 +24,14 @@ import {
   slotHpHc,
   solarSavingEstimate,
   solarYield,
+  nextMonth,
   yearMonths,
   type EnergyBalance,
   type PeakSplit,
   type Period,
 } from "@/domain/overview";
 import { batteryGaps, type BatteryGap, type BatteryMonth } from "@/domain/battery-data";
+import { projectYear, type Projection } from "@/domain/projection";
 import {
   baseloadBetween,
   baseloadMonths,
@@ -126,6 +128,11 @@ export type Overview =
         isHeating: boolean;
         kwh: number;
       }[];
+      /**
+       * Projection de la dépense d'électricité de l'année en cours (abonnement compris) ;
+       * null pour une année passée, sans contrat ou sans base de comparaison.
+       */
+      projection: Projection | null;
       /**
        * Talon de consommation (envois horaires seulement, sinon null) : période choisie,
        * même période un an plus tôt, 12 derniers mois jusqu'à la fin de la période.
@@ -524,6 +531,32 @@ export async function getOverview(
     };
   }
 
+  // Projection : seulement pour l'année en cours, quand l'électricité est chiffrée.
+  const thisMonth = today.slice(0, 7);
+  const projection =
+    priced && year === today.slice(0, 4)
+      ? projectYear(
+          Array.from({ length: 12 }, (_, i) => {
+            const key = `${year}-${String(i + 1).padStart(2, "0")}`;
+            const cost = yearCost.byMonth[key];
+            const prevKey = `${Number(year) - 1}${key.slice(4)}`;
+            const prev = previousYearCost.byMonth[prevKey];
+            return {
+              key,
+              actualCents:
+                key <= thisMonth ? (cost?.energyCents ?? 0) + (cost?.subscriptionCents ?? 0) : null,
+              previousCents:
+                kwhByMonth.has(prevKey) && prev ? prev.energyCents + prev.subscriptionCents : null,
+            };
+          }),
+          {
+            key: thisMonth,
+            elapsedDays: Number(today.slice(8, 10)),
+            daysInMonth: eachDay(`${thisMonth}-01`, `${nextMonth(thisMonth)}-01`).length,
+          },
+        )
+      : null;
+
   let baseload: Extract<Overview, { status: "ok" }>["baseload"] = null;
   if (nights) {
     const minima = nightlyMinima(nights);
@@ -563,6 +596,7 @@ export async function getOverview(
       yearTo,
     ),
     balance,
+    projection,
     baseload,
     categories: categories
       .filter((c) => modules.heatingCategories || !c.isHeating)

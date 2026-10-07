@@ -135,6 +135,9 @@ export function BudgetCard({ overview }: { overview: Ok }) {
           </span>
         </span>
       </div>
+      {overview.projection && !period.complete && (
+        <Projection projection={overview.projection} year={period.key.slice(0, 4)} />
+      )}
       {budget.unknownContractDays > 0 && (
         <p className="text-[11px] text-[#A9ADA6]">
           {budget.unknownContractDays} jour{budget.unknownContractDays > 1 ? "s" : ""} sans contrat
@@ -143,6 +146,45 @@ export function BudgetCard({ overview }: { overview: Ok }) {
         </p>
       )}
     </section>
+  );
+}
+
+/** « À ce rythme » : dépense projetée de l'année en cours, sur la carte Budget (fond sombre). */
+function Projection({
+  projection: p,
+  year,
+}: {
+  projection: NonNullable<Ok["projection"]>;
+  year: string;
+}) {
+  const previousYear = Number(year) - 1;
+  const trend = p.trend - 1;
+  return (
+    <div className="flex flex-col gap-1 border-t border-bg/10 pt-3">
+      <p className="text-[13px] text-[#C9CCC5]">
+        À ce rythme :{" "}
+        <span className="font-semibold whitespace-nowrap text-bg tabular-nums">≈ {eur(p.totalCents)}</span> sur {year}
+        {p.lowCents !== null && p.highCents !== null && (
+          <span className="whitespace-nowrap tabular-nums">
+            {" "}
+            (entre {eur(p.lowCents)} et {eur(p.highCents)})
+          </span>
+        )}
+        {p.previousTotalCents !== null && (
+          <span className="whitespace-nowrap tabular-nums">
+            {" "}
+            · {previousYear} : {eur(p.previousTotalCents)}
+          </span>
+        )}
+      </p>
+      <p className="text-[11px] text-[#A9ADA6] text-pretty">
+        Mois restants estimés sur {previousYear}
+        {Math.abs(trend) >= 0.005
+          ? `, ${trend > 0 ? "+" : "−"}${formatPercent(Math.abs(trend))} comme depuis janvier`
+          : ""}
+        .
+      </p>
+    </div>
   );
 }
 

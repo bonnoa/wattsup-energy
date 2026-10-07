@@ -1,5 +1,7 @@
 // Emails envoyés par l'instance (SPEC §14) : contenu, texte et HTML. Pur.
 
+import { CONTACT_KIND_LABELS, type ContactKind } from "./contact";
+
 export interface MailContent {
   subject: string;
   text: string;
@@ -69,4 +71,36 @@ export function newIdeaEmail(idea: {
 ${idea.description ? paragraphs(idea.description) : ""}
 <p><a href="${escapeHtml(idea.url)}" style="display:inline-block;background:#16181a;color:#f4f2ec;padding:10px 16px;border-radius:8px;text-decoration:none">Ouvrir la boîte à idées</a></p>`);
   return { subject: `Nouvelle idée : ${idea.title}`, text, html };
+}
+
+/** Message du formulaire de contact : envoyé à l'administrateur, réponse directe à l'expéditeur. */
+export function contactEmail(m: {
+  kind: ContactKind;
+  message: string;
+  name: string;
+  email: string;
+  /** Version de l'appli (utile pour un bug). */
+  version: string;
+}): MailContent {
+  const label = CONTACT_KIND_LABELS[m.kind];
+  const by = `${m.name} <${m.email}>`;
+  const firstLine = m.message.split("\n")[0] ?? "";
+  const excerpt = firstLine.length > 60 ? `${firstLine.slice(0, 59)}…` : firstLine;
+  const text = [
+    `${label} — ${by}, WattsUp ${m.version}`,
+    "",
+    m.message,
+    "",
+    "Répondez à cet email pour écrire directement à l'expéditeur.",
+  ].join("\n");
+  const html =
+    layout(`<p style="font-size:13px;color:#6b6f68">${escapeHtml(label)} — ${escapeHtml(by)}, WattsUp ${escapeHtml(m.version)}</p>
+${paragraphs(m.message)}
+<p style="font-size:13px;color:#6b6f68">Répondez à cet email pour écrire directement à l'expéditeur.</p>`);
+  return {
+    subject: `[${m.kind === "bug" ? "Bug" : "Contact"}] ${excerpt}`,
+    text,
+    html,
+    replyTo: m.email,
+  };
 }

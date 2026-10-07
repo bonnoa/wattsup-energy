@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { newIdeaEmail, resetPasswordEmail } from "@/domain/mail";
+import { contactEmail, newIdeaEmail, resetPasswordEmail } from "@/domain/mail";
 
 describe("resetPasswordEmail", () => {
   it("lien dans le texte et le HTML ; prénom échappé", () => {
@@ -31,6 +31,34 @@ describe("newIdeaEmail", () => {
     expect(m.text).toContain("https://wattsup.test/idees");
     expect(m.html).toContain("Thème &lt;sombre&gt;");
     expect(m.html).not.toContain("<sombre>");
-    expect(m.html).toContain("<p style=\"white-space:pre-wrap\">Et la nuit.</p>");
+    expect(m.html).toContain('<p style="white-space:pre-wrap">Et la nuit.</p>');
+  });
+});
+
+describe("contactEmail", () => {
+  it("motif dans l'objet, expéditeur et version ; réponse à l'expéditeur", () => {
+    const m = contactEmail({
+      kind: "bug",
+      message:
+        "Le graphique <Production> est vide depuis hier et je ne comprends pas pourquoi.\nDétails…",
+      name: "Élise",
+      email: "elise@example.test",
+      version: "0.1.0",
+    });
+    expect(m.subject).toBe("[Bug] Le graphique <Production> est vide depuis hier et je ne com…");
+    expect(m.replyTo).toBe("elise@example.test");
+    expect(m.text).toContain("Signaler un bug — Élise <elise@example.test>, WattsUp 0.1.0");
+    expect(m.html).toContain("&lt;Production&gt;");
+    expect(m.html).not.toContain("<Production>");
+    expect(
+      contactEmail({
+        ...m,
+        kind: "contact",
+        message: "Bonjour",
+        name: "A",
+        email: "a@b.c",
+        version: "1",
+      }).subject,
+    ).toBe("[Contact] Bonjour");
   });
 });

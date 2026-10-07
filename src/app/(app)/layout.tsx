@@ -2,6 +2,7 @@ import { AppNav } from "@/components/nav/app-nav";
 import { visibleModules } from "@/domain/profile";
 import { APP_VERSION } from "@/lib/version";
 import { getLastPushAt } from "@/server/ingest/status";
+import { mailConfigured } from "@/server/mail";
 import { pageContext } from "@/server/page";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
@@ -22,6 +23,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         householdName={ctx.householdName}
         ingest={ingest}
         version={APP_VERSION}
+        contact={mailConfigured()}
         admin={ctx.isAdmin}
       />
       <main className="min-w-0 flex-1 px-4 pt-2 pb-28 lg:px-9 lg:py-8">

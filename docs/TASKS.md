@@ -389,11 +389,12 @@ Légende des tailles : **S** = 1–2 fichiers · **M** = 3–5 fichiers (hors te
   - Vérifier : `tests/unit/domain/ideas.test.ts`, `tests/integration/ideas.test.ts` ; manuel
   - Fichiers : `src/domain/ideas.ts`, `drizzle/0016_*.sql`, `src/server/ideas.ts`, `src/server/actions/ideas.ts`, `src/app/(app)/idees/*`
 
-- [ ] **T38 — Contact** · S · Dépend de : T36
+- [x] **T38 — Contact** · S · Dépend de : T36
   - Acceptation :
     - Menu du profil : « Contact » → `/contact` (si l'envoi d'emails est configuré) ; motif « Prendre contact » ou « Signaler un bug », message (2 000 caractères)
     - Envoi par email à l'administrateur, nom et adresse du compte inclus, réponse directe à l'expéditeur (`reply_to`) ; 5 messages par heure et par compte
-  - Vérifier : `tests/unit/domain/mail.test.ts`, `tests/integration/contact.test.ts` ; manuel
+    - Bouton de soutien Buy Me a Coffee en bas de page
+  - Vérifier : `tests/unit/domain/contact.test.ts`, `tests/unit/domain/mail.test.ts`, `tests/integration/contact.test.ts` ; manuel
   - Fichiers : `src/server/contact.ts`, `src/server/actions/contact.ts`, `src/app/(app)/contact/*`
 
 ---

@@ -15,6 +15,8 @@ interface Props {
   ingest: { lastPushAt: string | null; granularity: "hourly" | "daily"; renderedAt: string };
   /** Version de l'appli, en petit sous le menu du profil. */
   version: string;
+  /** Entrée « Contact » du menu du profil (l'instance envoie des emails). */
+  contact: boolean;
   /** Administrateur de l'instance : section « Administration » (desktop seulement). */
   admin: boolean;
 }
@@ -58,7 +60,7 @@ function AdminNav({ active }: { active: boolean }) {
   );
 }
 
-export function AppNav({ items, userName, householdName, ingest, version, admin }: Props) {
+export function AppNav({ items, userName, householdName, ingest, version, contact, admin }: Props) {
   const pathname = usePathname();
 
   return (
@@ -102,6 +104,7 @@ export function AppNav({ items, userName, householdName, ingest, version, admin 
             userName={userName}
             householdName={householdName}
             version={version}
+            contact={contact}
             variant="sidebar"
           />
           <p className="px-2 pt-2 text-[11px] text-[#A9ADA6] tabular-nums">Version {version}</p>
@@ -120,6 +123,7 @@ export function AppNav({ items, userName, householdName, ingest, version, admin 
             userName={userName}
             householdName={householdName}
             version={version}
+            contact={contact}
             variant="header"
           />
         </div>

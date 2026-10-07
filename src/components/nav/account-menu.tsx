@@ -7,7 +7,7 @@ import { Icon } from "@/components/ui";
 import { authClient } from "@/lib/auth-client";
 
 // Menu du profil : le bloc nom (barre latérale) ou l'initiale (mobile) l'ouvrent. « Mon
-// compte », « Boîte à idées », puis un trait, puis « Se déconnecter ». Au clavier : focus sur le premier
+// compte », « Boîte à idées », « Contact » (si l'instance envoie des emails), puis un trait, puis « Se déconnecter ». Au clavier : focus sur le premier
 // élément à l'ouverture, flèches, Début / Fin ; Échap referme et rend le focus au bouton.
 // Fermé aussi par un clic à côté ou un changement de page.
 
@@ -54,12 +54,15 @@ export function AccountMenu({
   userName,
   householdName,
   version,
+  contact,
   variant,
 }: {
   userName: string;
   householdName: string;
   /** Version de l'appli : en pied du menu sur mobile (la barre latérale l'affiche dessous). */
   version: string;
+  /** Entrée « Contact » : seulement si l'instance envoie des emails. */
+  contact: boolean;
   /** sidebar : bloc nom en bas de la barre latérale ; header : initiale de l'en-tête mobile. */
   variant: "sidebar" | "header";
 }) {
@@ -68,7 +71,7 @@ export function AccountMenu({
   const [open, setOpen] = useState(false);
   const root = useRef<HTMLDivElement>(null);
   const initial = userName.slice(0, 1).toUpperCase();
-  const onAccount = pathname === "/compte" || pathname === "/idees";
+  const onAccount = ["/compte", "/idees", "/contact"].includes(pathname);
 
   const menu = useRef<HTMLDivElement>(null);
   const button = useRef<HTMLButtonElement>(null);
@@ -183,6 +186,17 @@ export function AccountMenu({
             <Icon name="bulb" size={16} />
             Boîte à idées
           </Link>
+          {contact && (
+            <Link
+              href="/contact"
+              role="menuitem"
+              onClick={() => setOpen(false)}
+              className={itemClass}
+            >
+              <Icon name="mail" size={16} />
+              Contact
+            </Link>
+          )}
           <div role="separator" className="my-1.5 border-t border-track" />
           <button type="button" role="menuitem" onClick={signOut} className={itemClass}>
             <SignOutIcon />

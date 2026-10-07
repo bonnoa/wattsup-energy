@@ -1,6 +1,7 @@
 import { AppNav } from "@/components/nav/app-nav";
 import { visibleModules } from "@/domain/profile";
 import { APP_VERSION } from "@/lib/version";
+import { getAlerts } from "@/server/alerts";
 import { getLastPushAt } from "@/server/ingest/status";
 import { mailConfigured } from "@/server/mail";
 import { pageContext } from "@/server/page";
@@ -8,7 +9,8 @@ import { pageContext } from "@/server/page";
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const ctx = await pageContext();
   const { nav } = visibleModules(ctx.profile);
-  const lastPushAt = await getLastPushAt(ctx);
+  const [lastPushAt, alerts] = await Promise.all([getLastPushAt(ctx), getAlerts(ctx)]);
+  const alertNav = [...new Set(alerts.flatMap((a) => (a.nav ? [a.nav] : [])))];
   const ingest = {
     lastPushAt: lastPushAt?.toISOString() ?? null,
     granularity: ctx.granularity,
@@ -24,6 +26,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         ingest={ingest}
         version={APP_VERSION}
         contact={mailConfigured()}
+        alertNav={alertNav}
         admin={ctx.isAdmin}
       />
       <main className="min-w-0 flex-1 px-4 pt-2 pb-28 lg:px-9 lg:py-8">

@@ -16,7 +16,9 @@ import { getLocationStatus } from "@/server/location";
 import { dayValues, storedMetrics, suspectValues, type StoredValue } from "@/server/energy-data";
 import { addDays, localParts } from "@/lib/time";
 import { pageContext } from "@/server/page";
+import { alertSettings } from "@/server/alerts";
 import { ScrollToActive } from "./active-tab";
+import { AlertsSettingsCard } from "./alerts-card";
 import { CategoriesCard } from "./categories-card";
 import { CsvCard } from "./csv-card";
 import { DayCard, RangeCard, SuspectCard } from "./data-cards";
@@ -234,6 +236,19 @@ export default async function SettingsPage({
       {tab === "equipements" && <EquipmentTab ctx={ctx} />}
       {tab === "home-assistant" && <HomeAssistantTab ctx={ctx} />}
       {tab === "postes" && <CategoriesTab ctx={ctx} />}
+      {tab === "alertes" && (
+        <div className={panel}>
+          <AlertsSettingsCard
+            initial={alertSettings(ctx)}
+            visible={[
+              ...(p.pellet || p.wood ? (["fuelStock"] as const) : []),
+              "haSilent",
+              ...(p.solar ? (["solarYield"] as const) : []),
+              "budget",
+            ]}
+          />
+        </div>
+      )}
       {tab === "donnees" && (
         <DataTab ctx={ctx} metric={one(params.compteur)} day={one(params.jour)} />
       )}

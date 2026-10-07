@@ -59,3 +59,30 @@ export function yieldDeviation(
   const deviation = current / reference - 1;
   return { yield: current, reference, deviation, alert: deviation < YIELD_ALERT };
 }
+
+/** Irradiation minimale d'un jour pour juger son rendement (un jour très sombre est trop bruité). */
+const MIN_DAY_RADIATION = 1;
+
+/**
+ * Écart au rendement habituel des `n` derniers jours complets (alerte T44). Référence : médiane
+ * des rendements mensuels des 12 mois complets avant le mois en cours (3 au moins). Un jour
+ * sans production reçue, sans irradiation ou trop sombre vaut null.
+ */
+export function recentYieldDeviations(
+  days: readonly DailySolar[],
+  today: string,
+  previousDays: readonly string[],
+): (number | null)[] | null {
+  const month = today.slice(0, 7);
+  const yields = monthlyYields(days.filter((d) => d.date < `${month}-01`));
+  const months = Object.keys(yields).sort().slice(-12);
+  if (months.length < 3) return null;
+  const reference = median(months.map((m) => yields[m] ?? 0));
+  if (reference <= 0) return null;
+  const byDate = new Map(days.map((d) => [d.date, d]));
+  return previousDays.map((date) => {
+    const d = byDate.get(date);
+    if (!d || d.radiationKwhM2 === null || d.radiationKwhM2 < MIN_DAY_RADIATION) return null;
+    return d.kwh / d.radiationKwhM2 / reference - 1;
+  });
+}

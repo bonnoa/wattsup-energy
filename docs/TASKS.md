@@ -427,7 +427,7 @@ Légende des tailles : **S** = 1–2 fichiers · **M** = 3–5 fichiers (hors te
   - Vérifier : `tests/integration/preferences.test.ts` ; audit de contraste (script dans le navigateur) sur les 9 écrans en sombre, 0 défaut ; en clair, `subtle` et `muted` assombris pour 4,5:1 sur les tuiles
   - Fichiers : `src/app/globals.css`, `src/app/layout.tsx`, `src/app/(app)/compte/*`
 
-- [ ] **T44 — Alertes dans l'appli** · M · Dépend de : T27, T29, T20
+- [x] **T44 — Alertes dans l'appli** · M · Dépend de : T27, T29, T20
   - Acceptation :
     - Calcul pur `evaluateAlerts` : stock de combustible sous N semaines (défaut 3), Home Assistant muet depuis N h (défaut 6), production solaire sous le rendement attendu de N % (défaut 15) pendant 3 jours, budget du mois en route pour dépasser N-1 de N % (défaut 15) ; seulement les modules du profil
     - Vue d'ensemble : carte « À surveiller » (3 alertes au plus, action en un clic, « Masquer ») ; pastille sur l'entrée de menu concernée

@@ -20,6 +20,12 @@ export const SETTINGS_TABS = [
   },
   { id: "postes", label: "Postes", description: "Les appareils ou circuits suivis séparément." },
   {
+    id: "alertes",
+    label: "Alertes",
+    description:
+      "Ce qui s'affiche dans « À surveiller » sur la Vue d'ensemble, et à partir de quand.",
+  },
+  {
     id: "donnees",
     label: "Données",
     description: "Contrôler et corriger les valeurs enregistrées.",

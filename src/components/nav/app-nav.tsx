@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import type { NavItem } from "@/domain/profile";
+import type { NavId, NavItem } from "@/domain/profile";
 import { HaStatus } from "./ha-status";
 import { NavIcon } from "./icons";
 import { AccountMenu } from "./account-menu";
@@ -17,12 +17,23 @@ interface Props {
   version: string;
   /** Entrée « Contact » du menu du profil (l'instance envoie des emails). */
   contact: boolean;
+  /** Entrées de menu qui portent une alerte en cours (pastille). */
+  alertNav: NavId[];
   /** Administrateur de l'instance : section « Administration » (desktop seulement). */
   admin: boolean;
 }
 
 const isActive = (pathname: string, href: string) =>
   href === "/" ? pathname === "/" : pathname === href || pathname.startsWith(`${href}/`);
+
+/** Pastille d'alerte sur une entrée de menu (détail dans « À surveiller »). */
+function AlertDot({ className }: { className: string }) {
+  return (
+    <span className={`size-2 flex-none rounded-full bg-pellet ${className}`}>
+      <span className="sr-only">(alerte)</span>
+    </span>
+  );
+}
 
 /**
  * Section réservée à l'administrateur, sous la navigation : intitulé et lien en couleur
@@ -60,7 +71,16 @@ function AdminNav({ active }: { active: boolean }) {
   );
 }
 
-export function AppNav({ items, userName, householdName, ingest, version, contact, admin }: Props) {
+export function AppNav({
+  items,
+  userName,
+  householdName,
+  ingest,
+  version,
+  contact,
+  alertNav,
+  admin,
+}: Props) {
   const pathname = usePathname();
 
   return (
@@ -91,6 +111,7 @@ export function AppNav({ items, userName, householdName, ingest, version, contac
               >
                 <NavIcon id={n.id} size={18} />
                 <span>{n.label}</span>
+                {alertNav.includes(n.id) && <AlertDot className="ml-auto" />}
               </Link>
             );
           })}
@@ -145,7 +166,10 @@ export function AppNav({ items, userName, householdName, ingest, version, contac
                 active ? "text-ink" : "text-subtle"
               }`}
             >
-              <NavIcon id={n.id} size={22} />
+              <span className="relative">
+                <NavIcon id={n.id} size={22} />
+                {alertNav.includes(n.id) && <AlertDot className="absolute -top-0.5 -right-1" />}
+              </span>
               <span className={`text-[11px] ${active ? "font-semibold" : "font-medium"}`}>
                 {n.short}
               </span>

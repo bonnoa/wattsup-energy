@@ -159,7 +159,7 @@ export type Overview =
 const shiftYear = (day: string, years: number) =>
   `${Number(day.slice(0, 4)) + years}${day.slice(4)}`.replace(/-02-29$/, "-02-28");
 
-async function gridIntervals(ctx: HouseholdContext, from: string, to: string) {
+export async function gridIntervals(ctx: HouseholdContext, from: string, to: string) {
   const rows = await db
     .select({
       start: energyInterval.start,

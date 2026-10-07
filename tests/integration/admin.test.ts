@@ -19,6 +19,7 @@ import { createContract } from "@/server/contracts";
 import { saveEquipment } from "@/server/equipment";
 import { addPurchase } from "@/server/fuel";
 import { createMarker } from "@/server/markers";
+import { dismissAlert } from "@/server/alerts";
 import { ingest } from "@/server/ingest/persist";
 import { createIngestToken, verifyIngestToken } from "@/server/ingest/token";
 import { createTestHousehold, describeTenantIsolation } from "../helpers/tenancy";
@@ -64,6 +65,7 @@ async function seedEverything(ctx: HouseholdContext) {
     installedOn: "2025-01-01",
     costEur: 1,
   });
+  await dismissAlert(ctx, "ha_silent", 1);
   await createMarker(ctx, {
     kind: "other",
     text: "Repère",

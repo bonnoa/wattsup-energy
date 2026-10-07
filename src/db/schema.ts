@@ -38,6 +38,8 @@ export interface HouseholdSettings {
   /** Bornes de la saison de chauffe, "MM-JJ". */
   heatingSeason: { from: string; to: string };
   kwhFactors: { pelletPerKg: number; woodPerStere: number };
+  /** Alertes (T44) : activation et seuils ; absent, les valeurs par défaut s'appliquent. */
+  alerts?: unknown;
 }
 
 /** Commune du foyer pour la météo ; coordonnées arrondies à 0,01° (SPEC §7.9). */
@@ -336,6 +338,22 @@ export const contractPeriod = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [unique("contract_period_contract_from_uq").on(t.contractId, t.validFrom)],
+);
+
+/**
+ * Alertes masquées (T44) : une alerte reste cachée 7 jours, sauf si elle s'aggrave (niveau
+ * supérieur) ; la ligne disparaît quand l'alerte n'a plus lieu d'être.
+ */
+export const alertDismissal = pgTable(
+  "alert_dismissal",
+  {
+    householdId: householdRef(),
+    /** Clé de l'alerte (src/domain/alerts.ts), ex. « fuel_stock:pellet ». */
+    key: text("key").notNull(),
+    level: integer("level").notNull(),
+    dismissedAt: timestamp("dismissed_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [primaryKey({ columns: [t.householdId, t.key] })],
 );
 
 export const signupModeEnum = pgEnum("signup_mode", ["open", "invite", "closed"]);

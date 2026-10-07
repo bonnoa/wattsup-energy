@@ -6,7 +6,7 @@ import {
   type EnergySlot,
   type SavingsOptions,
 } from "@/domain/roi/savings";
-import { monthlyYields, yieldDeviation } from "@/domain/roi/yield";
+import { monthlyYields, recentYieldDeviations, yieldDeviation } from "@/domain/roi/yield";
 import type { BaseContract, HphcContract } from "@/domain/tariff/types";
 
 const base: BaseContract = { kind: "base", subscriptionEurYear: 200, priceEurKwh: 0.25 };
@@ -166,5 +166,29 @@ describe("rendement solaire normalisé", () => {
     expect(d?.alert).toBe(true);
     expect(yieldDeviation(yields, "2026-03")?.alert).toBe(false);
     expect(yieldDeviation(yields, "2026-02")).toBeNull(); // moins de 3 mois de référence
+  });
+});
+
+describe("recentYieldDeviations", () => {
+  // Juin à septembre : 0,8 kWh par kWh/m² (référence) ; octobre en cours.
+  const days = ["2026-06", "2026-07", "2026-08", "2026-09"].map((m) => ({
+    date: `${m}-15`,
+    kwh: 4,
+    radiationKwhM2: 5,
+  }));
+  const last = ["2026-10-19", "2026-10-18", "2026-10-17"];
+
+  it("écart de chaque jour au rendement habituel ; jour sombre ou sans donnée : null", () => {
+    const recent = [
+      { date: "2026-10-19", kwh: 3, radiationKwhM2: 5 },
+      { date: "2026-10-18", kwh: 0.5, radiationKwhM2: 0.8 },
+    ];
+    const d = recentYieldDeviations([...days, ...recent], "2026-10-20", last);
+    expect(d?.[0]).toBeCloseTo(-0.25);
+    expect(d?.slice(1)).toEqual([null, null]);
+  });
+
+  it("moins de 3 mois de référence : null", () => {
+    expect(recentYieldDeviations(days.slice(0, 2), "2026-10-20", last)).toBeNull();
   });
 });

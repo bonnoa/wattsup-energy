@@ -13,6 +13,7 @@ import { AdviceCard } from "@/components/cards/advice-card";
 import { AlertsCard } from "@/components/cards/alerts-card";
 import { BaseloadCard } from "@/components/cards/baseload-card";
 import { MarkersStrip } from "@/components/cards/markers-strip";
+import { PeriodContent, PeriodTransition } from "@/components/period-transition";
 import { MonthlyCostCard } from "@/components/cards/monthly-cost-card";
 import { MonthlyTable } from "@/components/cards/monthly-table";
 import { PageHeader } from "@/components/page-header";
@@ -66,48 +67,50 @@ export default async function OverviewPage({
           l&apos;import de votre historique.
         </EmptyState>
       ) : (
-        <>
+        <PeriodTransition>
           <PeriodSwitcher overview={overview} />
-          <MarkersStrip
-            markers={overview.markers}
-            period={overview.period}
-            today={localParts(new Date(), ctx.timezone).date}
-          />
-          <BatteryGapNotices gaps={overview.batteryGaps} context="overview" />
-          <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,320px),1fr))] gap-4">
-            <BudgetCard overview={overview} />
-            <KpiTiles overview={overview} solar={modules.solar} battery={modules.battery} />
-          </div>
-          {comparison &&
-            block("contract", (hide) => (
-              <CheaperContractNotice comparison={comparison} hide={hide} />
+          <PeriodContent>
+            <MarkersStrip
+              markers={overview.markers}
+              period={overview.period}
+              today={localParts(new Date(), ctx.timezone).date}
+            />
+            <BatteryGapNotices gaps={overview.batteryGaps} context="overview" />
+            <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,320px),1fr))] gap-4">
+              <BudgetCard overview={overview} />
+              <KpiTiles overview={overview} solar={modules.solar} battery={modules.battery} />
+            </div>
+            {comparison &&
+              block("contract", (hide) => (
+                <CheaperContractNotice comparison={comparison} hide={hide} />
+              ))}
+            {block("advice", (hide) => (
+              <AdviceCard advice={advice} actions={hide} />
             ))}
-          {block("advice", (hide) => (
-            <AdviceCard advice={advice} actions={hide} />
-          ))}
-          <MonthlyCostCard
-            months={overview.months}
-            period={overview.period}
-            markers={overview.markers}
-          />
-          {block("peak", (hide) => (
-            <PeakCard overview={overview} actions={hide} />
-          ))}
-          <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,340px),1fr))] items-start gap-4">
-            <OriginCard overview={overview} solar={modules.solar} battery={modules.battery} />
-            <CategoriesOverviewCard overview={overview} />
-          </div>
-          {block("baseload", (hide) => (
-            <BaseloadCard overview={overview} actions={hide} />
-          ))}
-          <SolarCard overview={overview} />
-          <MonthlyTable
-            months={overview.months}
-            year={overview.period.key.slice(0, 4)}
-            currentMonth={localParts(new Date(), ctx.timezone).date.slice(0, 7)}
-            solar={modules.solar}
-          />
-        </>
+            <MonthlyCostCard
+              months={overview.months}
+              period={overview.period}
+              markers={overview.markers}
+            />
+            {block("peak", (hide) => (
+              <PeakCard overview={overview} actions={hide} />
+            ))}
+            <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,340px),1fr))] items-start gap-4">
+              <OriginCard overview={overview} solar={modules.solar} battery={modules.battery} />
+              <CategoriesOverviewCard overview={overview} />
+            </div>
+            {block("baseload", (hide) => (
+              <BaseloadCard overview={overview} actions={hide} />
+            ))}
+            <SolarCard overview={overview} />
+            <MonthlyTable
+              months={overview.months}
+              year={overview.period.key.slice(0, 4)}
+              currentMonth={localParts(new Date(), ctx.timezone).date.slice(0, 7)}
+              solar={modules.solar}
+            />
+          </PeriodContent>
+        </PeriodTransition>
       )}
     </>
   );

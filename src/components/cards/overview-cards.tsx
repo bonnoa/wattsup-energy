@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { SolarChart } from "@/components/cards/solar-chart";
 import { CoverageBadge } from "@/components/coverage-badge";
+import { PeriodLink } from "@/components/period-transition";
 import { Badge, button, Card, Icon, Notice, StatTile, tiles } from "@/components/ui";
 import { CATEGORY_SWATCH, CategoryTile, categoryColor } from "@/components/ui/category";
 import { monthLabel } from "@/domain/overview";
@@ -20,17 +21,18 @@ const eur = (cents: number) => formatEurFromCents(cents, 0);
 /** Sélecteur mois / année et navigation ‹ › (liens : la période est dans l'URL). */
 export function PeriodSwitcher({ overview }: { overview: Ok }) {
   const { period, nav } = overview;
-  const segment = (active: boolean) =>
-    `rounded-[8px] px-3.5 py-1.5 text-[13px] font-medium ${
-      active ? "bg-surface shadow-[0_1px_2px_rgba(0,0,0,0.08)]" : "text-ink-soft"
-    }`;
+  const segment = {
+    className: "rounded-[8px] px-3.5 py-1.5 text-[13px] font-medium",
+    activeClassName: "bg-surface shadow-[0_1px_2px_rgba(0,0,0,0.08)]",
+    inactiveClassName: "text-ink-soft",
+  };
   const arrow = (key: string | null, label: string, path: string) =>
     key ? (
-      <Link href={`/?p=${key}`} aria-label={label} className={button.icon} scroll={false}>
+      <PeriodLink href={`/?p=${key}`} aria-label={label} className={button.icon}>
         <span aria-hidden className="text-base leading-none">
           {path}
         </span>
-      </Link>
+      </PeriodLink>
     ) : (
       <span className={`${button.icon} opacity-40`} aria-hidden>
         <span className="text-base leading-none">{path}</span>
@@ -39,24 +41,22 @@ export function PeriodSwitcher({ overview }: { overview: Ok }) {
   return (
     <div className="flex flex-wrap items-center gap-3">
       <div role="tablist" className="flex gap-1 rounded-[10px] bg-chip p-[3px]">
-        <Link
+        <PeriodLink
           role="tab"
-          aria-selected={period.kind === "month"}
+          selected={period.kind === "month"}
           href={`/?p=${period.kind === "month" ? period.key : addDays(period.to, -1).slice(0, 7)}`}
-          className={segment(period.kind === "month")}
-          scroll={false}
+          {...segment}
         >
           Mois
-        </Link>
-        <Link
+        </PeriodLink>
+        <PeriodLink
           role="tab"
-          aria-selected={period.kind === "year"}
+          selected={period.kind === "year"}
           href={`/?p=${period.key.slice(0, 4)}`}
-          className={segment(period.kind === "year")}
-          scroll={false}
+          {...segment}
         >
           Année
-        </Link>
+        </PeriodLink>
       </div>
       <div className="flex items-center gap-2">
         {arrow(nav.prev, "Période précédente", "‹")}

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { StackedBars } from "@/components/charts/stacked-bars";
+import { PeriodLink } from "@/components/period-transition";
 import { Badge, button, Card, Notice, StatTile } from "@/components/ui";
 import { monthLabel, shortMonth } from "@/domain/overview";
 import { formatEurFromCents, formatNumber, formatPercent } from "@/lib/format";
@@ -30,11 +31,11 @@ const SOURCES = [
 export function SeasonSwitcher({ view }: { view: HeatingView }) {
   const arrow = (year: number | null, label: string, glyph: string) =>
     year !== null ? (
-      <Link href={`/chauffage?s=${year}`} aria-label={label} className={button.icon} scroll={false}>
+      <PeriodLink href={`/chauffage?s=${year}`} aria-label={label} className={button.icon}>
         <span aria-hidden className="text-base leading-none">
           {glyph}
         </span>
-      </Link>
+      </PeriodLink>
     ) : (
       <span className={`${button.icon} opacity-40`} aria-hidden>
         <span className="text-base leading-none">{glyph}</span>

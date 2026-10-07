@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { PeriodLink } from "@/components/period-transition";
 
 // Barres verticales empilées en HTML (SPEC §2 : graphiques maison). Segments séparés de
 // 2 px, extrémité arrondie, info-bulle native par barre. Une barre peut être un lien
@@ -115,17 +115,16 @@ export function StackedBars({
             </div>
           );
           return b.href ? (
-            <Link
+            <PeriodLink
               key={b.key}
               href={b.href}
               title={b.title}
               aria-label={b.title}
-              aria-current={b.selected ? "true" : undefined}
-              scroll={false}
+              selected={b.selected}
               className="h-full min-w-0 flex-1 rounded-t-[4px] px-[1.5px] hover:opacity-100 focus-visible:outline-2 focus-visible:outline-ink"
             >
               {body}
-            </Link>
+            </PeriodLink>
           ) : (
             <div key={b.key} title={b.title} className="h-full min-w-0 flex-1 px-[1.5px]">
               {body}

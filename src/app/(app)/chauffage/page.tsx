@@ -12,6 +12,7 @@ import { pageContext } from "@/server/page";
 import { getHeating, getRefillForecast } from "@/server/queries/heating";
 import { ForecastCard } from "./forecast-card";
 import { FuelLog } from "./fuel-log";
+import { PeriodContent, PeriodTransition } from "@/components/period-transition";
 import { HeatingCostCard, HeatingKpis, SeasonSwitcher } from "./heating-cards";
 import { FuelCard } from "./quick-actions";
 
@@ -88,9 +89,13 @@ export default async function HeatingPage({
           })}
         </div>
       )}
-      <SeasonSwitcher view={view} />
-      <HeatingKpis view={view} />
-      <HeatingCostCard view={view} />
+      <PeriodTransition>
+        <SeasonSwitcher view={view} />
+        <PeriodContent>
+          <HeatingKpis view={view} />
+          <HeatingCostCard view={view} />
+        </PeriodContent>
+      </PeriodTransition>
       {forecast && <ForecastCard view={forecast} />}
       {fuels.length > 0 && (
         <FuelLog

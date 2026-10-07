@@ -9,7 +9,7 @@ export function HaFuelCard({ origin }: { origin: string }) {
   return (
     <Card
       icon="plus"
-      title="Sac versé depuis Home Assistant"
+      title="Sac de pellets versé depuis Home Assistant"
       description="Décomptez un sac (ou un demi-stère) sans ouvrir l'appli : bouton du tableau de bord, bouton physique près du poêle, ou automatisation."
     >
       <ol className="flex list-decimal flex-col gap-1.5 pl-5 text-[13px] text-pretty">

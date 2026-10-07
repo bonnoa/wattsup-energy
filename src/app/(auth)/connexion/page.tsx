@@ -1,17 +1,18 @@
 import { Suspense } from "react";
-import { signupMode } from "@/server/auth";
+import { getSignupPolicy } from "@/server/instance";
 import { mailConfigured } from "@/server/mail";
 import { AuthForm } from "../auth-form";
 
 export const metadata = { title: "Connexion · WattsUp Energy" };
 export const dynamic = "force-dynamic";
 
-export default function ConnexionPage() {
+export default async function ConnexionPage() {
+  const { mode } = await getSignupPolicy();
   return (
     <Suspense>
       <AuthForm
         mode="connexion"
-        signupOpen={signupMode() !== "closed"}
+        signupOpen={mode !== "closed"}
         passwordReset={mailConfigured()}
       />
     </Suspense>

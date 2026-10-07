@@ -1,14 +1,15 @@
 import Link from "next/link";
 import { Suspense } from "react";
-import { signupMode } from "@/server/auth";
+import { getSignupPolicy } from "@/server/instance";
 import { AuthForm } from "../auth-form";
 
 export const metadata = { title: "Inscription · WattsUp Energy" };
-// Le mode d'inscription est lu à chaque requête (variable d'environnement de l'instance).
+// Le mode d'inscription est lu à chaque requête (réglage de l'administrateur ou variable
+// d'environnement).
 export const dynamic = "force-dynamic";
 
-export default function InscriptionPage() {
-  const mode = signupMode();
+export default async function InscriptionPage() {
+  const { mode } = await getSignupPolicy();
   if (mode === "closed") {
     return (
       <section className="flex flex-col gap-3 rounded-card border border-border bg-surface p-6">

@@ -2,8 +2,10 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+import { parseSignupSettings, type SignupMode } from "@/domain/signup";
 import { AdminError, deleteUserAsAdmin, ForbiddenError, setUserDisabled } from "../admin";
 import { getHouseholdContext } from "../context";
+import { updateSignupPolicy } from "../instance";
 
 export type AdminActionResult = { ok: true } | { ok: false; errors: string[] };
 
@@ -39,4 +41,24 @@ export async function deleteUserAction(id: string): Promise<AdminActionResult> {
   if (!p.success) return { ok: false, errors: ["compte introuvable"] };
   const ctx = await getHouseholdContext();
   return run(() => deleteUserAsAdmin(ctx, p.data));
+}
+
+const signupMode = z.enum(["open", "invite", "closed"]);
+
+/** Mode d'inscription de l'instance et codes d'invitation (administrateur seulement). */
+export async function saveSignupPolicyAction(
+  mode: SignupMode,
+  rawCodes: string,
+): Promise<AdminActionResult> {
+  const m = signupMode.safeParse(mode);
+  if (!m.success || typeof rawCodes !== "string" || rawCodes.length > 2000) {
+    return { ok: false, errors: ["réglage invalide"] };
+  }
+  const parsed = parseSignupSettings(m.data, rawCodes);
+  if (!parsed.ok) return { ok: false, errors: [parsed.message] };
+  const ctx = await getHouseholdContext();
+  return run(async () => {
+    await updateSignupPolicy(ctx, { mode: m.data, codes: parsed.codes });
+    return true;
+  });
 }

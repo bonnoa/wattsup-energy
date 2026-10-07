@@ -154,6 +154,7 @@ Taille : **S** = 1–2 fichiers · **M** = 3–5 fichiers. Aucune tâche L/XL.
 |---|---|---|---|---|
 | T35 | Prénom et nom modifiables (Mon compte), version de l'appli en bas du menu | S | T32 | le menu affiche le nouveau nom sans reconnexion |
 | T36 | Compte administrateur (`user.is_admin`, fixé par migration) et page Utilisateurs (désactiver, supprimer) | M | T35 | un non-administrateur ne lit ni ne modifie rien (test) ; un compte désactivé ne se connecte plus et ses envois HA sont refusés |
+| T39 | Mode d'inscription (ouvert, sur invitation avec codes, fermé) réglé par l'administrateur sur la page Utilisateurs ; repli sur `SIGNUP_MODE` / `INVITE_CODES` | S | T36 | le réglage prime sur la variable d'environnement (test) |
 | T37 | Boîte à idées : proposition, votes, filtre, recherche ; statut et suppression par l'administrateur ; email à chaque nouvelle idée | M | T36 | un vote par compte ; seul l'administrateur change un statut (test) |
 | T38 | Contact (prendre contact, signaler un bug) par email à l'administrateur | S | T36 | réponse directe à l'expéditeur (`reply_to`) |
 

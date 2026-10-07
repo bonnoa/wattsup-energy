@@ -337,3 +337,20 @@ export const contractPeriod = pgTable(
   },
   (t) => [unique("contract_period_contract_from_uq").on(t.contractId, t.validFrom)],
 );
+
+export const signupModeEnum = pgEnum("signup_mode", ["open", "invite", "closed"]);
+
+/**
+ * Réglages de l'instance (une seule ligne, id = 1), modifiés par l'administrateur. Une
+ * valeur vide reprend la variable d'environnement (SIGNUP_MODE, INVITE_CODES).
+ */
+export const instanceSettings = pgTable("instance_settings", {
+  id: integer("id").primaryKey().default(1),
+  signupMode: signupModeEnum("signup_mode"),
+  /** Codes d'invitation, séparés par des virgules. */
+  inviteCodes: text("invite_codes"),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .notNull()
+    .defaultNow()
+    .$onUpdate(() => new Date()),
+});

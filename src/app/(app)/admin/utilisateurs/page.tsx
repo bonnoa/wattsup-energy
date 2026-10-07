@@ -2,18 +2,23 @@ import { redirect } from "next/navigation";
 import { PageHeader } from "@/components/page-header";
 import { activeProfileLabels } from "@/domain/profile";
 import { listUsers } from "@/server/admin";
+import { getSignupPolicy } from "@/server/instance";
 import { pageContext } from "@/server/page";
+import { SignupCard } from "./signup-card";
 import { UsersTable, type UserRow } from "./users-table";
 
 export const metadata = { title: "Utilisateurs · WattsUp Energy" };
 
 const day = (d: Date) => d.toLocaleDateString("fr-FR", { timeZone: "Europe/Paris" });
 
-/** Administration (SPEC §9, Utilisateurs) : comptes de l'instance, désactivation, suppression. */
+/**
+ * Administration (SPEC §9, Utilisateurs) : comptes de l'instance, désactivation, suppression,
+ * et mode d'inscription.
+ */
 export default async function UsersPage() {
   const ctx = await pageContext("/admin/utilisateurs");
   if (!ctx.isAdmin) redirect("/");
-  const users = await listUsers(ctx);
+  const [users, policy] = await Promise.all([listUsers(ctx), getSignupPolicy()]);
   const rows: UserRow[] = users.map((u) => ({
     id: u.id,
     name: u.name,
@@ -36,6 +41,9 @@ export default async function UsersPage() {
         }`}
       />
       <UsersTable rows={rows} />
+      <div className="max-w-2xl">
+        <SignupCard mode={policy.mode} codes={policy.codes} source={policy.source} />
+      </div>
     </>
   );
 }

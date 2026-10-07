@@ -19,7 +19,7 @@ export class ForbiddenError extends Error {
 /** Refus métier, message en français pour l'interface. */
 export class AdminError extends Error {}
 
-function requireAdmin(ctx: HouseholdContext) {
+export function requireAdmin(ctx: HouseholdContext) {
   if (!ctx.isAdmin) throw new ForbiddenError();
 }
 

@@ -11,13 +11,16 @@ import {
   fuelEvent,
   household,
   ingestLog,
+  instanceSettings,
   ingestToken,
   meterState,
   session,
   tempoOverride,
   user,
 } from "@/db/schema";
+import { ForbiddenError } from "@/server/admin";
 import { auth } from "@/server/auth";
+import { getSignupPolicy, updateSignupPolicy } from "@/server/instance";
 import { createCategory } from "@/server/categories";
 import { householdContextFor } from "@/server/context";
 import { createContract } from "@/server/contracts";
@@ -62,6 +65,23 @@ describe("inscription selon SIGNUP_MODE", () => {
     await expect(signUp(new Headers({ "x-invite-code": "mauvais" }))).rejects.toThrow(/invitation/);
     const ok = await signUp(new Headers({ "x-invite-code": "bienvenue-2026" }));
     expect(ok.user.id).toBeTruthy();
+  });
+
+  // Dans ce fichier (exécuté en séquence) pour ne pas croiser les tests ci-dessus. Le réglage
+  // reste « ouvert » : les autres fichiers, en parallèle, continuent d'inscrire leurs comptes.
+  it("le réglage de l'administrateur prime sur SIGNUP_MODE ; réservé à l'administrateur", async () => {
+    const admin = await createTestHousehold("admin");
+    const policy = { mode: "open" as const, codes: ["ami-2026"] };
+    await expect(updateSignupPolicy(admin, policy)).rejects.toThrow(ForbiddenError);
+    try {
+      await updateSignupPolicy({ ...admin, isAdmin: true }, policy);
+      process.env.SIGNUP_MODE = "closed";
+      expect(await getSignupPolicy()).toEqual({ ...policy, source: "admin" });
+      expect((await signUp()).user.id).toBeTruthy();
+    } finally {
+      await db.delete(instanceSettings);
+    }
+    expect((await getSignupPolicy()).source).toBe("env");
   });
 });
 

@@ -372,6 +372,13 @@ Légende des tailles : **S** = 1–2 fichiers · **M** = 3–5 fichiers (hors te
   - Vérifier : `tests/integration/admin.test.ts` (refus pour un non-administrateur, désactivation, suppression en cascade) ; manuel
   - Fichiers : `src/db/auth-schema.ts`, `drizzle/0014_*.sql`, `src/server/admin.ts`, `src/server/actions/admin.ts`, `src/app/(app)/admin/utilisateurs/*`
 
+- [x] **T39 — Mode d'inscription réglable par l'administrateur** · S · Dépend de : T36 (demandé le 2026-10-07)
+  - Acceptation :
+    - Page Utilisateurs, carte « Inscriptions » : Ouvertes / Sur invitation (codes séparés par des virgules, au moins un) / Fermées ; effet immédiat
+    - Table `instance_settings` (ligne unique) ; tant que l'administrateur n'a rien enregistré, `SIGNUP_MODE` et `INVITE_CODES` s'appliquent
+  - Vérifier : `tests/unit/domain/signup.test.ts`, `tests/integration/account.test.ts` ; manuel
+  - Fichiers : `src/domain/signup.ts`, `drizzle/0015_*.sql`, `src/server/instance.ts`, `src/app/(app)/admin/utilisateurs/signup-card.tsx`
+
 - [ ] **T37 — Boîte à idées** · M · Dépend de : T36
   - Acceptation :
     - Menu du profil : « Boîte à idées » → `/idees` ; formulaire titre (60 caractères) et description (1 000 caractères)
@@ -379,7 +386,7 @@ Légende des tailles : **S** = 1–2 fichiers · **M** = 3–5 fichiers (hors te
     - Administrateur seulement, signalé comme tel : changement de statut (version exigée pour « Terminée », version courante proposée) et suppression ; auteur affiché
     - Nouvelle idée : email à l'administrateur (si l'envoi d'emails est configuré) ; 5 idées par heure et par compte
   - Vérifier : `tests/unit/domain/ideas.test.ts`, `tests/integration/ideas.test.ts` ; manuel
-  - Fichiers : `src/domain/ideas.ts`, `drizzle/0015_*.sql`, `src/server/ideas.ts`, `src/server/actions/ideas.ts`, `src/app/(app)/idees/*`
+  - Fichiers : `src/domain/ideas.ts`, `drizzle/0016_*.sql`, `src/server/ideas.ts`, `src/server/actions/ideas.ts`, `src/app/(app)/idees/*`
 
 - [ ] **T38 — Contact** · S · Dépend de : T36
   - Acceptation :

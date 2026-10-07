@@ -5,19 +5,11 @@ import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { nextCookies } from "better-auth/next-js";
 import { db } from "@/db";
 import * as schema from "@/db/schema";
-import {
-  NAME_MAX,
-  parseInviteCodes,
-  parseSignupMode,
-  signupAllowed,
-  validName,
-} from "@/domain/signup";
+import { NAME_MAX, signupAllowed, validName } from "@/domain/signup";
 import { resetPasswordEmail } from "@/domain/mail";
 import { ensureHousehold } from "./household";
+import { getSignupPolicy } from "./instance";
 import { mailConfigured, sendMail } from "./mail";
-
-/** Mode d'inscription de l'instance (SIGNUP_MODE, INVITE_CODES). */
-export const signupMode = () => parseSignupMode(process.env.SIGNUP_MODE);
 
 export const auth = betterAuth({
   database: drizzleAdapter(db, { provider: "pg", schema }),
@@ -57,7 +49,8 @@ export const auth = betterAuth({
     changeEmail: { enabled: true, updateEmailWithoutVerification: true },
   },
   hooks: {
-    // L'inscription respecte SIGNUP_MODE, y compris par un appel direct à l'API.
+    // L'inscription respecte le mode de l'instance (réglage de l'administrateur, sinon
+    // SIGNUP_MODE), y compris par un appel direct à l'API.
     before: createAuthMiddleware(async (ctx) => {
       // Nom affiché (inscription, page Compte) : non vide, NAME_MAX caractères au plus.
       if (ctx.path === "/sign-up/email" || ctx.path === "/update-user") {
@@ -69,11 +62,8 @@ export const auth = betterAuth({
         }
       }
       if (ctx.path !== "/sign-up/email") return;
-      const allowed = signupAllowed(
-        signupMode(),
-        ctx.headers?.get("x-invite-code"),
-        parseInviteCodes(process.env.INVITE_CODES),
-      );
+      const policy = await getSignupPolicy();
+      const allowed = signupAllowed(policy.mode, ctx.headers?.get("x-invite-code"), policy.codes);
       if (!allowed.ok) throw new APIError("FORBIDDEN", { message: allowed.message });
     }),
   },

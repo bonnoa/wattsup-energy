@@ -483,7 +483,7 @@ Légende des tailles : **S** = 1–2 fichiers · **M** = 3–5 fichiers (hors te
     - Retour après connexion (`?suite=`) limité aux chemins de l'application : `//autre-site`, `/\autre-site` ou une adresse complète ramènent à l'accueil
     - Lien de l'email « nouvelle idée » construit sur `BETTER_AUTH_URL`, jamais sur les en-têtes de la requête
     - Ingestion : corps lu en flux et coupé au-delà de 64 Ko, même sans `content-length`
-    - Audit : actions serveur (session, validation Zod, droits d'administrateur), limites de débit (Better Auth en production, ingestion, résumé, contact, idées, import CSV), secrets absents de l'historique git ; alertes `pnpm audit` limitées aux outils de build et de test (vitest, esbuild, postcss de Next au build)
+    - Audit : actions serveur (session, validation Zod, droits d'administrateur), limites de débit (Better Auth en production, ingestion, résumé, contact, idées, import CSV), secrets absents de l'historique git ; `pnpm audit` : vitest passé en 5 (alertes critiques de tinypool), postcss de Next forcé en ≥ 8.5.23 (`pnpm.overrides`) ; restent esbuild de drizzle-kit (mode serveur non utilisé) et braces d'eslint-config-next (aucune version corrigée), outils de développement absents de l'image
   - Vérifier : `tests/unit/domain/redirect.test.ts`, `tests/unit/lib/security-headers.test.ts`, `tests/integration/ingest-guards.test.ts`, `e2e/security.spec.ts` (build de production) ; navigateur : aucune violation CSP (pages, navigation, action serveur)
   - Fichiers : `src/lib/security-headers.ts`, `next.config.ts`, `src/middleware.ts`, `src/domain/redirect.ts`, `src/app/(auth)/auth-form.tsx`, `src/server/actions/ideas.ts`, `src/app/api/v1/ingest/route.ts`
 

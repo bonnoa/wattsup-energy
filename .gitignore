@@ -46,3 +46,9 @@ next-env.d.ts
 /playwright-report/
 /.next-e2e/
 /e2e/.auth/
+
+# Notes de travail locales (spécification, plan, maquette, consignes de l'assistant) :
+# hors du dépôt public.
+/docs/
+/CLAUDE.md
+/.claude/

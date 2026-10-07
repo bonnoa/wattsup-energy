@@ -197,7 +197,7 @@ export async function exportData(ctx: HouseholdContext, now = new Date()) {
     format: "wattsup-export",
     version: 1,
     exportedAt: now.toISOString(),
-    note: "Énergie : fichier CSV séparé, au format de l'import (docs/csv-format.md).",
+    note: "Énergie : fichier CSV séparé, au format de l'import CSV (Réglages › Données).",
     account: account[0] ?? null,
     household: home[0] ?? null,
     categories,

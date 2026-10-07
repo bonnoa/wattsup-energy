@@ -1,7 +1,7 @@
 import { localParts } from "@/lib/time";
 
 // Export de mes données (SPEC §9, Mon compte, T46). L'énergie part en CSV au format de
-// l'import (docs/csv-format.md), donc réimportable : heures en UTC (`Z`), jours à la date
+// l'import CSV, donc réimportable : heures en UTC (`Z`), jours à la date
 // locale du foyer avec leur créneau HP/HC. Pur.
 
 export const ENERGY_CSV_HEADER = "timestamp,metric,kwh,tariff_slot";

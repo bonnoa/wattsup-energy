@@ -1,6 +1,6 @@
 @import "tailwindcss";
 
-/* Tokens issus de la maquette (docs/wattsup-energy-app-design), voir SPEC §2 */
+/* Tokens de design : couleurs, rayons et ombres de l'interface */
 @theme {
   --color-bg: #f4f2ec;
   --color-surface: #ffffff;

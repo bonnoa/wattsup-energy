@@ -1,7 +1,7 @@
 # Home Assistant → WattsUp Energy
 
 Home Assistant **pousse** ses compteurs d'énergie vers WattsUp : aucun port entrant à ouvrir,
-WattsUp n'interroge jamais votre instance. Contrat d'API : voir `docs/SPEC.md` §6. La météo n'est pas envoyée par HA : WattsUp la
+WattsUp n'interroge jamais votre instance. La météo n'est pas envoyée par HA : WattsUp la
 récupère lui-même (Open-Meteo) pour la commune indiquée dans Réglages.
 
 ## 1. Récupérer l'endpoint et le token
@@ -20,7 +20,7 @@ Dans WattsUp : **Réglages › API d'ingestion**.
 Dans `secrets.yaml` :
 
 ```yaml
-wattsup_url: https://wattsup-energy.kraftpunk.app/api/v1/ingest
+wattsup_url: https://wattsup.exemple.fr/api/v1/ingest
 wattsup_token: "Bearer wu_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
 ```
 
@@ -46,9 +46,8 @@ rest_command:
 https://github.com/bonnoa/wattsup-energy/blob/main/homeassistant/blueprints/wattsup_push.yaml
 ```
 
-> Tant que le dépôt est privé, l'import par URL ne fonctionne pas : copiez le fichier
-> `wattsup_push.yaml` dans `config/blueprints/automation/wattsup/` puis rechargez les
-> automatisations.
+> Le blueprint est aussi servi par votre instance : `https://wattsup.exemple.fr/api/blueprint/wattsup_push.yaml`
+> (lien direct dans Réglages).
 
 Créez ensuite une automatisation à partir du blueprint.
 

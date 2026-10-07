@@ -10,7 +10,7 @@ test.beforeEach(async () => {
 test("parcours 1 : le profil énergétique masque le bois dans tout le chauffage", async ({
   page,
 }) => {
-  await open(page, "/reglages");
+  await open(page, "/reglages?onglet=profil");
   const wood = page.getByRole("switch", { name: /Bois/ });
   await wood.click();
   await expect(wood).toHaveAttribute("aria-checked", "false");

@@ -1,13 +1,6 @@
-import Link from "next/link";
 import { headers } from "next/headers";
-import { PageHeader } from "@/components/page-header";
 import { pushState } from "@/domain/ingest/push-state";
-import {
-  parseSettingsTab,
-  SETTINGS_TABS,
-  settingsHref,
-  type SettingsTab,
-} from "@/lib/settings-tabs";
+import { parseSettingsTab, settingsTabsFor } from "@/lib/settings-tabs";
 import { listCategories, unknownCategorySlugs } from "@/server/categories";
 import type { HouseholdContext } from "@/server/context";
 import { getLastPushAt, listIngestLog } from "@/server/ingest/status";
@@ -17,7 +10,6 @@ import { dayValues, storedMetrics, suspectValues, type StoredValue } from "@/ser
 import { addDays, localParts } from "@/lib/time";
 import { pageContext } from "@/server/page";
 import { alertSettings } from "@/server/alerts";
-import { ScrollToActive } from "./active-tab";
 import { AlertsSettingsCard } from "./alerts-card";
 import { CategoriesCard } from "./categories-card";
 import { CsvCard } from "./csv-card";
@@ -39,39 +31,8 @@ async function requestOrigin() {
   return `${h.get("x-forwarded-proto") ?? "http"}://${h.get("host") ?? "localhost:3000"}`;
 }
 
-// Un ou deux encarts par onglet, en colonne de lecture confortable.
+// Un ou deux encarts par section, en colonne de lecture confortable.
 const panel = "flex max-w-2xl flex-col gap-4";
-
-/** Sous-onglets : liens (l'onglet est dans l'URL) ; la barre défile seule sur mobile. */
-function Tabs({ tabs, active }: { tabs: readonly SettingsTab[]; active: SettingsTab }) {
-  return (
-    <nav aria-label="Sections des réglages" className="flex max-w-2xl flex-col gap-2">
-      <ScrollToActive>
-        {/* Largeur de la colonne d'encarts (onglets égaux) ; plus étroit, la barre défile. */}
-        <div className="flex w-max min-w-full gap-1 rounded-[10px] bg-chip p-[3px]">
-          {SETTINGS_TABS.filter((t) => tabs.includes(t.id)).map((t) => (
-            <Link
-              key={t.id}
-              href={settingsHref(t.id)}
-              aria-current={t.id === active ? "page" : undefined}
-              scroll={false}
-              className={`flex-1 rounded-[8px] px-3.5 py-2 text-center text-[13px] font-medium whitespace-nowrap ${
-                t.id === active
-                  ? "bg-surface shadow-[0_1px_2px_rgba(0,0,0,0.08)]"
-                  : "text-ink-soft hover:text-ink"
-              }`}
-            >
-              {t.label}
-            </Link>
-          ))}
-        </div>
-      </ScrollToActive>
-      <p className="px-1 text-xs text-muted">
-        {SETTINGS_TABS.find((t) => t.id === active)?.description}
-      </p>
-    </nav>
-  );
-}
 
 async function EquipmentTab({ ctx }: { ctx: HouseholdContext }) {
   return (
@@ -211,18 +172,28 @@ export default async function SettingsPage({
   }>;
 }) {
   const ctx = await pageContext("/reglages");
-  const p = ctx.profile;
-  // « Équipements » n'existe que si le profil a du solaire, une batterie ou un combustible.
-  const tabs = SETTINGS_TABS.map((t) => t.id).filter(
-    (id) => id !== "equipements" || p.solar || p.battery || p.pellet || p.wood,
-  );
+  const tabs = settingsTabsFor(ctx.profile);
   const params = await searchParams;
   const tab = parseSettingsTab(params.onglet, tabs);
   const one = (v: string | string[] | undefined) => (typeof v === "string" ? v : undefined);
+  return <SettingsSection ctx={ctx} tab={tab} params={params} one={one} />;
+}
+
+/** Contenu de la section choisie. */
+async function SettingsSection({
+  ctx,
+  tab,
+  params,
+  one,
+}: {
+  ctx: HouseholdContext;
+  tab: ReturnType<typeof parseSettingsTab>;
+  params: { compteur?: string | string[]; jour?: string | string[] };
+  one: (v: string | string[] | undefined) => string | undefined;
+}) {
+  const p = ctx.profile;
   return (
     <>
-      <PageHeader title="Réglages" subtitle="Votre foyer et la liaison avec Home Assistant" />
-      <Tabs tabs={tabs} active={tab} />
       {tab === "profil" && (
         <div className={panel}>
           <ProfileForm initial={ctx.profile} />

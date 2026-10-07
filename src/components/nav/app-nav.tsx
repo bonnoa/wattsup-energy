@@ -1,8 +1,9 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
+import Link, { useLinkStatus } from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
 import type { NavId, NavItem } from "@/domain/profile";
 import { HaStatus } from "./ha-status";
 import { NavIcon } from "./icons";
@@ -25,6 +26,12 @@ interface Props {
 
 const isActive = (pathname: string, href: string) =>
   href === "/" ? pathname === "/" : pathname === href || pathname.startsWith(`${href}/`);
+
+/** Pictogramme d'une entrée de menu, qui pulse tant que sa page charge. */
+function PendingIcon({ children }: { children: React.ReactNode }) {
+  const { pending } = useLinkStatus();
+  return <span className={`flex ${pending ? "animate-pulse" : ""}`}>{children}</span>;
+}
 
 /** Pastille d'alerte sur une entrée de menu (détail dans « À surveiller »). */
 function AlertDot({ className }: { className: string }) {
@@ -81,7 +88,11 @@ export function AppNav({
   alertNav,
   admin,
 }: Props) {
-  const pathname = usePathname();
+  const actual = usePathname();
+  // Entrée touchée : active tout de suite, avant que la nouvelle page n'arrive.
+  const [clicked, setClicked] = useState<string | null>(null);
+  useEffect(() => setClicked(null), [actual]);
+  const pathname = clicked ?? actual;
 
   return (
     <>
@@ -105,11 +116,14 @@ export function AppNav({
                 key={n.id}
                 href={n.href}
                 aria-current={active ? "page" : undefined}
+                onClick={() => setClicked(n.href)}
                 className={`flex items-center gap-3 rounded-[9px] px-3 py-2.5 text-sm font-medium no-underline hover:bg-panel-ink/[0.08] ${
                   active ? "bg-panel-ink/[0.12] text-panel-ink" : "text-panel-muted"
                 }`}
               >
-                <NavIcon id={n.id} size={18} />
+                <PendingIcon>
+                  <NavIcon id={n.id} size={18} />
+                </PendingIcon>
                 <span>{n.label}</span>
                 {alertNav.includes(n.id) && <AlertDot className="ml-auto" />}
               </Link>
@@ -162,12 +176,15 @@ export function AppNav({
               key={n.id}
               href={n.href}
               aria-current={active ? "page" : undefined}
+              onClick={() => setClicked(n.href)}
               className={`flex min-h-[52px] flex-1 flex-col items-center justify-center gap-1 no-underline ${
                 active ? "text-ink" : "text-subtle"
               }`}
             >
               <span className="relative">
-                <NavIcon id={n.id} size={22} />
+                <PendingIcon>
+                  <NavIcon id={n.id} size={22} />
+                </PendingIcon>
                 {alertNav.includes(n.id) && <AlertDot className="absolute -top-0.5 -right-1" />}
               </span>
               <span className={`text-[11px] ${active ? "font-semibold" : "font-medium"}`}>

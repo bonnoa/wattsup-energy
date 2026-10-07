@@ -104,6 +104,7 @@ const preset = CONTRACT_PRESETS[0] ?? {
 
 describe("compte administrateur", () => {
   it("le statut n'est pas saisissable à l'inscription", async () => {
+    await createAdmin(); // sinon le premier compte de l'instance devient administrateur
     const res = await auth.api
       .signUpEmail({
         body: {
@@ -236,4 +237,26 @@ describeTenantIsolation("supprimer un compte (non administrateur)", {
   untouched: async (_b, id) => {
     expect(await db.$count(user, eq(user.id, id))).toBe(1);
   },
+});
+
+describe("premier administrateur", () => {
+  it("le premier compte d'une instance sans administrateur le devient, pas le suivant", async () => {
+    const admins = await db.select({ id: user.id }).from(user).where(eq(user.isAdmin, true));
+    await db.update(user).set({ isAdmin: false });
+    try {
+      const signUp = (n: number) =>
+        auth.api.signUpEmail({
+          body: { email: `first-${Date.now()}-${n}@wattsup.test`, password: PASSWORD, name: "P" },
+        });
+      const first = await signUp(1);
+      const second = await signUp(2);
+      const isAdmin = async (id: string) =>
+        (await db.select({ a: user.isAdmin }).from(user).where(eq(user.id, id)))[0]?.a;
+      expect(await isAdmin(first.user.id)).toBe(true);
+      expect(await isAdmin(second.user.id)).toBe(false);
+      await db.update(user).set({ isAdmin: false }).where(eq(user.id, first.user.id));
+    } finally {
+      for (const a of admins) await db.update(user).set({ isAdmin: true }).where(eq(user.id, a.id));
+    }
+  });
 });

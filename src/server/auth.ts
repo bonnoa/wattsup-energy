@@ -7,6 +7,7 @@ import { db } from "@/db";
 import * as schema from "@/db/schema";
 import { NAME_MAX, signupAllowed, validName } from "@/domain/signup";
 import { confirmEmailEmail, resetPasswordEmail } from "@/domain/mail";
+import { promoteFirstAdmin } from "./admin";
 import { ensureHousehold } from "./household";
 import { getSignupPolicy } from "./instance";
 import { mailConfigured, sendMail } from "./mail";
@@ -40,7 +41,8 @@ export const auth = betterAuth({
   },
   user: {
     // Administrateur de l'instance (SPEC §5) : lu dans la session, jamais saisissable
-    // (input: false, refusé à l'inscription comme dans updateUser).
+    // (input: false, refusé à l'inscription comme dans updateUser). Le premier compte d'une
+    // instance sans administrateur le devient (hook user.create.after).
     additionalFields: {
       isAdmin: { type: "boolean", required: false, defaultValue: false, input: false },
       // Thème (T43) : changé par une action dédiée qui valide la valeur.
@@ -134,6 +136,7 @@ export const auth = betterAuth({
         // idempotent : getHouseholdContext le rappelle si ce hook a échoué.
         after: async (user) => {
           await ensureHousehold(user.id);
+          await promoteFirstAdmin(user.id);
         },
       },
     },

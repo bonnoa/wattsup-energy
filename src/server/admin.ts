@@ -4,8 +4,8 @@ import { category, energyInterval, household, ingestLog, session, user } from "@
 import type { EnergyProfile } from "@/domain/profile";
 import type { HouseholdContext } from "./context";
 
-// Administration de l'instance (SPEC §9, Utilisateurs) : réservée au compte `user.is_admin`,
-// fixé par migration. Ces opérations sortent du cadre d'un foyer ; elles ne touchent jamais
+// Administration de l'instance (SPEC §9, Utilisateurs) : réservée aux comptes `user.is_admin`.
+// Sur une instance neuve, le premier compte créé devient administrateur. Ces opérations sortent du cadre d'un foyer ; elles ne touchent jamais
 // au compte de l'administrateur lui-même (ni à celui d'un autre administrateur).
 
 /** Opération réservée à l'administrateur. */
@@ -21,6 +21,20 @@ export class AdminError extends Error {}
 
 export function requireAdmin(ctx: HouseholdContext) {
   if (!ctx.isAdmin) throw new ForbiddenError();
+}
+
+/**
+ * Premier compte d'une instance sans administrateur : il le devient (en une seule requête,
+ * deux inscriptions simultanées ne peuvent pas être promues toutes les deux). Renvoie true
+ * si le compte a été promu.
+ */
+export async function promoteFirstAdmin(userId: string): Promise<boolean> {
+  const rows = await db.execute<{ id: string }>(sql`
+    update "user" set is_admin = true
+    where id = ${userId}
+      and not exists (select 1 from "user" where is_admin)
+    returning id`);
+  return rows.length > 0;
 }
 
 export interface AdminUser {

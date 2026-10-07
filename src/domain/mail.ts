@@ -4,6 +4,8 @@ export interface MailContent {
   subject: string;
   text: string;
   html: string;
+  /** Adresse de réponse (message de contact : l'expéditeur). */
+  replyTo?: string;
 }
 
 const escapeHtml = (s: string) =>
@@ -29,4 +31,42 @@ export function resetPasswordEmail(name: string, url: string): MailContent {
 <p style="font-size:13px;color:#6b6f68">Le lien est valable une heure. Si vous n'êtes pas à l'origine de cette demande, ignorez cet email : votre mot de passe reste inchangé.</p>
 </div></body></html>`;
   return { subject: "WattsUp Energy : nouveau mot de passe", text, html };
+}
+
+/** Cadre commun des emails : carte blanche sur le fond de l'appli. */
+const layout = (body: string) =>
+  `<!doctype html><html lang="fr"><body style="font-family:system-ui,sans-serif;color:#16181a;background:#f4f2ec;padding:24px">
+<div style="max-width:520px;margin:auto;background:#fff;border:1px solid #e4e0d6;border-radius:14px;padding:24px">
+${body}
+</div></body></html>`;
+
+const paragraphs = (s: string) =>
+  s
+    .split(/\n{2,}/)
+    .map((p) => `<p style="white-space:pre-wrap">${escapeHtml(p)}</p>`)
+    .join("\n");
+
+/** Nouvelle idée dans la boîte à idées : envoyée à l'administrateur. */
+export function newIdeaEmail(idea: {
+  title: string;
+  description: string;
+  authorName: string;
+  authorEmail: string;
+  url: string;
+}): MailContent {
+  const by = `${idea.authorName} <${idea.authorEmail}>`;
+  const text = [
+    `Nouvelle idée proposée par ${by} :`,
+    "",
+    idea.title,
+    ...(idea.description ? ["", idea.description] : []),
+    "",
+    `Boîte à idées : ${idea.url}`,
+  ].join("\n");
+  const html =
+    layout(`<p style="font-size:13px;color:#6b6f68">Nouvelle idée proposée par ${escapeHtml(by)}</p>
+<h2 style="font-size:17px;margin:8px 0">${escapeHtml(idea.title)}</h2>
+${idea.description ? paragraphs(idea.description) : ""}
+<p><a href="${escapeHtml(idea.url)}" style="display:inline-block;background:#16181a;color:#f4f2ec;padding:10px 16px;border-radius:8px;text-decoration:none">Ouvrir la boîte à idées</a></p>`);
+  return { subject: `Nouvelle idée : ${idea.title}`, text, html };
 }

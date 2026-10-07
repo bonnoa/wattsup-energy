@@ -1,9 +1,10 @@
 import type { MailContent } from "@/domain/mail";
 import type { FetchFn } from "./http";
 
-// Envoi d'emails par l'API Resend (https://resend.com) : seul usage, le mot de passe
-// oublié. Désactivé tant que RESEND_API_KEY et MAIL_FROM ne sont pas renseignés : le lien
-// « Mot de passe oublié » n'apparaît alors pas.
+// Envoi d'emails par l'API Resend (https://resend.com) : mot de passe oublié, nouvelle idée
+// et messages de contact pour l'administrateur. Désactivé tant que RESEND_API_KEY et MAIL_FROM
+// ne sont pas renseignés : le lien « Mot de passe oublié » et la page Contact n'apparaissent
+// alors pas, et les idées sont enregistrées sans notification.
 
 const RESEND_URL = "https://api.resend.com/emails";
 
@@ -35,7 +36,14 @@ export async function sendMail(
     method: "POST",
     signal: AbortSignal.timeout(10_000),
     headers: { authorization: `Bearer ${config.apiKey}`, "content-type": "application/json" },
-    body: JSON.stringify({ to, from: config.from, ...content }),
+    body: JSON.stringify({
+      to,
+      from: config.from,
+      subject: content.subject,
+      text: content.text,
+      html: content.html,
+      ...(content.replyTo ? { reply_to: content.replyTo } : {}),
+    }),
   });
   if (!res.ok) throw new Error(`Resend : HTTP ${res.status}`);
 }

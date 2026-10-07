@@ -354,3 +354,43 @@ export const instanceSettings = pgTable("instance_settings", {
     .defaultNow()
     .$onUpdate(() => new Date()),
 });
+
+export const ideaStatus = pgEnum("idea_status", ["new", "planned", "in_progress", "done"]);
+
+/**
+ * Boîte à idées (SPEC §9), commune à toute l'instance : hors foyer. Un compte supprimé laisse
+ * ses idées, sans auteur (author_id mis à null) ; ses votes partent avec lui.
+ */
+export const idea = pgTable(
+  "idea",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    authorId: text("author_id").references(() => user.id, { onDelete: "set null" }),
+    title: text("title").notNull(),
+    description: text("description").notNull().default(""),
+    status: ideaStatus("status").notNull().default("new"),
+    /** Version qui livre l'idée (statut « terminée »). */
+    version: text("version"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+  },
+  (t) => [index("idea_author_created_idx").on(t.authorId, t.createdAt)],
+);
+
+/** Un vote par compte et par idée. */
+export const ideaVote = pgTable(
+  "idea_vote",
+  {
+    ideaId: uuid("idea_id")
+      .notNull()
+      .references(() => idea.id, { onDelete: "cascade" }),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [primaryKey({ columns: [t.ideaId, t.userId] }), index("idea_vote_user_idx").on(t.userId)],
+);

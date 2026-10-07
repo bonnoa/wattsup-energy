@@ -379,12 +379,13 @@ Légende des tailles : **S** = 1–2 fichiers · **M** = 3–5 fichiers (hors te
   - Vérifier : `tests/unit/domain/signup.test.ts`, `tests/integration/account.test.ts` ; manuel
   - Fichiers : `src/domain/signup.ts`, `drizzle/0015_*.sql`, `src/server/instance.ts`, `src/app/(app)/admin/utilisateurs/signup-card.tsx`
 
-- [ ] **T37 — Boîte à idées** · M · Dépend de : T36
+- [x] **T37 — Boîte à idées** · M · Dépend de : T36
   - Acceptation :
     - Menu du profil : « Boîte à idées » → `/idees` ; formulaire titre (60 caractères) et description (1 000 caractères)
     - Liste commune à tous les comptes : titre, description, date, statut (Proposée, Planifiée, En cours, Terminée + version), votes (un par compte, retirable) ; tri par votes puis date ; filtre par statut et recherche (sans accents ni casse)
     - Administrateur seulement, signalé comme tel : changement de statut (version exigée pour « Terminée », version courante proposée) et suppression ; auteur affiché
     - Nouvelle idée : email à l'administrateur (si l'envoi d'emails est configuré) ; 5 idées par heure et par compte
+    - Bouton de soutien Buy Me a Coffee en bas de page
   - Vérifier : `tests/unit/domain/ideas.test.ts`, `tests/integration/ideas.test.ts` ; manuel
   - Fichiers : `src/domain/ideas.ts`, `drizzle/0016_*.sql`, `src/server/ideas.ts`, `src/server/actions/ideas.ts`, `src/app/(app)/idees/*`
 

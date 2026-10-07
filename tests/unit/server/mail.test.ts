@@ -32,6 +32,21 @@ describe("sendMail", () => {
     });
   });
 
+  it("adresse de réponse transmise en reply_to", async () => {
+    let body: unknown = null;
+    await sendMail(
+      "x@y.z",
+      { ...content, replyTo: "elise@example.test" },
+      config,
+      async (_u, init) => {
+        body = JSON.parse(String(init?.body));
+        return new Response("{}", { status: 200 });
+      },
+    );
+    expect(body).toMatchObject({ reply_to: "elise@example.test" });
+    expect(body).not.toHaveProperty("replyTo");
+  });
+
   it("refus de Resend ou configuration absente : erreur", async () => {
     await expect(
       sendMail("x@y.z", content, config, async () => new Response("", { status: 403 })),

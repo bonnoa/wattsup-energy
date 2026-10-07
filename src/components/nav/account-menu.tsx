@@ -3,10 +3,11 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState, type KeyboardEvent } from "react";
+import { Icon } from "@/components/ui";
 import { authClient } from "@/lib/auth-client";
 
 // Menu du profil : le bloc nom (barre latérale) ou l'initiale (mobile) l'ouvrent. « Mon
-// compte », puis un trait, puis « Se déconnecter ». Au clavier : focus sur le premier
+// compte », « Boîte à idées », puis un trait, puis « Se déconnecter ». Au clavier : focus sur le premier
 // élément à l'ouverture, flèches, Début / Fin ; Échap referme et rend le focus au bouton.
 // Fermé aussi par un clic à côté ou un changement de page.
 
@@ -67,7 +68,7 @@ export function AccountMenu({
   const [open, setOpen] = useState(false);
   const root = useRef<HTMLDivElement>(null);
   const initial = userName.slice(0, 1).toUpperCase();
-  const onAccount = pathname === "/compte";
+  const onAccount = pathname === "/compte" || pathname === "/idees";
 
   const menu = useRef<HTMLDivElement>(null);
   const button = useRef<HTMLButtonElement>(null);
@@ -177,6 +178,10 @@ export function AccountMenu({
           <Link href="/compte" role="menuitem" onClick={() => setOpen(false)} className={itemClass}>
             <UserIcon />
             Mon compte
+          </Link>
+          <Link href="/idees" role="menuitem" onClick={() => setOpen(false)} className={itemClass}>
+            <Icon name="bulb" size={16} />
+            Boîte à idées
           </Link>
           <div role="separator" className="my-1.5 border-t border-track" />
           <button type="button" role="menuitem" onClick={signOut} className={itemClass}>

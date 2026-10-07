@@ -78,9 +78,23 @@ async function insert(
   return row ? toRow(row) : null;
 }
 
-/** « + Sac versé » / « + ½ stère » : une consommation horodatée maintenant. */
-export async function addQuickConsumption(ctx: HouseholdContext, fuel: Fuel, now = new Date()) {
-  return insert(ctx, { fuel, type: "consumption", at: now, ...QUICK_CONSUMPTION[fuel] });
+/**
+ * « + Sac versé » / « + ½ stère » : une consommation horodatée maintenant ; `qty` (sacs ou
+ * stères) pour un décompte venu de Home Assistant.
+ */
+export async function addQuickConsumption(
+  ctx: HouseholdContext,
+  fuel: Fuel,
+  now = new Date(),
+  qty = QUICK_CONSUMPTION[fuel].qty,
+) {
+  return insert(ctx, {
+    fuel,
+    type: "consumption",
+    at: now,
+    unit: QUICK_CONSUMPTION[fuel].unit,
+    qty,
+  });
 }
 
 export interface PurchaseInput {

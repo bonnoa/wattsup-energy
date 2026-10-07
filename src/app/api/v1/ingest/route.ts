@@ -1,5 +1,7 @@
 import { isBackfill } from "@/domain/ingest/backfill";
+import { isFuelEvent } from "@/domain/ingest/fuel-event";
 import { backfill } from "@/server/ingest/backfill";
+import { fuelEvent } from "@/server/ingest/fuel-event";
 import { ingest } from "@/server/ingest/persist";
 import { verifyIngestToken } from "@/server/ingest/token";
 import { ingestRateLimiter } from "@/server/rate-limit";
@@ -28,9 +30,13 @@ export async function POST(request: Request): Promise<Response> {
   const body = await request.text();
   if (Buffer.byteLength(body) > MAX_BODY_BYTES) return tooLarge();
 
-  // Envoi d'historique (bloc `backfill`, SPEC §6.4) : traitement à part ; tout autre
-  // envoi suit le chemin ordinaire, inchangé.
+  // Décompte d'un combustible (bloc `fuel_event`, §6.5) et historique (bloc `backfill`,
+  // §6.4) : traitements à part ; tout autre envoi suit le chemin ordinaire, inchangé.
   const json = parseJson(body);
+  if (isFuelEvent(json)) {
+    const result = await fuelEvent(auth.householdId, json, body);
+    return Response.json(result.body, { status: result.status });
+  }
   if (isBackfill(json)) {
     const result = await backfill(auth.householdId, json, body);
     return Response.json(result.body, { status: result.status });

@@ -21,6 +21,7 @@ import { CategoriesCard } from "./categories-card";
 import { CsvCard } from "./csv-card";
 import { DayCard, RangeCard, SuspectCard } from "./data-cards";
 import { FuelSettingsCard } from "./fuel-settings-card";
+import { HaFuelCard } from "./ha-fuel-card";
 import { HaHistoryCard } from "./ha-history-card";
 import { IngestCard } from "./ingest-card";
 import { IngestLogCard } from "./ingest-log-card";
@@ -70,7 +71,7 @@ function Tabs({ tabs, active }: { tabs: readonly SettingsTab[]; active: Settings
   );
 }
 
-function EquipmentTab({ ctx }: { ctx: HouseholdContext }) {
+async function EquipmentTab({ ctx }: { ctx: HouseholdContext }) {
   return (
     <div className={panel}>
       {(ctx.profile.solar || ctx.profile.battery) && (
@@ -96,6 +97,7 @@ function EquipmentTab({ ctx }: { ctx: HouseholdContext }) {
           }}
         />
       )}
+      {(ctx.profile.pellet || ctx.profile.wood) && <HaFuelCard origin={await requestOrigin()} />}
     </div>
   );
 }

@@ -111,7 +111,14 @@ WattsUp ne remplace jamais une valeur déjà présente et rejette les valeurs
 invraisemblables (sauts de compteur). Le détail s'affiche dans WattsUp › Réglages › Home
 Assistant › Derniers envois.
 
-## 5. Vérifier
+## 5. Décompter un sac depuis Home Assistant (facultatif)
+
+Pour signaler « un sac versé » sans ouvrir WattsUp (bouton du tableau de bord, bouton
+physique près du poêle, automatisation) : importez le blueprint `wattsup_fuel.yaml`
+(WattsUp › Réglages › Équipements, bouton « Importer “sac versé” »), créez un script à partir
+de lui, puis appelez ce script où vous voulez. Une notification donne le stock restant.
+
+## 6. Vérifier
 
 - WattsUp : « Home Assistant connecté · Dernier push il y a X min » dans la navigation.
 - Home Assistant : en cas de refus (token, mode, format), une notification persistante

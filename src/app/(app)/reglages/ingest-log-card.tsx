@@ -6,7 +6,7 @@ export interface LogEntry {
   /** ISO. */
   receivedAt: string;
   httpStatus: number;
-  mode: "hourly" | "daily" | "backfill" | null;
+  mode: "hourly" | "daily" | "backfill" | "fuel" | null;
   payloadSize: number;
   warnings: unknown[];
   error: string | null;
@@ -70,7 +70,9 @@ export function IngestLogCard({
                         ? "horaire"
                         : e.mode === "daily"
                           ? "quotidien"
-                          : "historique"}
+                          : e.mode === "fuel"
+                            ? "combustible"
+                            : "historique"}
                     </span>
                   )}
                 </span>

@@ -1,0 +1,84 @@
+blueprint:
+  name: WattsUp Energy — sac versé
+  description: >-
+    Décompte un sac de granulés (ou un demi-stère de bois) dans WattsUp Energy, comme le
+    bouton « Sac versé » de l'appli. Lancez ce script depuis une carte bouton du tableau
+    de bord, un bouton physique (Zigbee, etc.) ou une automatisation.
+
+
+    Prérequis : le `rest_command` nommé `wattsup_push` (voir le README du dépôt WattsUp,
+    dossier homeassistant/). Le combustible doit être activé dans WattsUp › Réglages ›
+    Profil. Une notification donne le stock restant.
+  domain: script
+  source_url: https://github.com/bonnoa/wattsup-energy/blob/main/homeassistant/blueprints/wattsup_fuel.yaml
+  input:
+    fuel:
+      name: Combustible
+      default: pellet
+      selector:
+        select:
+          options:
+            - label: Granulés (un sac)
+              value: pellet
+            - label: Bois (un demi-stère)
+              value: wood
+    qty:
+      name: Quantité (facultatif)
+      description: >-
+        Sacs pour les granulés, stères pour le bois. Laissez 0 pour la quantité habituelle
+        (1 sac, ½ stère).
+      default: 0
+      selector:
+        number:
+          min: 0
+          max: 50
+          step: 0.5
+          mode: box
+    notify:
+      name: Notifier le stock restant
+      default: true
+      selector:
+        boolean: {}
+
+mode: queued
+max: 5
+
+variables:
+  fuel: !input fuel
+  qty: !input qty
+  notify: !input notify
+  payload: >-
+    {%- set e = {'fuel': fuel} -%}
+    {%- if qty | float(0) > 0 -%}{%- set e = dict(e, qty=qty | float) -%}{%- endif -%}
+    {{ {'version': 1, 'fuel_event': e} | to_json }}
+
+sequence:
+  - action: rest_command.wattsup_push
+    data:
+      payload: "{{ payload }}"
+    response_variable: wattsup_response
+    continue_on_error: true
+  - if:
+      - condition: template
+        value_template: >-
+          {{ wattsup_response is not defined or wattsup_response.status != 200 }}
+    then:
+      - action: persistent_notification.create
+        data:
+          notification_id: wattsup_fuel_error
+          title: WattsUp Energy — décompte refusé
+          message: >-
+            Statut {{ wattsup_response.status if wattsup_response is defined else 'inconnu' }} :
+            {{ wattsup_response.content if wattsup_response is defined else 'pas de réponse' }}
+    else:
+      - if:
+          - condition: template
+            value_template: "{{ notify }}"
+        then:
+          - action: persistent_notification.create
+            data:
+              notification_id: wattsup_fuel
+              title: WattsUp Energy
+              message: >-
+                Décompte enregistré. Stock restant :
+                {{ wattsup_response.content.stock }} {{ wattsup_response.content.unit }}.

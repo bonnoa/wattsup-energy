@@ -282,8 +282,11 @@ export const ingestLog = pgTable(
     householdId: householdRef(),
     receivedAt: timestamp("received_at", { withTimezone: true }).notNull().defaultNow(),
     httpStatus: integer("http_status").notNull(),
-    /** Granularité de l'envoi, ou « backfill » pour un envoi d'historique (SPEC §6.4). */
-    mode: text("mode", { enum: ["hourly", "daily", "backfill"] }),
+    /**
+     * Granularité de l'envoi ; « backfill » : historique (SPEC §6.4) ; « fuel » : décompte
+     * d'un combustible (SPEC §6.5).
+     */
+    mode: text("mode", { enum: ["hourly", "daily", "backfill", "fuel"] }),
     payloadSize: integer("payload_size").notNull(),
     warnings: jsonb("warnings").$type<unknown[]>().notNull().default([]),
     error: text("error"),

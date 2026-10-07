@@ -71,6 +71,15 @@ export function describeWarnings(
         tone: "info",
         text: `Bloc « ${String(raw.key)} » non exploité par cette version.`,
       });
+    } else if (raw.code === "fuel_event") {
+      const n = (v: unknown) =>
+        typeof v === "number" ? v.toLocaleString("fr-FR", { maximumFractionDigits: 1 }) : "?";
+      const wood = raw.unit === "stères";
+      const what = wood ? `${n(raw.qty)} stère de bois` : `${n(raw.qty)} sac de granulés`;
+      lines.push({
+        tone: "info",
+        text: `Décompte depuis Home Assistant : ${what} ; stock restant ${n(raw.stock)} ${String(raw.unit)}.`,
+      });
     } else if (raw.code === "backfill") {
       lines.push(...backfillLines(raw));
     } else if (raw.code === "no_energy_data") {

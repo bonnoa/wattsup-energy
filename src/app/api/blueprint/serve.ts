@@ -4,7 +4,9 @@ import path from "node:path";
 // Blueprints Home Assistant (homeassistant/blueprints), publics : HA les importe depuis
 // ces adresses, l'utilisateur peut aussi les télécharger.
 
-export async function serveBlueprint(file: "wattsup_push.yaml" | "wattsup_history.yaml") {
+export async function serveBlueprint(
+  file: "wattsup_push.yaml" | "wattsup_history.yaml" | "wattsup_fuel.yaml",
+) {
   const yaml = await readFile(path.join(process.cwd(), "homeassistant/blueprints", file), "utf8");
   return new Response(yaml, {
     headers: {

@@ -286,6 +286,13 @@ Même endpoint, même token, même `rest_command` : un envoi qui porte un bloc `
 - Quota de valeurs par foyer partagé avec l'import CSV (§7.7). Journal : mode `backfill` (« historique »), résumé dans les avertissements ; un envoi d'historique ne compte pas comme dernier envoi pour l'état de la liaison.
 - Réponse `200` : `{ ok, inserted, existing, rejected: { implausible, negative, outOfRange, unknownCategory }, quotaReached }`.
 
+### 6.5 Décompte d'un combustible (bloc `fuel_event`, additionnel)
+
+Même endpoint, même token, même `rest_command` : `{ "version": 1, "fuel_event": { "fuel": "pellet" | "wood", "qty"?: number } }`. Enregistre une consommation horodatée maintenant, comme le bouton « Sac versé » : 1 sac (granulés) ou ½ stère (bois) par défaut, `qty` sinon (50 au plus). Lancé dans HA par le script « WattsUp Energy — sac versé » (blueprint `wattsup_fuel.yaml`), à brancher sur un bouton ou une automatisation.
+- `200` : `{ ok, id, stock, unit }` (stock restant en sacs ou stères, repris dans une notification HA).
+- `409` si le combustible n'est pas activé dans le profil du foyer ; `400` pour une forme invalide.
+- Journal : mode `fuel` (« combustible ») ; ne compte pas comme dernier envoi pour l'état de la liaison.
+
 ---
 
 ## 7. Règles métier

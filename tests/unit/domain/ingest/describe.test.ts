@@ -119,6 +119,17 @@ describe("describeWarnings — historique", () => {
   });
 });
 
+describe("describeWarnings — décompte de combustible", () => {
+  it("quantité et stock restant", () => {
+    expect(
+      describeWarnings(
+        [{ code: "fuel_event", fuel: "granulés", qty: 1, stock: 41.5, unit: "sacs" }],
+        {},
+      ).map((l) => l.text),
+    ).toEqual(["Décompte depuis Home Assistant : 1 sac de granulés ; stock restant 41,5 sacs."]);
+  });
+});
+
 describe("describeLogError", () => {
   it("erreurs de validation (JSON stocké) : une ligne par champ", () => {
     expect(

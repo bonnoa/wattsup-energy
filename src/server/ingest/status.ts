@@ -1,9 +1,9 @@
-import { and, desc, eq, ne } from "drizzle-orm";
+import { and, desc, eq, notInArray } from "drizzle-orm";
 import { db } from "@/db";
 import { ingestLog } from "@/db/schema";
 import type { HouseholdContext } from "../context";
 
-/** Date du dernier push ordinaire accepté (HTTP 200, hors envoi d'historique), ou null. */
+/** Date du dernier push ordinaire accepté (HTTP 200, hors historique et décompte), ou null. */
 export async function getLastPushAt(ctx: HouseholdContext): Promise<Date | null> {
   const [row] = await db
     .select({ at: ingestLog.receivedAt })
@@ -12,7 +12,7 @@ export async function getLastPushAt(ctx: HouseholdContext): Promise<Date | null>
       and(
         eq(ingestLog.householdId, ctx.householdId),
         eq(ingestLog.httpStatus, 200),
-        ne(ingestLog.mode, "backfill"),
+        notInArray(ingestLog.mode, ["backfill", "fuel"]),
       ),
     )
     .orderBy(desc(ingestLog.receivedAt))

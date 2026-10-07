@@ -19,7 +19,16 @@ const PLACEHOLDER: Record<ContactKind, string> = {
 };
 
 /** Motif et message ; l'expéditeur est le compte connecté (nom et adresse connus). */
-export function ContactForm({ name, email }: { name: string; email: string }) {
+export function ContactForm({
+  name,
+  email,
+  title,
+}: {
+  name: string;
+  email: string;
+  /** Titre de la carte : intitulé réglé par l'administrateur, sinon « Écrire à l'administrateur ». */
+  title: string;
+}) {
   const [kind, setKind] = useState<ContactKind>("contact");
   const [message, setMessage] = useState("");
   const [status, setStatus] = useState<{ ok: boolean; text: string } | null>(null);
@@ -44,7 +53,7 @@ export function ContactForm({ name, email }: { name: string; email: string }) {
   return (
     <Card
       icon="mail"
-      title="Écrire à l'administrateur"
+      title={title}
       description={
         <>
           Envoyé au nom de <span className="font-medium text-ink">{name}</span> ({email}) : la

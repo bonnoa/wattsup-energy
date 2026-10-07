@@ -18,13 +18,10 @@ export default async function ContactPage() {
   const texts = await getContactTexts();
   return (
     <>
-      <PageHeader
-        title={texts.label}
-        subtitle="Une question, une remarque ou un bug : écrivez à l'administrateur de WattsUp."
-      />
+      <PageHeader title={texts.label} subtitle={texts.intro} />
       <div className="flex max-w-2xl flex-col gap-5">
         {mailConfigured() ? (
-          <ContactForm name={ctx.userName} email={ctx.userEmail} />
+          <ContactForm name={ctx.userName} email={ctx.userEmail} title={texts.formTitle} />
         ) : (
           <Notice tone="info" title="Messagerie non configurée :">
             cette instance n&apos;envoie pas d&apos;emails, le formulaire de contact est donc

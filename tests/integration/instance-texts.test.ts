@@ -11,20 +11,25 @@ import { createTestHousehold } from "../helpers/tenancy";
 // mode d'inscription enregistré dans la même ligne.
 
 afterAll(async () => {
-  await db.update(instanceSettings).set({ contactLabel: null, contactNotice: null });
+  await db
+    .update(instanceSettings)
+    .set({ contactLabel: null, contactIntro: null, contactNotice: null });
 });
 
 describe("textes de la page Contact", () => {
   it("par défaut : « Contact » et aucun texte", async () => {
-    await db.update(instanceSettings).set({ contactLabel: null, contactNotice: null });
-    expect(await getContactTexts()).toEqual({ label: DEFAULT_CONTACT_LABEL, notice: null });
+    await db
+      .update(instanceSettings)
+      .set({ contactLabel: null, contactIntro: null, contactNotice: null });
+    expect((await getContactTexts()).label).toBe(DEFAULT_CONTACT_LABEL);
+    expect((await getContactTexts()).notice).toBeNull();
   });
 
   it("un non-administrateur ne peut pas les changer", async () => {
     const ctx = await createTestHousehold("texts-user");
-    await expect(updateContactTexts(ctx, { label: "Pirate", notice: null })).rejects.toThrow(
-      ForbiddenError,
-    );
+    await expect(
+      updateContactTexts(ctx, { label: "Pirate", intro: null, notice: null }),
+    ).rejects.toThrow(ForbiddenError);
     expect((await getContactTexts()).label).toBe(DEFAULT_CONTACT_LABEL);
   });
 
@@ -36,15 +41,18 @@ describe("textes de la page Contact", () => {
 
     await updateContactTexts(admin, {
       label: "Écrire au créateur",
+      intro: "Écrivez à Alex.",
       notice: "**Hébergé en France**",
     });
     expect(await getContactTexts()).toEqual({
       label: "Écrire au créateur",
+      intro: "Écrivez à Alex.",
+      formTitle: "Écrire au créateur",
       notice: "**Hébergé en France**",
     });
     expect(await getSignupPolicy()).toEqual(before);
 
-    await updateContactTexts(admin, { label: null, notice: null });
-    expect(await getContactTexts()).toEqual({ label: DEFAULT_CONTACT_LABEL, notice: null });
+    await updateContactTexts(admin, { label: null, intro: null, notice: null });
+    expect((await getContactTexts()).label).toBe(DEFAULT_CONTACT_LABEL);
   });
 });

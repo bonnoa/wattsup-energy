@@ -1,6 +1,10 @@
 import { db } from "@/db";
 import { instanceSettings } from "@/db/schema";
-import { resolveContactTexts, type ContactTexts } from "@/domain/instance-texts";
+import {
+  resolveContactTexts,
+  type ContactTexts,
+  type ContactTextsValue,
+} from "@/domain/instance-texts";
 import { resolveSignupPolicy, type SignupMode, type SignupPolicy } from "@/domain/signup";
 import { requireAdmin } from "./admin";
 import type { HouseholdContext } from "./context";
@@ -41,6 +45,7 @@ export async function getContactTexts(): Promise<ContactTexts> {
   const [row] = await db
     .select({
       contactLabel: instanceSettings.contactLabel,
+      contactIntro: instanceSettings.contactIntro,
       contactNotice: instanceSettings.contactNotice,
     })
     .from(instanceSettings);
@@ -50,10 +55,14 @@ export async function getContactTexts(): Promise<ContactTexts> {
 /** Enregistre les textes de la page Contact (validés par parseContactTexts). */
 export async function updateContactTexts(
   ctx: HouseholdContext,
-  input: { label: string | null; notice: string | null },
+  input: ContactTextsValue,
 ): Promise<void> {
   requireAdmin(ctx);
-  const values = { contactLabel: input.label, contactNotice: input.notice };
+  const values = {
+    contactLabel: input.label,
+    contactIntro: input.intro,
+    contactNotice: input.notice,
+  };
   await db
     .insert(instanceSettings)
     .values({ id: 1, ...values })

@@ -404,6 +404,8 @@ export const instanceSettings = pgTable("instance_settings", {
   inviteCodes: text("invite_codes"),
   /** Intitulé de l'entrée Contact du menu (T53) ; null : « Contact ». */
   contactLabel: text("contact_label"),
+  /** Phrase d'introduction de la page Contact (T53) ; null : phrase neutre. */
+  contactIntro: text("contact_intro"),
   /** Texte affiché sous le bouton de soutien de la page Contact (T53) ; null : aucun. */
   contactNotice: text("contact_notice"),
   updatedAt: timestamp("updated_at", { withTimezone: true })

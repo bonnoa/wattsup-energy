@@ -1,8 +1,11 @@
 import { describe, expect, it } from "vitest";
 import {
+  CONTACT_INTRO_MAX,
   CONTACT_LABEL_MAX,
   CONTACT_NOTICE_MAX,
+  DEFAULT_CONTACT_INTRO,
   DEFAULT_CONTACT_LABEL,
+  DEFAULT_FORM_TITLE,
   parseContactTexts,
   parseRichText,
   resolveContactTexts,
@@ -10,33 +13,54 @@ import {
 
 describe("parseContactTexts", () => {
   it("intitulé et texte nettoyés ; vides : valeurs par défaut (null)", () => {
-    expect(parseContactTexts({ label: "  Écrire au créateur ", notice: " Texte \n" })).toEqual({
+    expect(
+      parseContactTexts({
+        label: "  Écrire au créateur ",
+        intro: " Écrivez à Alex. ",
+        notice: " Texte \n",
+      }),
+    ).toEqual({
       ok: true,
-      value: { label: "Écrire au créateur", notice: "Texte" },
+      value: { label: "Écrire au créateur", intro: "Écrivez à Alex.", notice: "Texte" },
     });
-    expect(parseContactTexts({ label: " ", notice: "" })).toEqual({
+    expect(parseContactTexts({ label: " ", intro: "", notice: "" })).toEqual({
       ok: true,
-      value: { label: null, notice: null },
+      value: { label: null, intro: null, notice: null },
     });
   });
 
   it("refuse un intitulé ou un texte trop long, ou une valeur qui n'est pas du texte", () => {
-    expect(parseContactTexts({ label: "x".repeat(CONTACT_LABEL_MAX + 1), notice: "" }).ok).toBe(
-      false,
-    );
-    expect(parseContactTexts({ label: "", notice: "x".repeat(CONTACT_NOTICE_MAX + 1) }).ok).toBe(
-      false,
-    );
-    expect(parseContactTexts({ label: 3, notice: "" }).ok).toBe(false);
+    const ok = { label: "", intro: "", notice: "" };
+    expect(parseContactTexts({ ...ok, label: "x".repeat(CONTACT_LABEL_MAX + 1) }).ok).toBe(false);
+    expect(parseContactTexts({ ...ok, intro: "x".repeat(CONTACT_INTRO_MAX + 1) }).ok).toBe(false);
+    expect(parseContactTexts({ ...ok, notice: "x".repeat(CONTACT_NOTICE_MAX + 1) }).ok).toBe(false);
+    expect(parseContactTexts({ ...ok, label: 3 }).ok).toBe(false);
   });
 });
 
 describe("resolveContactTexts", () => {
-  it("« Contact » et aucun texte sans réglage", () => {
-    expect(resolveContactTexts(null)).toEqual({ label: DEFAULT_CONTACT_LABEL, notice: null });
-    expect(resolveContactTexts({ contactLabel: "Écrire au créateur", contactNotice: "A" })).toEqual(
-      { label: "Écrire au créateur", notice: "A" },
-    );
+  it("sans réglage : « Contact », phrase et titre du formulaire neutres, aucun texte", () => {
+    expect(resolveContactTexts(null)).toEqual({
+      label: DEFAULT_CONTACT_LABEL,
+      intro: DEFAULT_CONTACT_INTRO,
+      formTitle: DEFAULT_FORM_TITLE,
+      notice: null,
+    });
+  });
+
+  it("l'intitulé réglé sert aussi de titre au formulaire", () => {
+    expect(
+      resolveContactTexts({
+        contactLabel: "Écrire au créateur",
+        contactIntro: "Écrivez à Alex.",
+        contactNotice: "A",
+      }),
+    ).toEqual({
+      label: "Écrire au créateur",
+      intro: "Écrivez à Alex.",
+      formTitle: "Écrire au créateur",
+      notice: "A",
+    });
   });
 });
 

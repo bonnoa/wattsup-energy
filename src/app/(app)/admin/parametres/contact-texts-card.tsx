@@ -4,36 +4,43 @@ import { useState, useTransition } from "react";
 import { button, Card, Notice } from "@/components/ui";
 import { RichText } from "@/components/rich-text";
 import {
+  CONTACT_INTRO_MAX,
   CONTACT_LABEL_MAX,
   CONTACT_NOTICE_MAX,
+  DEFAULT_CONTACT_INTRO,
   DEFAULT_CONTACT_LABEL,
+  DEFAULT_FORM_TITLE,
 } from "@/domain/instance-texts";
 import { saveContactTextsAction } from "@/server/actions/admin";
 
-// Page Contact de l'instance (T53) : intitulé de l'entrée du menu et texte affiché sous le
-// bouton de soutien (hébergement, confidentialité…). Vides : « Contact » et aucun texte.
+// Page Contact de l'instance (T53) : intitulé de l'entrée du menu (titre de la page et du
+// formulaire), phrase d'introduction et texte affiché sous le bouton de soutien
+// (hébergement, confidentialité…). Vides : textes neutres.
 
 const inputClass =
   "w-full rounded-[8px] border border-border-strong bg-surface px-3 text-[14px] text-ink outline-none focus:border-ink focus-visible:ring-2 focus-visible:ring-grid/30";
 
 export function ContactTextsCard({
   label: savedLabel,
+  intro: savedIntro,
   notice: savedNotice,
   mailOn,
 }: {
   label: string;
+  intro: string;
   notice: string;
   /** Sans envoi d'emails, l'entrée Contact n'apparaît pas : le réglage reste possible. */
   mailOn: boolean;
 }) {
   const [label, setLabel] = useState(savedLabel === DEFAULT_CONTACT_LABEL ? "" : savedLabel);
+  const [intro, setIntro] = useState(savedIntro === DEFAULT_CONTACT_INTRO ? "" : savedIntro);
   const [notice, setNotice] = useState(savedNotice);
   const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null);
   const [pending, startTransition] = useTransition();
 
   const save = () =>
     startTransition(async () => {
-      const res = await saveContactTextsAction({ label, notice });
+      const res = await saveContactTextsAction({ label, intro, notice });
       setMessage(
         res.ok
           ? { ok: true, text: "Enregistré : visible dès maintenant dans le menu et sur la page." }
@@ -45,7 +52,7 @@ export function ContactTextsCard({
     <Card
       icon="mail"
       title="Page Contact"
-      description="Intitulé de l'entrée du menu du profil et texte affiché sous le bouton de soutien, par exemple l'hébergement et la confidentialité des données de cette instance."
+      description="Intitulé de l'entrée du menu du profil, phrase d'introduction et texte affiché sous le bouton de soutien, par exemple l'hébergement et la confidentialité des données de cette instance."
     >
       {!mailOn && (
         <Notice tone="info" title="Messagerie non configurée :">
@@ -66,6 +73,24 @@ export function ContactTextsCard({
           autoComplete="off"
           className={`${inputClass} h-10`}
         />
+        <span className="text-subtle">
+          Aussi titre de la page Contact et du formulaire (vide : « {DEFAULT_FORM_TITLE} »).
+        </span>
+      </label>
+      <label className="flex flex-col gap-1.5 text-xs text-muted">
+        Phrase d&apos;introduction
+        <input
+          value={intro}
+          onChange={(e) => {
+            setIntro(e.target.value);
+            setMessage(null);
+          }}
+          maxLength={CONTACT_INTRO_MAX}
+          placeholder={DEFAULT_CONTACT_INTRO}
+          autoComplete="off"
+          className={`${inputClass} h-10`}
+        />
+        <span className="text-subtle">Sous le titre de la page Contact.</span>
       </label>
       <label className="flex flex-col gap-1.5 text-xs text-muted">
         Texte sous le bouton de soutien (facultatif)

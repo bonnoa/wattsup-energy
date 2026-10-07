@@ -18,6 +18,7 @@ export default async function InstanceSettingsPage() {
       <div className="max-w-2xl">
         <ContactTextsCard
           label={texts.label}
+          intro={texts.intro}
           notice={texts.notice ?? ""}
           mailOn={mailConfigured()}
         />

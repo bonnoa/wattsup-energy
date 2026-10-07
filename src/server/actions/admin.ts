@@ -64,9 +64,10 @@ export async function saveSignupPolicyAction(
   });
 }
 
-/** Intitulé de l'entrée Contact et texte de la page Contact (administrateur seulement). */
+/** Intitulé de l'entrée Contact et textes de la page Contact (administrateur seulement). */
 export async function saveContactTextsAction(raw: {
   label: unknown;
+  intro: unknown;
   notice: unknown;
 }): Promise<AdminActionResult> {
   const parsed = parseContactTexts(raw);

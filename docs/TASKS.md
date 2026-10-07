@@ -487,6 +487,14 @@ Légende des tailles : **S** = 1–2 fichiers · **M** = 3–5 fichiers (hors te
   - Vérifier : `tests/unit/domain/redirect.test.ts`, `tests/unit/lib/security-headers.test.ts`, `tests/integration/ingest-guards.test.ts`, `e2e/security.spec.ts` (build de production) ; navigateur : aucune violation CSP (pages, navigation, action serveur)
   - Fichiers : `src/lib/security-headers.ts`, `next.config.ts`, `src/middleware.ts`, `src/domain/redirect.ts`, `src/app/(auth)/auth-form.tsx`, `src/server/actions/ideas.ts`, `src/app/api/v1/ingest/route.ts`
 
+- [x] **T52 — Changement d'email protégé** · S · Dépend de : T51 (validé le 2026-10-07)
+  - Acceptation :
+    - Mon compte › Adresse email : mot de passe actuel exigé (refus côté serveur sinon, même par l'API)
+    - Envoi d'emails configuré : lien de confirmation valable une heure envoyé à la nouvelle adresse ; l'ancienne reste valable jusqu'à l'ouverture du lien ; retour sur Mon compte avec « Adresse confirmée » ou « Lien expiré »
+    - Sans envoi d'emails : changement immédiat, comme avant
+  - Vérifier : `tests/unit/domain/mail.test.ts`, `tests/integration/email-change.test.ts`, `tests/integration/email-change-mail.test.ts` (Resend simulé) ; navigateur
+  - Fichiers : `src/server/auth.ts`, `src/domain/mail.ts`, `src/app/(app)/compte/account-card.tsx`, `src/app/(app)/compte/page.tsx`
+
 ### Ensuite (à voir ensemble)
 
 - T34 : mise à jour GitHub (README, image Docker GHCR, tag `v1.0.0`)

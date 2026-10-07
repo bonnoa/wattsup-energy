@@ -1,6 +1,23 @@
 import { describe, expect, it } from "vitest";
 import type { Alert } from "@/domain/alerts";
-import { alertsEmail, contactEmail, newIdeaEmail, resetPasswordEmail } from "@/domain/mail";
+import {
+  alertsEmail,
+  confirmEmailEmail,
+  contactEmail,
+  newIdeaEmail,
+  resetPasswordEmail,
+} from "@/domain/mail";
+
+describe("confirmEmailEmail", () => {
+  it("lien de confirmation dans le texte et le HTML, valable une heure ; prénom échappé", () => {
+    const m = confirmEmailEmail("<Alex>", "https://wattsup.test/api/auth/verify-email?token=a&b");
+    expect(m.subject).toContain("adresse");
+    expect(m.text).toContain("https://wattsup.test/api/auth/verify-email?token=a&b");
+    expect(m.text).toMatch(/une heure/);
+    expect(m.html).toContain('href="https://wattsup.test/api/auth/verify-email?token=a&amp;b"');
+    expect(m.html).toContain("&lt;Alex&gt;");
+  });
+});
 
 describe("resetPasswordEmail", () => {
   it("lien dans le texte et le HTML ; prénom échappé", () => {

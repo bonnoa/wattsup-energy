@@ -49,6 +49,27 @@ const paragraphs = (s: string) =>
     .map((p) => `<p style="white-space:pre-wrap">${escapeHtml(p)}</p>`)
     .join("\n");
 
+/**
+ * Confirmation d'une adresse (changement d'email, T52) : envoyée à la nouvelle adresse, qui
+ * ne remplace l'ancienne qu'une fois le lien ouvert (valable une heure).
+ */
+export function confirmEmailEmail(name: string, url: string): MailContent {
+  const hello = name ? `Bonjour ${name},` : "Bonjour,";
+  const text = [
+    hello,
+    "",
+    "Pour utiliser cette adresse avec votre compte WattsUp Energy, ouvrez ce lien (il est valable une heure) :",
+    url,
+    "",
+    "Si vous n'êtes pas à l'origine de cette demande, ignorez cet email : rien ne change.",
+  ].join("\n");
+  const html = layout(`<p>${escapeHtml(hello)}</p>
+<p>Pour utiliser cette adresse avec votre compte WattsUp Energy, confirmez-la :</p>
+<p><a href="${escapeHtml(url)}" style="display:inline-block;background:#16181a;color:#f4f2ec;padding:10px 16px;border-radius:8px;text-decoration:none">Confirmer cette adresse</a></p>
+<p style="font-size:13px;color:#6b6f68">Le lien est valable une heure. Si vous n'êtes pas à l'origine de cette demande, ignorez cet email : rien ne change.</p>`);
+  return { subject: "WattsUp Energy : confirmez votre adresse email", text, html };
+}
+
 /** Nouvelle idée dans la boîte à idées : envoyée à l'administrateur. */
 export function newIdeaEmail(idea: {
   title: string;

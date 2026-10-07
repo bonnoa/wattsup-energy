@@ -179,6 +179,7 @@ Taille : **S** = 1–2 fichiers · **M** = 3–5 fichiers. Aucune tâche L/XL.
 | # | Tâche | Taille | Dépend de | Critère d'acceptation clé |
 |---|---|---|---|---|
 | T51 | Passe de sécurisation : en-têtes (CSP à nonce, HSTS…), redirection après connexion, liens des emails, corps de l'ingestion borné, audit des dépendances | S | T50 | aucune violation CSP sur les pages ; `?suite=//autre-site` ramène à l'accueil (test) |
+| T52 | Changement d'email : mot de passe actuel exigé, confirmation par lien envoyé à la nouvelle adresse (si l'envoi d'emails est configuré) | S | T51 | une session sans le mot de passe ne change pas l'adresse (test) |
 
 **Ensuite** : T34 (GitHub : README, image, `v1.0.0`), puis wiki. Bilan mensuel par email et foyer partagé écartés pour l'instant.
 

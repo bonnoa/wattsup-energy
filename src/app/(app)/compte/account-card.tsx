@@ -96,15 +96,39 @@ function NameForm({ name }: { name: string }) {
   );
 }
 
+/** Retour du lien de confirmation (Mon compte, `?email=confirme`, T52). */
+export type EmailConfirmation = "ok" | "invalid" | null;
+
+const CONFIRMATION_MESSAGES: Record<"ok" | "invalid", Message> = {
+  ok: { ok: true, text: "Adresse confirmée : connectez-vous désormais avec elle." },
+  invalid: {
+    ok: false,
+    text: "Lien expiré ou déjà utilisé : votre adresse n'a pas changé. Recommencez si besoin.",
+  },
+};
+
 /**
  * Adresse email de connexion : saisie deux fois (une faute de frappe empêcherait de se
- * reconnecter). Une adresse déjà prise ne change rien : Better Auth ne le dit pas, pour ne
- * pas révéler qu'elle existe ; on le constate en relisant la session.
+ * reconnecter) et mot de passe actuel exigé. Avec l'envoi d'emails (`confirmByEmail`), un
+ * lien part vers la nouvelle adresse et l'ancienne reste valable jusqu'à son ouverture ;
+ * sinon le changement est immédiat. Une adresse déjà prise ne change rien : Better Auth ne
+ * le dit pas, pour ne pas révéler qu'elle existe ; sans emails, on le constate en relisant
+ * la session.
  */
-function EmailForm({ email }: { email: string }) {
+function EmailForm({
+  email,
+  confirmByEmail,
+  confirmation,
+}: {
+  email: string;
+  confirmByEmail: boolean;
+  confirmation: EmailConfirmation;
+}) {
   const router = useRouter();
   const [editing, setEditing] = useState(false);
-  const [message, setMessage] = useState<Message>(null);
+  const [message, setMessage] = useState<Message>(
+    confirmation ? CONFIRMATION_MESSAGES[confirmation] : null,
+  );
   const [pending, setPending] = useState(false);
 
   const changeEmail = async (e: FormEvent<HTMLFormElement>) => {
@@ -116,8 +140,14 @@ function EmailForm({ email }: { email: string }) {
       return;
     }
     setPending(true);
-    const { error } = await authClient.changeEmail({ newEmail: next });
-    const session = error ? null : await authClient.getSession();
+    // Le mot de passe est vérifié par un hook du serveur (absent du type de Better Auth).
+    const body = {
+      newEmail: next,
+      password: String(form.get("password")),
+      callbackURL: "/compte?email=confirme",
+    };
+    const { error } = await authClient.changeEmail(body);
+    const session = error || confirmByEmail ? null : await authClient.getSession();
     setPending(false);
     if (error) {
       setMessage({
@@ -125,7 +155,17 @@ function EmailForm({ email }: { email: string }) {
         text:
           error.message === "Email is the same"
             ? "C'est déjà votre adresse."
-            : "Changement impossible. Vérifiez l'adresse et réessayez.",
+            : error.code === "INVALID_PASSWORD"
+              ? "Mot de passe incorrect."
+              : "Changement impossible. Vérifiez l'adresse et réessayez.",
+      });
+      return;
+    }
+    setEditing(false);
+    if (confirmByEmail) {
+      setMessage({
+        ok: true,
+        text: `Lien envoyé à ${next} : ouvrez-le dans l'heure pour confirmer. D'ici là, votre adresse reste ${email}. Rien reçu ? L'adresse est peut-être déjà utilisée par un autre compte.`,
       });
       return;
     }
@@ -133,7 +173,6 @@ function EmailForm({ email }: { email: string }) {
       setMessage({ ok: false, text: "Cette adresse est déjà utilisée par un autre compte." });
       return;
     }
-    setEditing(false);
     setMessage({ ok: true, text: `Adresse changée : connectez-vous désormais avec ${next}.` });
     router.refresh();
   };
@@ -184,9 +223,19 @@ function EmailForm({ email }: { email: string }) {
               />
             </label>
           </div>
+          <label className={labelClass}>
+            Mot de passe actuel
+            <input
+              name="password"
+              type="password"
+              required
+              autoComplete="current-password"
+              className={inputClass}
+            />
+          </label>
           <div className="flex gap-2">
             <button type="submit" disabled={pending} className={button.primary}>
-              Changer d&apos;adresse
+              {confirmByEmail ? "Envoyer le lien de confirmation" : "Changer d'adresse"}
             </button>
             <button type="button" onClick={() => setEditing(false)} className={button.secondary}>
               Annuler
@@ -200,7 +249,17 @@ function EmailForm({ email }: { email: string }) {
 }
 
 /** Identité et identifiants : nom affiché, adresse email de connexion et mot de passe. */
-export function AccountCard({ name, email }: { name: string; email: string }) {
+export function AccountCard({
+  name,
+  email,
+  confirmByEmail,
+  confirmation,
+}: {
+  name: string;
+  email: string;
+  confirmByEmail: boolean;
+  confirmation: EmailConfirmation;
+}) {
   const [message, setMessage] = useState<Message>(null);
   const [pending, setPending] = useState(false);
 
@@ -238,7 +297,7 @@ export function AccountCard({ name, email }: { name: string; email: string }) {
     >
       <NameForm name={name} />
       <div className="border-t border-track pt-4">
-        <EmailForm email={email} />
+        <EmailForm email={email} confirmByEmail={confirmByEmail} confirmation={confirmation} />
       </div>
       <form onSubmit={changePassword} className="flex flex-col gap-3 border-t border-track pt-4">
         <h3 className="text-sm font-semibold">Changer de mot de passe</h3>

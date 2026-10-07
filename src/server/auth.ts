@@ -1,15 +1,19 @@
 import { eq } from "drizzle-orm";
 import { betterAuth } from "better-auth";
-import { APIError, createAuthMiddleware } from "better-auth/api";
+import { APIError, createAuthMiddleware, getSessionFromCtx } from "better-auth/api";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { nextCookies } from "better-auth/next-js";
 import { db } from "@/db";
 import * as schema from "@/db/schema";
 import { NAME_MAX, signupAllowed, validName } from "@/domain/signup";
-import { resetPasswordEmail } from "@/domain/mail";
+import { confirmEmailEmail, resetPasswordEmail } from "@/domain/mail";
 import { ensureHousehold } from "./household";
 import { getSignupPolicy } from "./instance";
 import { mailConfigured, sendMail } from "./mail";
+
+// Envoi d'emails configuré au démarrage (RESEND_API_KEY, MAIL_FROM) : mot de passe oublié et
+// confirmation d'une nouvelle adresse par lien.
+const mailOn = mailConfigured();
 
 export const auth = betterAuth({
   database: drizzleAdapter(db, { provider: "pg", schema }),
@@ -18,7 +22,7 @@ export const auth = betterAuth({
     minPasswordLength: 10,
     // Mot de passe oublié (si l'envoi d'emails est configuré) : lien valable une heure ;
     // les sessions ouvertes sont fermées après le changement.
-    ...(mailConfigured()
+    ...(mailOn
       ? {
           resetPasswordTokenExpiresIn: 3600,
           revokeSessionsOnPasswordReset: true,
@@ -45,11 +49,28 @@ export const auth = betterAuth({
     // Suppression du compte depuis la page Compte (mot de passe exigé) : le foyer et toutes
     // ses données partent en cascade.
     deleteUser: { enabled: true },
-    // Changement d'email depuis la page Compte. L'instance n'envoie pas d'email : les
-    // adresses ne sont jamais vérifiées, le changement s'applique donc directement (session
-    // récente exigée par Better Auth ; l'interface fait saisir l'adresse deux fois).
-    changeEmail: { enabled: true, updateEmailWithoutVerification: true },
+    // Changement d'email depuis la page Compte (T52), mot de passe actuel exigé (hook
+    // ci-dessous). Avec l'envoi d'emails, la nouvelle adresse ne remplace l'ancienne qu'une
+    // fois le lien qui lui est envoyé ouvert ; sans, le changement s'applique directement
+    // (l'interface fait saisir l'adresse deux fois).
+    changeEmail: { enabled: true, updateEmailWithoutVerification: !mailOn },
   },
+  ...(mailOn
+    ? {
+        emailVerification: {
+          expiresIn: 3600,
+          sendVerificationEmail: async ({
+            user,
+            url,
+          }: {
+            user: { email: string; name: string };
+            url: string;
+          }) => {
+            await sendMail(user.email, confirmEmailEmail(user.name, url));
+          },
+        },
+      }
+    : {}),
   hooks: {
     // L'inscription respecte le mode de l'instance (réglage de l'administrateur, sinon
     // SIGNUP_MODE), y compris par un appel direct à l'API.
@@ -62,6 +83,26 @@ export const auth = betterAuth({
             message: `nom attendu, ${NAME_MAX} caractères au plus`,
           });
         }
+      }
+      // Changement d'email : mot de passe actuel exigé. Une session volée ne suffit donc
+      // pas à détourner le compte (nouvelle adresse puis « mot de passe oublié »).
+      if (ctx.path === "/change-email") {
+        const session = await getSessionFromCtx(ctx);
+        if (!session) return; // refusé ensuite par Better Auth (401)
+        const password: unknown = ctx.body?.password;
+        const account = await ctx.context.internalAdapter.findCredentialAccount(session.user.id);
+        const valid =
+          typeof password === "string" &&
+          password.length <= 128 &&
+          Boolean(account?.password) &&
+          (await ctx.context.password.verify({ hash: account?.password ?? "", password }));
+        if (!valid) {
+          throw new APIError("BAD_REQUEST", {
+            message: "mot de passe incorrect",
+            code: "INVALID_PASSWORD",
+          });
+        }
+        return;
       }
       if (ctx.path !== "/sign-up/email") return;
       const policy = await getSignupPolicy();

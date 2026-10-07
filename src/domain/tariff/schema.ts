@@ -95,7 +95,7 @@ export const CONTRACT_PRESETS: readonly ContractInput[] = [
     contract: { kind: "base", subscriptionEurYear: 229.2, priceEurKwh: 0.2516 },
   },
   {
-    name: "Heures creuses 22 h – 6 h",
+    name: "Heures creuses",
     contract: {
       kind: "hphc",
       subscriptionEurYear: 236.4,

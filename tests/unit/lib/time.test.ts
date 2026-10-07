@@ -37,6 +37,68 @@ describe("localParts", () => {
   });
 });
 
+describe("localParts : identique à Intl, en cache par quart d'heure", () => {
+  const reference = (instant: Date, timeZone: string) => {
+    const parts: Record<string, string> = {};
+    for (const p of new Intl.DateTimeFormat("en-US", {
+      timeZone,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      weekday: "short",
+      hourCycle: "h23",
+    }).formatToParts(instant))
+      parts[p.type] = p.value;
+    const weekdays: Record<string, number> = {
+      Mon: 1,
+      Tue: 2,
+      Wed: 3,
+      Thu: 4,
+      Fri: 5,
+      Sat: 6,
+      Sun: 7,
+    };
+    return {
+      date: `${parts.year}-${parts.month}-${parts.day}`,
+      hour: Number(parts.hour),
+      minute: Number(parts.minute),
+      weekday: weekdays[parts.weekday ?? ""] ?? 0,
+    };
+  };
+
+  it("toutes les 7 minutes autour des changements d'heure, dans plusieurs fuseaux", () => {
+    const zones = [
+      "Europe/Paris",
+      "America/New_York",
+      "Australia/Lord_Howe", // changement d'heure d'une demi-heure
+      "Asia/Kathmandu", // décalage de 5 h 45
+      "Pacific/Chatham", // décalage de 12 h 45 avec heure d'été
+      "UTC",
+    ];
+    const windows = [
+      "2026-03-29T00:00:00Z",
+      "2026-10-25T00:00:00Z",
+      "2026-04-05T12:00:00Z",
+      "2026-03-08T05:00:00Z",
+      "2026-11-01T04:00:00Z",
+      "2026-09-27T12:00:00Z",
+    ];
+    for (const zone of zones) {
+      for (const start of windows) {
+        const from = Date.parse(start) - 6 * 3_600_000;
+        for (let t = from; t < from + 12 * 3_600_000; t += 7 * 60_000 + 13_000) {
+          const instant = new Date(t);
+          expect(localParts(instant, zone), `${zone} ${instant.toISOString()}`).toEqual(
+            reference(instant, zone),
+          );
+        }
+      }
+    }
+  });
+});
+
 describe("dates locales", () => {
   it("addDays traverse les mois et les années", () => {
     expect(addDays("2026-12-31", 1)).toBe("2027-01-01");

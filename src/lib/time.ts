@@ -31,7 +31,7 @@ function formatter(timeZone: string): Intl.DateTimeFormat {
 
 const WEEKDAYS: Record<string, number> = { Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6, Sun: 7 };
 
-export function localParts(instant: Date, timeZone: string): LocalParts {
+function intlParts(instant: Date, timeZone: string): LocalParts {
   const parts: Record<string, string> = {};
   for (const p of formatter(timeZone).formatToParts(instant)) parts[p.type] = p.value;
   return {
@@ -39,6 +39,59 @@ export function localParts(instant: Date, timeZone: string): LocalParts {
     hour: Number(parts.hour),
     minute: Number(parts.minute),
     weekday: WEEKDAYS[parts.weekday ?? ""] ?? 0,
+  };
+}
+
+// Intl est lent (plusieurs dizaines de µs par appel) et un calcul de page convertit des
+// centaines de milliers d'instants. Le décalage d'un fuseau ne change qu'aux changements
+// d'heure, toujours sur un quart d'heure UTC : il est calculé une fois par quart d'heure et
+// gardé en mémoire (vidée au-delà d'un plafond).
+const QUARTER_MS = 15 * 60_000;
+const OFFSETS_MAX = 400_000;
+const offsets = new Map<string, Map<number, number>>();
+
+/** Décalage du fuseau (minutes, heure locale − UTC) pour le quart d'heure de l'instant. */
+function offsetMinutes(ms: number, timeZone: string): number {
+  const quarter = Math.floor(ms / QUARTER_MS);
+  let zone = offsets.get(timeZone);
+  if (!zone) {
+    zone = new Map();
+    offsets.set(timeZone, zone);
+  }
+  let offset = zone.get(quarter);
+  if (offset === undefined) {
+    const at = quarter * QUARTER_MS;
+    const p = intlParts(new Date(at), timeZone);
+    offset = Math.round(
+      (Date.parse(`${p.date}T00:00:00Z`) + (p.hour * 60 + p.minute) * 60_000 - at) / 60_000,
+    );
+    if (zone.size >= OFFSETS_MAX) zone.clear();
+    zone.set(quarter, offset);
+  }
+  return offset;
+}
+
+const DAY_LENGTH_MS = 86_400_000;
+/** Chaîne AAAA-MM-JJ de chaque jour déjà rencontré (index : jours depuis 1970-01-01). */
+const dayStrings = new Map<number, string>();
+
+export function localParts(instant: Date, timeZone: string): LocalParts {
+  const ms = instant.getTime();
+  const local = ms + offsetMinutes(ms, timeZone) * 60_000;
+  const day = Math.floor(local / DAY_LENGTH_MS);
+  let date = dayStrings.get(day);
+  if (date === undefined) {
+    date = new Date(day * DAY_LENGTH_MS).toISOString().slice(0, 10);
+    if (dayStrings.size >= OFFSETS_MAX) dayStrings.clear();
+    dayStrings.set(day, date);
+  }
+  const minutes = Math.floor((local - day * DAY_LENGTH_MS) / 60_000);
+  return {
+    date,
+    hour: Math.floor(minutes / 60),
+    minute: minutes % 60,
+    // Le 1er janvier 1970 était un jeudi (4).
+    weekday: ((((day + 3) % 7) + 7) % 7) + 1,
   };
 }
 

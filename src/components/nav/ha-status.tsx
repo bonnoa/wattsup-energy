@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { pushState } from "@/domain/ingest/push-state";
+import { formatAgo } from "@/lib/format";
 
 interface Props {
   lastPushAt: string | null;
@@ -9,15 +10,6 @@ interface Props {
   /** Heure du rendu serveur : garantit un premier rendu identique côté client. */
   renderedAt: string;
   compact?: boolean;
-}
-
-function ago(ms: number): string {
-  const min = Math.max(0, Math.round(ms / 60_000));
-  if (min < 1) return "à l'instant";
-  if (min < 60) return `il y a ${min} min`;
-  const h = Math.round(min / 60);
-  if (h < 48) return `il y a ${h} h`;
-  return `il y a ${Math.round(h / 24)} j`;
 }
 
 export function HaStatus({ lastPushAt, granularity, renderedAt, compact }: Props) {
@@ -31,7 +23,7 @@ export function HaStatus({ lastPushAt, granularity, renderedAt, compact }: Props
   const last = lastPushAt ? Date.parse(lastPushAt) : null;
   const state = pushState(last, now, granularity);
   const dot = { never: "bg-subtle", stale: "bg-pellet", ok: "bg-battery" }[state];
-  const since = last === null ? "" : ago(now - last);
+  const since = last === null ? "" : formatAgo(now - last);
 
   if (compact) {
     return (

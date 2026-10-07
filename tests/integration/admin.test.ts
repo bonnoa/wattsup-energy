@@ -108,7 +108,7 @@ describe("compte administrateur", () => {
     }
   });
 
-  it("liste des comptes : profil, postes et valeurs enregistrées", async () => {
+  it("liste des comptes : profil, postes, valeurs enregistrées et dernier envoi", async () => {
     const admin = await createAdmin();
     const b = await createTestHousehold("b");
     await createCategory(b, {
@@ -131,6 +131,10 @@ describe("compte administrateur", () => {
     const row = rows.find((r) => r.id === b.userId);
     expect(row).toMatchObject({ name: "b", categories: 1, isAdmin: false, disabledAt: null });
     expect(row?.values).toBeGreaterThan(0);
+    expect(row?.lastPushAt).toBeInstanceOf(Date);
+    expect(row?.granularity).toBe("hourly");
+    // Aucun envoi : pas de date.
+    expect(rows.find((r) => r.id === admin.userId)?.lastPushAt).toBeNull();
     expect(row?.profile).toMatchObject({ solar: false });
     expect(rows.find((r) => r.id === admin.userId)?.isAdmin).toBe(true);
   });

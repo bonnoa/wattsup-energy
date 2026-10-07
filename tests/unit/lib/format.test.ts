@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  formatAgo,
   formatDay,
   formatDuration,
   formatEur,
@@ -46,5 +47,16 @@ describe("format fr-FR", () => {
 
   it("formate un ratio en pourcentage", () => {
     expect(plain(formatPercent(0.68))).toBe("68 %");
+  });
+});
+
+describe("formatAgo", () => {
+  it("minutes, heures puis jours au-delà de 48 h", () => {
+    expect(formatAgo(20_000)).toBe("à l'instant");
+    expect(formatAgo(12 * 60_000)).toBe("il y a 12 min");
+    expect(formatAgo(5 * 3_600_000)).toBe("il y a 5 h");
+    expect(formatAgo(47 * 3_600_000)).toBe("il y a 47 h");
+    expect(formatAgo(72 * 3_600_000)).toBe("il y a 3 j");
+    expect(formatAgo(-5000)).toBe("à l'instant");
   });
 });

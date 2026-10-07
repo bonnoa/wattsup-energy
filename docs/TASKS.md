@@ -399,6 +399,81 @@ Légende des tailles : **S** = 1–2 fichiers · **M** = 3–5 fichiers (hors te
 
 ---
 
+## Jalon 8 : Comprendre et anticiper (validé le 2026-10-07)
+
+- [x] **T40 — Admin : dernier envoi Home Assistant par compte** · XS · Dépend de : T36
+  - Acceptation : colonne « Dernier envoi » de la page Utilisateurs (date relative, « jamais » sinon), envois d'historique et de combustible exclus comme dans le statut HA
+  - Vérifier : `tests/integration/admin.test.ts`
+  - Fichiers : `src/server/admin.ts`, `src/app/(app)/admin/utilisateurs/*`
+
+- [ ] **T41 — Talon de consommation** · S · Dépend de : T20
+  - Acceptation :
+    - Talon = consommation du foyer de nuit la plus basse et stable (médiane des minima horaires 1 h–5 h sur la période, jours complets seulement), en W, en kWh/an et en €/an au prix moyen du kWh
+    - Carte sur la Vue d'ensemble (mode horaire seulement) : talon du mois, évolution sur 12 mois, écart au mois précédent ; état « données insuffisantes »
+  - Vérifier : `tests/unit/domain/baseload.test.ts` (TDD) ; manuel
+  - Fichiers : `src/domain/baseload.ts`, `src/server/queries/overview.ts`, `src/components/cards/*`
+
+- [ ] **T42 — Projection de fin d'année** · S · Dépend de : T20, T16b
+  - Acceptation :
+    - Vue année en cours : « À ce rythme : X € sur l'année (N-1 : Y €) » ; mois restants estimés sur le même mois de N-1 corrigé de la tendance de l'année, chauffage corrigé des degrés-jours normaux
+    - Fourchette affichée si moins de 3 mois de données ; rien sans contrat
+  - Vérifier : `tests/unit/domain/projection.test.ts` (TDD)
+  - Fichiers : `src/domain/projection.ts`, `src/components/cards/*`
+
+- [ ] **T43 — Thème sombre** · M · Dépend de : T35
+  - Acceptation :
+    - Mon compte : Clair (défaut) / Sombre / Automatique (réglage de l'appareil), enregistré sur le compte (`user.theme`), appliqué dès le premier rendu (pas de flash)
+    - Tous les tokens de couleur ont leur version sombre ; graphiques, encarts et pastilles lisibles (contraste AA)
+  - Vérifier : manuel sur les 8 écrans, clair et sombre, 390 et 1280 px
+  - Fichiers : `src/app/globals.css`, `src/app/layout.tsx`, `src/app/(app)/compte/*`
+
+- [ ] **T44 — Alertes dans l'appli** · M · Dépend de : T27, T29, T20
+  - Acceptation :
+    - Calcul pur `evaluateAlerts` : stock de combustible sous N semaines (défaut 3), Home Assistant muet depuis N h (défaut 6), production solaire sous le rendement attendu de N % (défaut 15) pendant 3 jours, budget du mois en route pour dépasser N-1 de N % (défaut 15) ; seulement les modules du profil
+    - Vue d'ensemble : carte « À surveiller » (3 alertes au plus, action en un clic, « Masquer ») ; pastille sur l'entrée de menu concernée
+    - Une alerte masquée revient si elle s'aggrave ou au bout de 7 jours ; disparaît d'elle-même quand la cause est réglée (table `alert_dismissal`)
+    - Réglages › Alertes : chaque alerte activable, seuil réglable
+  - Vérifier : `tests/unit/domain/alerts.test.ts` (TDD), `tests/integration/alerts.test.ts` (isolation) ; manuel
+  - Fichiers : `src/domain/alerts.ts`, `src/server/alerts.ts`, `src/components/cards/alerts-card.tsx`, `src/app/(app)/reglages/*`
+
+- [ ] **T45 — Simulateur « Et si… »** · L · Dépend de : T29
+  - Acceptation :
+    - Rentabilité : batterie de X kWh (puissance, rendement) et/ou +Y kWc de panneaux, rejoués heure par heure sur les 12 derniers mois réels : autoconsommation, économie annuelle, coût saisi → amortissement
+    - Vue d'ensemble : si un contrat simulé ou de référence aurait coûté moins cher sur 12 mois, encart « Sur 12 mois, X vous aurait coûté Y € de moins » vers Contrats
+  - Vérifier : `tests/unit/domain/roi/simulate.test.ts` (TDD, bilan énergétique conservé) ; manuel
+  - Fichiers : `src/domain/roi/simulate.ts`, `src/app/(app)/rentabilite/*`
+
+- [ ] **T46 — Export de mes données** · S · Dépend de : T22
+  - Acceptation : Mon compte › « Exporter mes données » : un CSV de l'énergie au format de l'import (réimportable) et un JSON de tout le reste (foyer, réglages, postes, contrats et grilles, combustibles, équipements, repères) ; jamais de token ni de hash
+  - Vérifier : `tests/integration/export.test.ts` (aller-retour export → import identique ; isolation)
+  - Fichiers : `src/server/export.ts`, `src/app/api/export/*`
+
+- [ ] **T47 — Résumé lisible par Home Assistant** · M · Dépend de : T20, T27
+  - Acceptation : `GET /api/v1/summary` (même token que l'ingestion, lecture seule) : coût du jour et du mois, projection annuelle, stock en jours, alertes actives ; documenté avec un exemple de capteur REST pour HA ; limité comme l'ingestion
+  - Vérifier : `tests/integration/summary-route.test.ts` (token révoqué, compte désactivé : 401)
+  - Fichiers : `src/app/api/v1/summary/route.ts`, `homeassistant/README.md`
+
+- [ ] **T48 — Heures conseillées** · M · Dépend de : T20, T15
+  - Acceptation : carte « Quand consommer » : heures habituelles de surplus solaire (profil horaire des 30 derniers jours), heures creuses du contrat en cours, couleur Tempo de demain (rouge : décaler) ; seulement ce qui s'applique au foyer
+  - Vérifier : `tests/unit/domain/advice.test.ts` (TDD)
+  - Fichiers : `src/domain/advice.ts`, `src/components/cards/*`
+
+- [ ] **T49 — Notifications push** · M · Dépend de : T44
+  - Acceptation :
+    - Service worker minimal ; Mon compte : « Recevoir les alertes sur cet appareil » (abonnement par appareil, table `push_subscription`), désabonnement
+    - Planificateur horaire : envoie une alerte nouvelle ou aggravée, une seule fois ; abonnement expiré supprimé
+    - Clés VAPID en variables d'environnement ; sans elles, l'option n'apparaît pas
+  - Vérifier : `tests/integration/push.test.ts` (envoi simulé, dédoublonnage) ; manuel sur Android et iPhone (appli installée)
+  - Fichiers : `public/sw.js`, `src/server/push.ts`, `src/app/(app)/compte/*`
+
+### Ensuite (à voir ensemble)
+
+- Passe de sécurisation de l'ensemble (revue, en-têtes, limites, dépendances)
+- T34 : mise à jour GitHub (README, image Docker GHCR, tag `v1.0.0`)
+- Wiki (dont une page « Nouveautés » tirée des idées terminées)
+
+---
+
 ## Dépendances à valider avant la phase 4 (« Demander d'abord »)
 
 | Paquet | Usage | Tâche |
@@ -410,3 +485,4 @@ Légende des tailles : **S** = 1–2 fichiers · **M** = 3–5 fichiers (hors te
 | `vitest`, `@vitest/coverage-v8`, `msw`, `@playwright/test` | tests (dev) | T1, T16, T33 |
 | `csv-parse` | parsing CSV en flux | T22 |
 | `tsx` | exécution des scripts | T2 |
+| `web-push` | notifications push (VAPID, chiffrement) — accord du 2026-10-07 | T49 |

@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { Badge, button, Icon } from "@/components/ui";
+import type { PushState } from "@/domain/ingest/push-state";
 import { formatNumber } from "@/lib/format";
 import { deleteUserAction, setUserDisabledAction } from "@/server/actions/admin";
 
@@ -20,7 +21,15 @@ export interface UserRow {
   profiles: string[];
   categories: number;
   values: number;
+  /** Dernier envoi Home Assistant : état (même code couleur que le menu), délai, date exacte. */
+  lastPush: { state: PushState; ago: string | null; at: string | null };
 }
+
+const PUSH_DOT: Record<PushState, string> = {
+  never: "bg-subtle",
+  stale: "bg-pellet",
+  ok: "bg-battery",
+};
 
 function Actions({ row }: { row: UserRow }) {
   const [pending, startTransition] = useTransition();
@@ -94,7 +103,7 @@ export function UsersTable({ rows }: { rows: UserRow[] }) {
     // relative : le libellé sr-only de la colonne Actions reste dans le cadre qui défile
     // (sinon il élargit la page sur mobile).
     <div className="relative overflow-x-auto rounded-card border border-border bg-surface">
-      <table className="w-full min-w-[860px] border-collapse text-[13px]">
+      <table className="w-full min-w-[980px] border-collapse text-[13px]">
         <thead>
           <tr className="border-b border-track">
             <th className={th}>Utilisateur</th>
@@ -102,6 +111,7 @@ export function UsersTable({ rows }: { rows: UserRow[] }) {
             <th className={th}>Profils activés</th>
             <th className={`${th} text-right`}>Postes</th>
             <th className={`${th} text-right`}>Valeurs importées</th>
+            <th className={th}>Dernier envoi HA</th>
             <th className={th}>Statut</th>
             <th className={`${th} text-right`}>
               <span className="sr-only">Actions</span>
@@ -135,6 +145,17 @@ export function UsersTable({ rows }: { rows: UserRow[] }) {
               </td>
               <td className={`${td} text-right tabular-nums`}>{formatNumber(r.categories)}</td>
               <td className={`${td} text-right tabular-nums`}>{formatNumber(r.values)}</td>
+              <td className={td}>
+                <span
+                  className="flex items-center gap-1.5 whitespace-nowrap"
+                  title={r.lastPush.at ?? "Aucun envoi dans le journal (30 derniers jours)"}
+                >
+                  <span
+                    className={`size-[7px] flex-none rounded-full ${PUSH_DOT[r.lastPush.state]}`}
+                  />
+                  {r.lastPush.ago ?? <span className="text-subtle">aucun sur 30 j</span>}
+                </span>
+              </td>
               <td className={td}>
                 {r.isAdmin ? (
                   <Badge tone="warning">Administrateur</Badge>

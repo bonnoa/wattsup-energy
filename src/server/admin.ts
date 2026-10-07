@@ -1,6 +1,6 @@
 import { and, desc, eq, sql } from "drizzle-orm";
 import { db } from "@/db";
-import { category, energyInterval, household, session, user } from "@/db/schema";
+import { category, energyInterval, household, ingestLog, session, user } from "@/db/schema";
 import type { EnergyProfile } from "@/domain/profile";
 import type { HouseholdContext } from "./context";
 
@@ -36,6 +36,13 @@ export interface AdminUser {
   categories: number;
   /** Valeurs d'énergie enregistrées (heures ou jours, toutes métriques et sources). */
   values: number;
+  /** Granularité des envois du foyer (seuil de retard du statut HA). */
+  granularity: "hourly" | "daily" | null;
+  /**
+   * Dernier envoi Home Assistant accepté, hors historique et combustible (comme le statut HA
+   * du menu) ; null si aucun dans le journal (gardé 30 jours).
+   */
+  lastPushAt: Date | null;
 }
 
 /** Tous les comptes de l'instance, du plus récent au plus ancien. */
@@ -52,6 +59,11 @@ export async function listUsers(ctx: HouseholdContext): Promise<AdminUser[]> {
       profile: household.profile,
       categories: sql<number>`(select count(*) from ${category} where ${category.householdId} = ${household.id})::int`,
       values: sql<number>`(select count(*) from ${energyInterval} where ${energyInterval.householdId} = ${household.id})::int`,
+      granularity: household.granularity,
+      lastPushAt:
+        sql<Date | null>`(select max(${ingestLog.receivedAt}) from ${ingestLog} where ${ingestLog.householdId} = ${household.id} and ${ingestLog.httpStatus} = 200 and ${ingestLog.mode} not in ('backfill', 'fuel'))`.mapWith(
+          (v: string | Date | null) => (v === null ? null : new Date(v)),
+        ),
     })
     .from(user)
     .leftJoin(household, eq(household.ownerId, user.id))
@@ -62,10 +74,7 @@ export async function listUsers(ctx: HouseholdContext): Promise<AdminUser[]> {
 async function target(ctx: HouseholdContext, userId: string) {
   requireAdmin(ctx);
   if (userId === ctx.userId) throw new AdminError("impossible sur votre propre compte");
-  const [row] = await db
-    .select({ isAdmin: user.isAdmin })
-    .from(user)
-    .where(eq(user.id, userId));
+  const [row] = await db.select({ isAdmin: user.isAdmin }).from(user).where(eq(user.id, userId));
   if (row?.isAdmin) throw new AdminError("impossible sur un compte administrateur");
   return row ?? null;
 }

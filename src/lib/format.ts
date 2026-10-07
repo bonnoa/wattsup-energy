@@ -49,3 +49,13 @@ export function formatDuration(from: string, to: string): string {
     .filter(Boolean)
     .join(" et ");
 }
+
+/** Durée écoulée, en clair : « à l'instant », « il y a 12 min », « il y a 5 h », « il y a 3 j ». */
+export function formatAgo(ms: number): string {
+  const min = Math.max(0, Math.round(ms / 60_000));
+  if (min < 1) return "à l'instant";
+  if (min < 60) return `il y a ${min} min`;
+  const h = Math.round(min / 60);
+  if (h < 48) return `il y a ${h} h`;
+  return `il y a ${Math.round(h / 24)} j`;
+}

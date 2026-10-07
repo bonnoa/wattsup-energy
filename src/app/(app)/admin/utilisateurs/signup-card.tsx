@@ -119,10 +119,7 @@ export function SignupCard({
           Enregistrer
         </button>
         {message && (
-          <p
-            role="status"
-            className={`text-sm ${message.ok ? "text-positive" : "text-negative"}`}
-          >
+          <p role="status" className={`text-sm ${message.ok ? "text-positive" : "text-negative"}`}>
             {message.text}
           </p>
         )}

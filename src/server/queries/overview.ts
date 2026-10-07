@@ -30,6 +30,13 @@ import {
   type Period,
 } from "@/domain/overview";
 import { batteryGaps, type BatteryGap, type BatteryMonth } from "@/domain/battery-data";
+import {
+  baseloadBetween,
+  baseloadMonths,
+  monthsEndingAt,
+  nightlyMinima,
+  type NightHour,
+} from "@/domain/baseload";
 import { autoMarkers, markersBetween, type Marker } from "@/domain/markers";
 import { visibleModules } from "@/domain/profile";
 import {
@@ -119,6 +126,18 @@ export type Overview =
         isHeating: boolean;
         kwh: number;
       }[];
+      /**
+       * Talon de consommation (envois horaires seulement, sinon null) : période choisie,
+       * même période un an plus tôt, 12 derniers mois jusqu'à la fin de la période.
+       */
+      baseload: {
+        /** null : moins de 7 nuits complètes sur la période. */
+        watts: number | null;
+        previousWatts: number | null;
+        months: { month: string; watts: number | null }[];
+        /** Prix moyen du kWh soutiré sur l'année (hors abonnement), null sans contrat. */
+        centsPerKwh: number | null;
+      } | null;
       solar: {
         points: SolarPoint[];
         kwh: number;
@@ -161,6 +180,39 @@ async function gridIntervals(ctx: HouseholdContext, from: string, to: string) {
           kwh: r.kwh,
         },
   );
+}
+
+/**
+ * Consommation du foyer heure par heure, de minuit à 6 h (heure locale) : import + production
+ * + décharge − export − charge. Les heures sans import (donnée manquante) sont écartées.
+ */
+async function nightHours(ctx: HouseholdContext, from: string, to: string): Promise<NightHour[]> {
+  const local = sql`(${energyInterval.start} at time zone ${ctx.timezone})`;
+  const k = energyInterval.kwh;
+  const rows = await db
+    .select({
+      date: sql<string>`to_char(${local}, 'YYYY-MM-DD')`,
+      hour: sql<number>`extract(hour from ${local})::int`,
+      kwh: sql<number>`sum(case ${energyInterval.metric}
+          when 'grid_import' then ${k} when 'solar_production' then ${k}
+          when 'battery_discharge' then ${k}
+          when 'grid_export' then -${k} when 'battery_charge' then -${k} else 0 end)`.mapWith(
+        Number,
+      ),
+      hasImport: sql<boolean>`bool_or(${energyInterval.metric} = 'grid_import')`,
+    })
+    .from(energyInterval)
+    .where(
+      and(
+        eq(energyInterval.householdId, ctx.householdId),
+        eq(energyInterval.granularity, "hour"),
+        gte(energyInterval.start, zonedInstant(from, 0, ctx.timezone)),
+        lt(energyInterval.start, zonedInstant(to, 0, ctx.timezone)),
+        sql`extract(hour from ${local}) < 6`,
+      ),
+    )
+    .groupBy(energyInterval.start);
+  return rows.filter((r) => r.hasImport).map(({ date, hour, kwh }) => ({ date, hour, kwh }));
 }
 
 async function totalsByMetric(ctx: HouseholdContext, from: string, to: string) {
@@ -352,6 +404,7 @@ export async function getOverview(
     savedMarkers,
     equipment,
     solarByMonth,
+    nights,
   ] = await Promise.all([
     listContracts(ctx),
     gridIntervals(ctx, yearFrom, yearTo),
@@ -369,6 +422,7 @@ export async function getOverview(
     modules.solar
       ? solarMonths(ctx, previousYearFrom, yearTo)
       : new Map<string, Record<string, number>>(),
+    ctx.granularity === "hourly" ? nightHours(ctx, previousYearFrom, yearTo) : null,
   ]);
   const colors = await tempoColorsFor(ctx.householdId, addDays(previousYearFrom, -1), yearTo);
   const pricing = { timezone: tz, tempoColor: (d: string) => colors.get(d) };
@@ -470,6 +524,19 @@ export async function getOverview(
     };
   }
 
+  let baseload: Extract<Overview, { status: "ok" }>["baseload"] = null;
+  if (nights) {
+    const minima = nightlyMinima(nights);
+    // Dernier jour de la période (fin exclue), sans dépasser aujourd'hui.
+    const lastDay = [addDays(period.to, -1), today].sort()[0] as string;
+    baseload = {
+      watts: baseloadBetween(minima, period.from, period.to)?.watts ?? null,
+      previousWatts: baseloadBetween(minima, previous.from, previous.to)?.watts ?? null,
+      months: baseloadMonths(minima, monthsEndingAt(lastDay.slice(0, 7), 12)),
+      centsPerKwh: priced && yearCost.kwh > 0 ? yearCost.energyCents / yearCost.kwh : null,
+    };
+  }
+
   return {
     status: "ok",
     period,
@@ -496,6 +563,7 @@ export async function getOverview(
       yearTo,
     ),
     balance,
+    baseload,
     categories: categories
       .filter((c) => modules.heatingCategories || !c.isHeating)
       .map((c) => ({

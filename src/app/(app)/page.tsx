@@ -8,6 +8,7 @@ import {
   SolarCard,
 } from "@/components/cards/overview-cards";
 import { BatteryGapNotices } from "@/components/battery-gap-notice";
+import { BaseloadCard } from "@/components/cards/baseload-card";
 import { MarkersStrip } from "@/components/cards/markers-strip";
 import { MonthlyCostCard } from "@/components/cards/monthly-cost-card";
 import { MonthlyTable } from "@/components/cards/monthly-table";
@@ -62,6 +63,7 @@ export default async function OverviewPage({
             <OriginCard overview={overview} solar={modules.solar} battery={modules.battery} />
             <CategoriesOverviewCard overview={overview} />
           </div>
+          <BaseloadCard overview={overview} />
           <SolarCard overview={overview} />
           <MonthlyTable
             months={overview.months}

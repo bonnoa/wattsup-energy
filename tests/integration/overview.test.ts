@@ -175,6 +175,37 @@ describe("vue d'ensemble sur le foyer de démo", () => {
     expect(o.markers.map((m) => m.text)).toEqual(["Vacances"]);
   });
 
+  it("talon : médiane des minima de nuit, consommation = import − charge de la batterie", async () => {
+    const ctx = await createTestHousehold("talon");
+    const rows: (typeof energyInterval.$inferInsert)[] = [];
+    for (let d = 1; d <= 10; d++) {
+      const date = `2026-09-${String(d).padStart(2, "0")}`;
+      for (let hour = 0; hour < 24; hour++) {
+        const start = zonedInstant(date, hour, TZ);
+        // Nuit : 0,3 kWh importés dont 0,1 part dans la batterie à 3 h, soit 0,2 consommés.
+        const night = hour === 3;
+        const base = {
+          householdId: ctx.householdId,
+          start,
+          granularity: "hour" as const,
+          source: "ha" as const,
+        };
+        rows.push({ ...base, metric: "grid_import", kwh: night ? 0.3 : 0.6 });
+        rows.push({ ...base, metric: "battery_charge", kwh: night ? 0.1 : 0 });
+      }
+    }
+    await db.insert(energyInterval).values(rows);
+    const o = await getOverview(ctx, "2026-09", now);
+    if (o.status !== "ok") throw new Error(o.status);
+    expect(o.baseload?.watts).toBe(200);
+    expect(o.baseload?.previousWatts).toBeNull();
+    expect(o.baseload?.months).toHaveLength(12);
+    expect(o.baseload?.months.at(-1)).toEqual({ month: "2026-09", watts: 200 });
+    // Quotidien : pas de talon.
+    const daily = await getOverview({ ...ctx, granularity: "daily" }, "2026-09", now);
+    expect(daily.status === "ok" && daily.baseload).toBeNull();
+  });
+
   it("aucune donnée : no-data", async () => {
     const ctx = await createTestHousehold();
     expect(await getOverview(ctx, undefined, now)).toEqual({ status: "no-data" });

@@ -406,10 +406,10 @@ Légende des tailles : **S** = 1–2 fichiers · **M** = 3–5 fichiers (hors te
   - Vérifier : `tests/integration/admin.test.ts`
   - Fichiers : `src/server/admin.ts`, `src/app/(app)/admin/utilisateurs/*`
 
-- [ ] **T41 — Talon de consommation** · S · Dépend de : T20
+- [x] **T41 — Talon de consommation** · S · Dépend de : T20
   - Acceptation :
-    - Talon = consommation du foyer de nuit la plus basse et stable (médiane des minima horaires 1 h–5 h sur la période, jours complets seulement), en W, en kWh/an et en €/an au prix moyen du kWh
-    - Carte sur la Vue d'ensemble (mode horaire seulement) : talon du mois, évolution sur 12 mois, écart au mois précédent ; état « données insuffisantes »
+    - Talon = médiane, sur la période, de l'heure la plus basse de chaque nuit (minuit–6 h, au moins 5 heures reçues, 7 nuits au moins), en W, en kWh/an et en €/an au prix moyen du kWh
+    - Carte sur la Vue d'ensemble (mode horaire seulement) : talon de la période, écart à la même période un an plus tôt, 12 derniers mois en barres ; état « données insuffisantes »
   - Vérifier : `tests/unit/domain/baseload.test.ts` (TDD) ; manuel
   - Fichiers : `src/domain/baseload.ts`, `src/server/queries/overview.ts`, `src/components/cards/*`
 

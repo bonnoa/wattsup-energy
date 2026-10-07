@@ -1,10 +1,9 @@
 import { afterAll, describe, expect, it, vi } from "vitest";
 
-// Mot de passe oublié de bout en bout, avec un useSend simulé : la configuration doit être
+// Mot de passe oublié de bout en bout, avec Resend simulé : la configuration doit être
 // en place avant le chargement de la configuration Better Auth.
 const sent = vi.hoisted(() => {
-  process.env.USESEND_URL = "https://usesend.test";
-  process.env.USESEND_API_KEY = "us_test";
+  process.env.RESEND_API_KEY = "re_test";
   process.env.MAIL_FROM = "WattsUp <noreply@wattsup.test>";
   return [] as { to: string; text: string }[];
 });
@@ -12,10 +11,10 @@ const sent = vi.hoisted(() => {
 const realFetch = globalThis.fetch;
 globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
   const url = String(input);
-  if (url.startsWith("https://usesend.test/")) {
+  if (url === "https://api.resend.com/emails") {
     const body = JSON.parse(String(init?.body)) as { to: string; text: string };
     sent.push(body);
-    return new Response(JSON.stringify({ emailId: "e1" }), { status: 200 });
+    return new Response(JSON.stringify({ id: "e1" }), { status: 200 });
   }
   return realFetch(input, init);
 }) as typeof fetch;

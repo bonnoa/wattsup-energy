@@ -2,6 +2,7 @@
 
 import Link, { useLinkStatus } from "next/link";
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from "react";
+import { useNavigationWake } from "@/components/use-navigation-wake";
 
 // Changement de période sur la même page (Vue d'ensemble `?p=`, Chauffage `?s=`) : Next.js
 // n'affiche pas de squelette quand seule la requête change. Comme pour le menu, le lien
@@ -43,6 +44,7 @@ export function PeriodContent({ children }: { children: ReactNode }) {
 /** Dans un lien : signale au contexte que sa page charge (useLinkStatus). */
 function PendingReporter({ href }: { href: string }) {
   const { pending } = useLinkStatus();
+  useNavigationWake(pending);
   const report = useContext(Ctx)?.report;
   useEffect(() => {
     report?.(href, pending);

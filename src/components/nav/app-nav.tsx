@@ -5,6 +5,7 @@ import Link, { useLinkStatus } from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Icon } from "@/components/ui";
+import { useNavigationWake } from "@/components/use-navigation-wake";
 import type { NavId, NavItem } from "@/domain/profile";
 import { HaStatus } from "./ha-status";
 import { NavIcon } from "./icons";
@@ -32,6 +33,7 @@ const isActive = (pathname: string, href: string) =>
 /** Pictogramme d'une entrée de menu, qui pulse tant que sa page charge. */
 function PendingIcon({ children }: { children: React.ReactNode }) {
   const { pending } = useLinkStatus();
+  useNavigationWake(pending);
   return <span className={`flex ${pending ? "animate-pulse" : ""}`}>{children}</span>;
 }
 

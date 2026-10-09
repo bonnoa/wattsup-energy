@@ -74,7 +74,7 @@ OVHcloud, dans le cadre du RGPD.
   l'entraînement de modèles d'intelligence artificielle.
 - Vous pouvez les exporter à tout moment, et supprimer votre compte avec tout son historique
   en quelques clics depuis Mon compte.
-- Seuls les emails (envoyés via Resend) et les notifications push (services de votre
+- Seuls les emails (envoyés via Brevo) et les notifications push (services de votre
   navigateur : Google, Apple ou Mozilla) passent par des prestataires techniques, uniquement
   pour vous être remis.
 
@@ -90,6 +90,14 @@ WattsUp vous rend service ? Vous pouvez soutenir son développement :
 <a href="https://www.buymeacoffee.com/kraftpunk"><img src="https://img.buymeacoffee.com/button-api/?text=Buy%20me%20a%20coffee&emoji=%E2%98%95&slug=kraftpunk&button_colour=FFDD00&font_colour=000000&font_family=Inter&outline_colour=000000&coffee_colour=ffffff" alt="Buy me a coffee" height="48"></a>
 
 ## Notes de version
+
+### 1.2.0 — 9 octobre 2026
+
+- Les emails de WattsUp (mot de passe oublié, confirmation d'adresse, alertes, contact)
+  partent désormais par **Brevo**, prestataire français, à la place de Resend.
+- Pages nettement plus rapides : Vue d'ensemble, Contrats et Rentabilité se calculent 3 à 6
+  fois plus vite, et les allers-retours Mois / Année ne se bloquent plus.
+- Changement de mois, d'année ou de saison : retour visuel immédiat pendant le chargement.
 
 ### 1.1.0 — 7 octobre 2026
 

@@ -57,7 +57,7 @@ export function ContactTextsCard({
       {!mailOn && (
         <Notice tone="info" title="Messagerie non configurée :">
           l&apos;entrée Contact n&apos;apparaît pas tant que l&apos;instance n&apos;envoie pas
-          d&apos;emails (RESEND_API_KEY, MAIL_FROM).
+          d&apos;emails (MAIL_FROM et BREVO_API_KEY ou RESEND_API_KEY).
         </Notice>
       )}
       <label className="flex flex-col gap-1.5 text-xs text-muted">

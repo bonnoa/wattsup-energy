@@ -12,7 +12,7 @@ import { ensureHousehold } from "./household";
 import { getSignupPolicy } from "./instance";
 import { mailConfigured, sendMail } from "./mail";
 
-// Envoi d'emails configuré au démarrage (RESEND_API_KEY, MAIL_FROM) : mot de passe oublié et
+// Envoi d'emails configuré au démarrage (MAIL_FROM, BREVO_API_KEY ou RESEND_API_KEY) : mot de passe oublié et
 // confirmation d'une nouvelle adresse par lien.
 const mailOn = mailConfigured();
 
